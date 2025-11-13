@@ -198,7 +198,7 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({ images, onRestart, onBack
   }, [drawCanvas]);
 
   return (
-    <div className="relative flex flex-col items-center p-4 min-h-screen justify-center">
+    <div className="relative flex flex-col items-center justify-center h-full w-full">
        <div className="absolute top-4 left-4">
         <button 
           onClick={onBack}

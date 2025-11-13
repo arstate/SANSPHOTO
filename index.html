@@ -11,17 +11,44 @@
     <style>
       body {
         font-family: 'Poppins', sans-serif;
+        /* Mencegah scrolling dan mengatur latar belakang untuk letterboxing */
+        overflow: hidden;
+        background-color: #111827; /* bg-gray-900 */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        margin: 0;
       }
       .font-bebas {
         font-family: 'Bebas Neue', sans-serif;
       }
-      /* Custom Scrollbar */
+
+      /* Wadah utama yang menerapkan rasio aspek */
+      #app-container {
+        position: relative;
+        aspect-ratio: 16 / 9;
+        width: 100vw;
+        height: calc(100vw * 9 / 16);
+        max-height: 100vh;
+        max-width: calc(100vh * 16 / 9);
+        background-color: #111827; /* bg-gray-900 */
+      }
+      
+      #root {
+        width: 100%;
+        height: 100%;
+        overflow: hidden; /* Memastikan tidak ada overflow dari aplikasi React */
+      }
+
+      /* Scrollbar Kustom */
       .scrollbar-thin {
         scrollbar-width: thin;
         scrollbar-color: #4B5563 #1F2937; /* thumb track */
       }
       .scrollbar-thin::-webkit-scrollbar {
         height: 8px;
+        width: 8px;
       }
       .scrollbar-thin::-webkit-scrollbar-track {
         background: #1F2937; /* bg-gray-800 */
@@ -49,8 +76,10 @@
 }
 </script>
 </head>
-  <body class="bg-gray-900 text-white">
-    <div id="root"></div>
+  <body>
+    <div id="app-container">
+      <div id="root"></div>
+    </div>
     <script type="module" src="/index.tsx"></script>
   </body>
 </html>

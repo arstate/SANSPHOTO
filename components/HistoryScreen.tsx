@@ -32,7 +32,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ history, events, onDelete
   }, []);
 
   return (
-    <div className="relative flex flex-col w-full min-h-screen p-4">
+    <div className="relative flex flex-col w-full h-full">
       <div className="absolute top-4 left-4 z-20">
         <button
           onClick={onBack}
@@ -47,7 +47,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ history, events, onDelete
         <h2 className="text-4xl font-bebas tracking-wider text-white">Photobooth History</h2>
       </header>
       
-      <div className="w-full max-w-md mx-auto mb-6">
+      <div className="w-full max-w-md mx-auto mb-6 shrink-0">
           <label htmlFor="eventFilter" className="block text-sm font-medium text-gray-300 mb-2">Filter by Event</label>
           <select
             id="eventFilter"
@@ -63,7 +63,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ history, events, onDelete
       </div>
 
 
-      <main className="w-full max-w-6xl mx-auto">
+      <main className="w-full max-w-6xl mx-auto overflow-y-auto scrollbar-thin pr-2">
         {filteredHistory.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {filteredHistory.map(entry => (

@@ -30,7 +30,7 @@ const CachingStatus: React.FC<{ progress: number }> = ({ progress }) => (
 
 const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStart, onSettingsClick, onViewHistory, isAdminLoggedIn, isCaching, cachingProgress }) => {
   return (
-    <div className="relative text-center flex flex-col items-center justify-center h-screen">
+    <div className="relative text-center flex flex-col items-center justify-center h-full w-full">
       <h1 className="font-bebas text-8xl md:text-9xl tracking-widest text-white animate-pulse">SANS PHOTO</h1>
       <p className="text-gray-400 mb-8">Your personal web photobooth</p>
       {isAdminLoggedIn ? (

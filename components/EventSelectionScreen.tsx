@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Event } from '../types';
 import { BackIcon } from './icons/BackIcon';
@@ -10,7 +11,7 @@ interface EventSelectionScreenProps {
 
 const EventSelectionScreen: React.FC<EventSelectionScreenProps> = ({ events, onSelect, onBack }) => {
   return (
-    <div className="relative flex flex-col items-center justify-center min-h-screen p-4">
+    <div className="relative flex flex-col items-center justify-center w-full h-full">
         <div className="absolute top-4 left-4">
             <button 
             onClick={onBack}

@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { CameraIcon } from './icons/CameraIcon';
 import { Template } from '../types';
@@ -120,7 +121,7 @@ const CaptureScreen: React.FC<CaptureScreenProps> = ({ onComplete, template, cou
   return (
     <>
       {showFlash && <div className="fixed inset-0 bg-white z-50"></div>}
-      <div className="flex flex-col md:flex-row w-full gap-8 items-center md:items-stretch md:h-[calc(100vh-5rem)]">
+      <div className="flex flex-col md:flex-row w-full h-full gap-8 items-center md:items-stretch">
           
         {/* Left Column: Main Camera Preview */}
         <div className="w-full md:w-3/5 flex flex-col items-center justify-center">

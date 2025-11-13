@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Settings } from '../types';
 import { BackIcon } from './icons/BackIcon';
@@ -26,7 +27,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ settings, onSettingsCha
   };
 
   return (
-    <div className="relative text-center flex flex-col items-center justify-center p-4 min-h-screen">
+    <div className="relative text-center flex flex-col items-center w-full h-full">
       <div className="absolute top-4 left-4">
         <button 
           onClick={onBack}
@@ -37,9 +38,9 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ settings, onSettingsCha
         </button>
       </div>
       
-      <h2 className="text-4xl font-bebas tracking-wider text-white mb-8">Admin Settings</h2>
+      <h2 className="text-4xl font-bebas tracking-wider text-white mb-8 shrink-0">Admin Settings</h2>
 
-      <div className="w-full max-w-md space-y-6">
+      <div className="w-full max-w-md space-y-6 overflow-y-auto scrollbar-thin pr-2">
         {/* Event Management */}
         <div className="p-6 bg-gray-800 rounded-lg border border-gray-700 text-left">
           <h3 className="text-xl font-bold mb-4 text-purple-400">Event Management</h3>

@@ -40,7 +40,7 @@ const TemplateSelection: React.FC<TemplateSelectionProps> = ({
   }, [templates, previewedTemplate]);
 
   return (
-    <div className="relative flex flex-col h-screen w-full">
+    <div className="relative flex flex-col h-full w-full">
       <div className="absolute top-4 left-4 z-10">
         <button 
           onClick={onBack}

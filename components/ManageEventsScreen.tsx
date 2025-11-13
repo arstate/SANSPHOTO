@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Event } from '../types';
 import { BackIcon } from './icons/BackIcon';
@@ -53,7 +54,7 @@ const ManageEventsScreen: React.FC<ManageEventsScreenProps> = ({
   );
 
   return (
-    <div className="relative flex flex-col w-full min-h-screen p-4">
+    <div className="relative flex flex-col w-full h-full">
       <div className="absolute top-4 left-4 z-10">
         <button
           onClick={onBack}
@@ -68,7 +69,7 @@ const ManageEventsScreen: React.FC<ManageEventsScreenProps> = ({
         <h2 className="text-4xl font-bebas tracking-wider text-white">Manage Events</h2>
       </header>
 
-      <main className="w-full max-w-2xl mx-auto space-y-8">
+      <main className="w-full max-w-2xl mx-auto space-y-8 overflow-y-auto scrollbar-thin pr-2">
         <div>
             <h3 className="text-2xl font-bebas tracking-wider text-purple-400 mb-4">Add New Event</h3>
             <form onSubmit={handleAddEvent} className="flex gap-2">

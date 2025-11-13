@@ -138,8 +138,12 @@ const App: React.FC = () => {
   }, []);
 
   const toggleFullscreen = useCallback(() => {
+    // We now target the #app-container for fullscreen
+    const appContainer = document.getElementById('app-container');
+    if (!appContainer) return;
+
     if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch((err) => {
+      appContainer.requestFullscreen().catch((err) => {
         alert(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
       });
     } else if (document.exitFullscreen) {
@@ -419,21 +423,15 @@ const App: React.FC = () => {
       
       case AppState.PREVIEW:
         if (!selectedTemplate) { setAppState(AppState.WELCOME); return null; }
-        return <PreviewScreen images={capturedImages} onRestart={handleRestart} template={selectedTemplate} onBack={handleBack} onSaveHistory={handleSaveHistoryFromSession} event={selectedEvent} />;
+        return <PreviewScreen images={capturedImages} onRestart={handleRestart} onBack={handleBack} template={selectedTemplate} onSaveHistory={handleSaveHistoryFromSession} event={selectedEvent} />;
       
       default:
         return <WelcomeScreen onStart={handleStartSession} onSettingsClick={handleGoToSettings} onViewHistory={handleViewHistory} isAdminLoggedIn={isAdminLoggedIn} isCaching={isCaching} cachingProgress={cachingProgress} />;
     }
   };
-  
-  const mainClasses = `w-full ${
-    appState === AppState.CAPTURE || appState === AppState.EDIT_TEMPLATE_LAYOUT || appState === AppState.TEMPLATE_SELECTION || appState === AppState.MANAGE_EVENTS || appState === AppState.HISTORY
-    ? 'max-w-7xl'
-    : 'max-w-lg'
-  } mx-auto`;
 
   return (
-    <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center p-2 md:p-4">
+    <div className="h-full bg-gray-900 flex flex-col items-center justify-center text-white relative">
       <div className="absolute top-4 right-4 z-50 flex gap-2">
          <button 
           onClick={isAdminLoggedIn ? handleAdminLogout : handleOpenLoginModal}
@@ -459,7 +457,7 @@ const App: React.FC = () => {
          <TemplateMetadataModal template={editingTemplate} onSave={handleSaveTemplateMetadata} onClose={handleCancelEditTemplateMetadata} />
       )}
       
-      <main className={mainClasses}>
+      <main className="w-full h-full p-4 flex flex-col items-center justify-center">
         {renderContent()}
       </main>
     </div>
