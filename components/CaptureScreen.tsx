@@ -126,7 +126,7 @@ const CaptureScreen: React.FC<CaptureScreenProps> = ({ onComplete, template, cou
         <div className="w-full md:w-3/5 flex flex-col items-center justify-center p-4 md:p-2">
           <div className="w-full flex-grow flex items-center justify-center min-h-0">
             <div 
-              className="relative w-full h-auto max-h-full bg-black rounded-lg overflow-hidden border-4 border-gray-700 shadow-2xl shadow-purple-500/20"
+              className="relative max-w-full max-h-full bg-black rounded-lg overflow-hidden border-4 border-gray-700 shadow-2xl shadow-purple-500/20"
               style={{ aspectRatio: aspectRatio }}
             >
               <video
