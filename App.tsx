@@ -16,7 +16,7 @@ import EventQrCodeModal from './components/EventQrCodeModal';
 import HistoryScreen from './components/HistoryScreen';
 import { AppState, PhotoSlot, Settings, Template, Event, HistoryEntry } from './types';
 import { db, ref, onValue, off, set, push, update, remove, firebaseObjectToArray } from './firebase';
-import { getAllHistoryEntries, addHistoryEntry, deleteHistoryEntry } from './utils/db';
+import { getAllHistoryEntries, addHistoryEntry, deleteHistoryEntry, cacheImage } from './utils/db';
 
 
 const INITIAL_PHOTO_SLOTS: PhotoSlot[] = [
@@ -57,6 +57,26 @@ const App: React.FC = () => {
   const [events, setEvents] = useState<Event[]>([]);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
+  
+  const [isCaching, setIsCaching] = useState(false);
+  const [cachingProgress, setCachingProgress] = useState(0);
+
+  // Fungsi untuk meng-cache semua gambar templat di latar belakang
+  const cacheAllTemplates = useCallback(async (templatesToCache: Template[]) => {
+      if (templatesToCache.length === 0) return;
+      setIsCaching(true);
+      setCachingProgress(0);
+
+      for (let i = 0; i < templatesToCache.length; i++) {
+          await cacheImage(templatesToCache[i].imageUrl);
+          setCachingProgress(((i + 1) / templatesToCache.length) * 100);
+      }
+
+      // Beri sedikit jeda agar pengguna bisa melihat progress 100%
+      setTimeout(() => {
+          setIsCaching(false);
+      }, 1500);
+  }, []);
 
   useEffect(() => {
     // Load local history from IndexedDB on startup
@@ -80,7 +100,10 @@ const App: React.FC = () => {
     const templatesRef = ref(db, 'templates');
     const templatesListener = onValue(templatesRef, (snapshot) => {
         if (snapshot.exists()) {
-            setTemplates(firebaseObjectToArray<Template>(snapshot.val()));
+            const fetchedTemplates = firebaseObjectToArray<Template>(snapshot.val());
+            setTemplates(fetchedTemplates);
+            // Mulai caching semua gambar templat setelah didapatkan
+            cacheAllTemplates(fetchedTemplates);
         } else {
             push(templatesRef, DEFAULT_TEMPLATE_DATA);
         }
@@ -97,7 +120,7 @@ const App: React.FC = () => {
       off(templatesRef, 'value', templatesListener);
       off(eventsRef, 'value', eventsListener);
     };
-  }, []);
+  }, [cacheAllTemplates]);
 
   const handleStartSession = useCallback(() => {
     setAppState(AppState.EVENT_SELECTION);
@@ -321,7 +344,7 @@ const App: React.FC = () => {
       
     switch (appState) {
       case AppState.WELCOME:
-        return <WelcomeScreen onStart={handleStartSession} onAdminLoginClick={handleOpenLoginModal} onAdminLogout={handleAdminLogout} onSettingsClick={handleGoToSettings} onViewHistory={handleViewHistory} isAdminLoggedIn={isAdminLoggedIn} />;
+        return <WelcomeScreen onStart={handleStartSession} onAdminLoginClick={handleOpenLoginModal} onAdminLogout={handleAdminLogout} onSettingsClick={handleGoToSettings} onViewHistory={handleViewHistory} isAdminLoggedIn={isAdminLoggedIn} isCaching={isCaching} cachingProgress={cachingProgress} />;
       
       case AppState.EVENT_SELECTION:
         return <EventSelectionScreen events={events.filter(e => !e.isArchived)} onSelect={handleEventSelect} onBack={handleBack} />;
@@ -374,7 +397,7 @@ const App: React.FC = () => {
         return <PreviewScreen images={capturedImages} onRestart={handleRestart} template={selectedTemplate} onBack={handleBack} onSaveHistory={handleSaveHistoryFromSession} event={selectedEvent} />;
       
       default:
-        return <WelcomeScreen onStart={handleStartSession} onAdminLoginClick={handleOpenLoginModal} onAdminLogout={handleAdminLogout} onSettingsClick={handleGoToSettings} onViewHistory={handleViewHistory} isAdminLoggedIn={isAdminLoggedIn} />;
+        return <WelcomeScreen onStart={handleStartSession} onAdminLoginClick={handleOpenLoginModal} onAdminLogout={handleAdminLogout} onSettingsClick={handleGoToSettings} onViewHistory={handleViewHistory} isAdminLoggedIn={isAdminLoggedIn} isCaching={isCaching} cachingProgress={cachingProgress} />;
     }
   };
   

@@ -1,3 +1,4 @@
+
 import { HistoryEntry } from '../types';
 
 const DB_NAME = 'SansPhotoDB';
@@ -98,7 +99,8 @@ export async function cacheImage(url: string): Promise<void> {
     const db = await openDB();
     const existingBlob = await getCachedImage(url);
     if (existingBlob) {
-      console.log(`Gambar dari ${url} sudah di-cache.`);
+      // Hapus log ini agar tidak terlalu berisik di konsol
+      // console.log(`Gambar dari ${url} sudah di-cache.`);
       return;
     }
     
@@ -109,7 +111,7 @@ export async function cacheImage(url: string): Promise<void> {
         fetchUrl = `https://images.weserv.nl/?url=${urlWithoutProtocol}`;
     }
 
-    console.log(`Menyimpan gambar dari ${url} ke cache... (melalui: ${fetchUrl})`);
+    console.log(`Menyimpan gambar dari ${url} ke cache...`);
     const response = await fetch(fetchUrl);
     if (!response.ok) {
       throw new Error(`Gagal mengambil gambar. Status: ${response.status}`);

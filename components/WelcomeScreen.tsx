@@ -12,9 +12,27 @@ interface WelcomeScreenProps {
   onSettingsClick: () => void;
   onViewHistory: () => void;
   isAdminLoggedIn: boolean;
+  isCaching: boolean;
+  cachingProgress: number;
 }
 
-const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStart, onAdminLoginClick, onAdminLogout, onSettingsClick, onViewHistory, isAdminLoggedIn }) => {
+const CachingStatus: React.FC<{ progress: number }> = ({ progress }) => (
+    <div className="fixed bottom-0 left-0 right-0 p-3 bg-gray-800/80 backdrop-blur-sm z-50 transition-opacity duration-300">
+        <div className="max-w-md mx-auto text-center">
+            <p className="text-sm text-gray-300 mb-1">Downloading templates for offline use...</p>
+            <div className="w-full bg-gray-600 rounded-full h-2.5">
+                <div 
+                    className="bg-purple-600 h-2.5 rounded-full transition-all duration-300" 
+                    style={{ width: `${progress}%` }}
+                ></div>
+            </div>
+            <p className="text-xs font-mono mt-1 text-purple-300">{Math.round(progress)}%</p>
+        </div>
+    </div>
+);
+
+
+const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStart, onAdminLoginClick, onAdminLogout, onSettingsClick, onViewHistory, isAdminLoggedIn, isCaching, cachingProgress }) => {
   return (
     <div className="relative text-center flex flex-col items-center justify-center h-screen">
       <div className="absolute top-4 right-4">
@@ -53,6 +71,8 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStart, onAdminLoginClic
           START SESSION
         </button>
       )}
+      
+      {isCaching && <CachingStatus progress={cachingProgress} />}
     </div>
   );
 };

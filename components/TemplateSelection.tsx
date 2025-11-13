@@ -1,10 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { BackIcon } from './icons/BackIcon';
 import { AddIcon } from './icons/AddIcon';
 import { EditIcon } from './icons/EditIcon';
 import { TrashIcon } from './icons/TrashIcon';
 import { Template } from '../types';
-import { cacheImage } from '../utils/db';
 
 interface TemplateSelectionProps {
   templates: Template[];
@@ -39,13 +39,6 @@ const TemplateSelection: React.FC<TemplateSelectionProps> = ({
       setPreviewedTemplate(templates[0] || null);
     }
   }, [templates, previewedTemplate]);
-
-  const handleSelectTemplate = (template: Template) => {
-    // Secara proaktif menyimpan gambar ke cache saat pengguna memilihnya.
-    // Ini berjalan di latar belakang.
-    cacheImage(template.imageUrl);
-    onSelect(template);
-  };
 
   return (
     <div className="relative flex flex-col h-screen w-full">
@@ -100,7 +93,7 @@ const TemplateSelection: React.FC<TemplateSelectionProps> = ({
                     </div>
                 ) : (
                     <button
-                        onClick={() => handleSelectTemplate(previewedTemplate)}
+                        onClick={() => onSelect(previewedTemplate)}
                         className="mt-4 bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-full text-md transition-transform transform hover:scale-105 w-full"
                     >
                         Use This Template
