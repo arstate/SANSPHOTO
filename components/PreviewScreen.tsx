@@ -117,13 +117,32 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({ images, onRestart, onBack
       templateBitmap = templateBmp;
       loadedImageBitmaps = loadedBmps;
 
+      // Tentukan urutan kanonis dari ID input dengan mengurutkannya secara numerik.
+      // Array `images` dari CaptureScreen sesuai dengan urutan yang diurutkan ini.
+      // FIX: Add type assertion to resolve incorrect type inference for sortedInputIds.
+      const sortedInputIds = ([...new Set(template.photoSlots.map(slot => slot.inputId))] as number[]).sort((a, b) => a - b);
+
+      // Periksa apakah jumlah gambar yang diambil cocok dengan jumlah input unik.
+      if (loadedImageBitmaps.length !== sortedInputIds.length) {
+          throw new Error(`Jumlah gambar (${loadedImageBitmaps.length}) tidak cocok dengan jumlah input foto unik (${sortedInputIds.length}).`);
+      }
+
+      // Buat peta dari setiap inputId ke ImageBitmap yang sesuai.
+      const bitmapMap = new Map<number, ImageBitmap>();
+      sortedInputIds.forEach((id, index) => {
+          // Gambar-gambar diambil dalam urutan ID input yang diurutkan.
+          bitmapMap.set(id, loadedImageBitmaps[index]);
+      });
 
       // Gambar foto yang diambil dan pangkas agar sesuai dengan slot
       template.photoSlots.forEach(slot => {
         if (!slot) return;
-        // inputId berbasis 1, loadedImageBitmaps berbasis 0
-        const bitmap = loadedImageBitmaps[slot.inputId - 1];
-        if (!bitmap) return;
+        // THE FIX: Gunakan peta untuk mendapatkan bitmap yang benar untuk inputId slot
+        const bitmap = bitmapMap.get(slot.inputId);
+        if (!bitmap) {
+            console.warn(`Tidak ada bitmap yang ditemukan untuk inputId: ${slot.inputId}`);
+            return;
+        }
         
         ctx.save();
         // Balikkan secara horizontal agar sesuai dengan pratinjau kamera
