@@ -1,4 +1,5 @@
-import React, { useState, useCallback } from 'react';
+
+import React, { useState, useCallback, useEffect } from 'react';
 import WelcomeScreen from './components/WelcomeScreen';
 import TemplateSelection from './components/TemplateSelection';
 import CaptureScreen from './components/CaptureScreen';
@@ -14,6 +15,7 @@ import AssignTemplatesModal from './components/AssignTemplatesModal';
 import EventQrCodeModal from './components/EventQrCodeModal';
 import HistoryScreen from './components/HistoryScreen';
 import { AppState, PhotoSlot, Settings, Template, Event, HistoryEntry } from './types';
+import { db, ref, onValue, off, set, push, update, remove, firebaseObjectToArray } from './firebase';
 
 const INITIAL_PHOTO_SLOTS: PhotoSlot[] = [
   { id: 1, inputId: 1, x: 90,  y: 70,   width: 480, height: 480 },
@@ -29,19 +31,13 @@ const DEFAULT_SETTINGS: Settings = {
   flashEffectEnabled: true,
 };
 
-const DEFAULT_TEMPLATE: Template = {
-  id: 'default-1',
+const DEFAULT_TEMPLATE_DATA: Omit<Template, 'id'> = {
   name: 'Portrait 4x6',
   imageUrl: 'https://lh3.googleusercontent.com/pw/AP1GczMwGZ8j7Lessgx9F6qavNTLnoC1UodPtOLNCDQf7vMM_sFZdxkg-ADr8yLGa0aaFtaS_TAut_FQTfmgt3rwzaWL5cCEawjyp64oQMkJC3aZrd7fRXQ=w2400',
   widthMM: 102,
   heightMM: 152,
   photoSlots: INITIAL_PHOTO_SLOTS,
 };
-
-const TEMPLATES_STORAGE_KEY = 'sans-photo-templates';
-const SETTINGS_STORAGE_KEY = 'sans-photo-settings';
-const EVENTS_STORAGE_KEY = 'sans-photo-events';
-const HISTORY_STORAGE_KEY = 'sans-photo-history';
 
 const App: React.FC = () => {
   const [appState, setAppState] = useState<AppState>(AppState.WELCOME);
@@ -55,74 +51,52 @@ const App: React.FC = () => {
   const [editingEventQr, setEditingEventQr] = useState<Event | null>(null);
   const [assigningTemplatesEvent, setAssigningTemplatesEvent] = useState<Event | null>(null);
   
-  const [templates, setTemplates] = useState<Template[]>(() => {
-    try {
-      const savedTemplates = localStorage.getItem(TEMPLATES_STORAGE_KEY);
-      const parsed = savedTemplates ? JSON.parse(savedTemplates) : null;
-      return Array.isArray(parsed) && parsed.length > 0 ? parsed : [DEFAULT_TEMPLATE];
-    } catch (e) {
-      console.error("Failed to load templates from storage", e);
-      return [DEFAULT_TEMPLATE];
-    }
-  });
+  const [templates, setTemplates] = useState<Template[]>([]);
+  const [events, setEvents] = useState<Event[]>([]);
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
 
-  const [events, setEvents] = useState<Event[]>(() => {
-    try {
-        const savedEvents = localStorage.getItem(EVENTS_STORAGE_KEY);
-        const parsed = savedEvents ? JSON.parse(savedEvents) : null;
-        return Array.isArray(parsed) ? parsed : [];
-    } catch (e) {
-        console.error("Failed to load events from storage", e);
-        return [];
-    }
-  });
-  
-  const [history, setHistory] = useState<HistoryEntry[]>(() => {
-      try {
-          const savedHistory = localStorage.getItem(HISTORY_STORAGE_KEY);
-          return savedHistory ? JSON.parse(savedHistory) : [];
-      } catch (e) {
-          console.error("Failed to load history from storage", e);
-          return [];
+  useEffect(() => {
+    // Settings listener
+    const settingsRef = ref(db, 'settings');
+    const settingsListener = onValue(settingsRef, (snapshot) => {
+      if (snapshot.exists()) {
+        setSettings({ ...DEFAULT_SETTINGS, ...snapshot.val() });
+      } else {
+        set(settingsRef, DEFAULT_SETTINGS);
       }
-  });
+    });
 
-  const [settings, setSettings] = useState<Settings>(() => {
-    try {
-      const savedSettings = localStorage.getItem(SETTINGS_STORAGE_KEY);
-      const parsed = savedSettings ? JSON.parse(savedSettings) : {};
-      return { ...DEFAULT_SETTINGS, ...parsed };
-    } catch (e) {
-      console.error("Failed to load settings from storage", e);
-      return DEFAULT_SETTINGS;
-    }
-  });
+    // Templates listener
+    const templatesRef = ref(db, 'templates');
+    const templatesListener = onValue(templatesRef, (snapshot) => {
+        if (snapshot.exists()) {
+            setTemplates(firebaseObjectToArray<Template>(snapshot.val()));
+        } else {
+            push(templatesRef, DEFAULT_TEMPLATE_DATA);
+        }
+    });
 
-  const saveTemplates = useCallback((newTemplates: Template[]) => {
-    try {
-      localStorage.setItem(TEMPLATES_STORAGE_KEY, JSON.stringify(newTemplates));
-      setTemplates(newTemplates);
-    } catch (e) {
-      console.error("Failed to save templates to storage", e);
-    }
-  }, []);
+    // Events listener
+    const eventsRef = ref(db, 'events');
+    const eventsListener = onValue(eventsRef, (snapshot) => {
+        setEvents(firebaseObjectToArray<Event>(snapshot.val()));
+    });
 
-  const saveEvents = useCallback((newEvents: Event[]) => {
-      try {
-          localStorage.setItem(EVENTS_STORAGE_KEY, JSON.stringify(newEvents));
-          setEvents(newEvents);
-      } catch (e) {
-          console.error("Failed to save events to storage", e);
-      }
-  }, []);
-  
-  const saveHistory = useCallback((newHistory: HistoryEntry[]) => {
-      try {
-          localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(newHistory));
-          setHistory(newHistory);
-      } catch(e) {
-          console.error("Failed to save history to storage", e);
-      }
+    // History listener
+    const historyRef = ref(db, 'history');
+    const historyListener = onValue(historyRef, (snapshot) => {
+        const historyData = firebaseObjectToArray<HistoryEntry>(snapshot.val());
+        historyData.sort((a, b) => b.timestamp - a.timestamp);
+        setHistory(historyData);
+    });
+
+    return () => {
+      off(settingsRef, 'value', settingsListener);
+      off(templatesRef, 'value', templatesListener);
+      off(eventsRef, 'value', eventsListener);
+      off(historyRef, 'value', historyListener);
+    };
   }, []);
 
   const handleStartSession = useCallback(() => {
@@ -159,12 +133,7 @@ const App: React.FC = () => {
   }, [isAdminLoggedIn]);
   
   const handleSettingsChange = useCallback((newSettings: Settings) => {
-    try {
-      localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(newSettings));
-    } catch (e) {
-      console.error("Failed to save settings to storage", e);
-    }
-    setSettings(newSettings);
+    set(ref(db, 'settings'), newSettings);
   }, []);
 
   const handleStartAddTemplate = useCallback(() => {
@@ -185,18 +154,17 @@ const App: React.FC = () => {
   }, []);
 
   const handleSaveTemplateMetadata = useCallback((templateToSave: Template) => {
-    const existingIndex = templates.findIndex(t => t.id === templateToSave.id);
-    let newTemplates;
-    if (existingIndex > -1) {
-      newTemplates = [...templates];
-      newTemplates[existingIndex] = templateToSave;
+    const isNew = templateToSave.id.startsWith('template-');
+    const { id, ...dataToSave } = templateToSave;
+
+    if (isNew) {
+      push(ref(db, 'templates'), dataToSave);
     } else {
-      newTemplates = [...templates, templateToSave];
+      update(ref(db, `templates/${id}`), dataToSave);
     }
-    saveTemplates(newTemplates);
     setEditingTemplate(null);
     setAppState(AppState.SETTINGS);
-  }, [templates, saveTemplates]);
+  }, []);
   
   const handleCancelEditTemplateMetadata = useCallback(() => {
     setEditingTemplate(null);
@@ -210,17 +178,14 @@ const App: React.FC = () => {
   
   const handleTemplateLayoutSave = useCallback((newSlots: PhotoSlot[]) => {
     if (!selectedTemplate) return;
-    const updatedTemplate = { ...selectedTemplate, photoSlots: newSlots };
-    const newTemplates = templates.map(t => t.id === updatedTemplate.id ? updatedTemplate : t);
-    saveTemplates(newTemplates);
+    update(ref(db, `templates/${selectedTemplate.id}`), { photoSlots: newSlots });
     setSelectedTemplate(null);
     setAppState(AppState.SETTINGS);
-  }, [selectedTemplate, templates, saveTemplates]);
+  }, [selectedTemplate]);
   
   const handleDeleteTemplate = useCallback((templateId: string) => {
-    const newTemplates = templates.filter(t => t.id !== templateId);
-    saveTemplates(newTemplates);
-  }, [templates, saveTemplates]);
+    remove(ref(db, `templates/${templateId}`));
+  }, []);
 
   const handleEditLayoutCancel = useCallback(() => {
     setSelectedTemplate(null);
@@ -229,74 +194,85 @@ const App: React.FC = () => {
   
   // Event Management Handlers
   const handleAddEvent = useCallback((name: string) => {
-    const newEvent: Event = { id: `event-${Date.now()}`, name, isArchived: false, isQrCodeEnabled: false, qrCodeImageUrl: '' };
-    saveEvents([...events, newEvent]);
-  }, [events, saveEvents]);
+    // FIX: The type of newEvent was changed from `Omit<Event, 'id'>` to `Event`.
+    // The original type caused an error because the object literal included an `id` property.
+    // This change also fixes the subsequent destructuring error on the next line.
+    const newEvent: Event = { id: '', name, isArchived: false, isQrCodeEnabled: false, qrCodeImageUrl: '' };
+    const { id, ...dataToSave } = newEvent;
+    push(ref(db, 'events'), dataToSave);
+  }, []);
 
   const handleStartRenameEvent = useCallback((event: Event) => setEditingEvent(event), []);
   const handleCancelRenameEvent = useCallback(() => setEditingEvent(null), []);
   const handleSaveRenameEvent = useCallback((eventId: string, newName: string) => {
-    saveEvents(events.map(e => e.id === eventId ? { ...e, name: newName } : e));
+    update(ref(db, `events/${eventId}`), { name: newName });
     setEditingEvent(null);
-  }, [events, saveEvents]);
+  }, []);
   
-  const handleDeleteEvent = useCallback((eventId: string) => {
+  const handleDeleteEvent = useCallback(async (eventId: string) => {
     if (!window.confirm("Are you sure you want to delete this event? This cannot be undone.")) return;
-    // Unassign templates from this event
-    const newTemplates = templates.map(t => t.eventId === eventId ? { ...t, eventId: undefined } : t);
-    saveTemplates(newTemplates);
-    // Delete the event
-    const newEvents = events.filter(e => e.id !== eventId);
-    saveEvents(newEvents);
-  }, [events, templates, saveEvents, saveTemplates]);
+    
+    const updates: Record<string, any> = {};
+    templates.forEach(t => {
+      if (t.eventId === eventId) {
+        updates[`/templates/${t.id}/eventId`] = null;
+      }
+    });
+
+    updates[`/events/${eventId}`] = null;
+    await update(ref(db), updates);
+  }, [templates]);
   
   const handleToggleArchiveEvent = useCallback((eventId: string) => {
-    saveEvents(events.map(e => e.id === eventId ? { ...e, isArchived: !e.isArchived } : e));
-  }, [events, saveEvents]);
+    const event = events.find(e => e.id === eventId);
+    if (event) {
+        update(ref(db, `events/${eventId}`), { isArchived: !event.isArchived });
+    }
+  }, [events]);
   
   const handleStartAssigningTemplates = useCallback((event: Event) => setAssigningTemplatesEvent(event), []);
   const handleCancelAssigningTemplates = useCallback(() => setAssigningTemplatesEvent(null), []);
   const handleSaveTemplateAssignments = useCallback((eventId: string, assignedTemplateIds: string[]) => {
-    const newTemplates = templates.map(t => {
+    const updates: Record<string, any> = {};
+    templates.forEach(t => {
       if (assignedTemplateIds.includes(t.id)) {
-        return { ...t, eventId }; // Assign to this event
+        if (t.eventId !== eventId) {
+          updates[`/templates/${t.id}/eventId`] = eventId;
+        }
+      } else if (t.eventId === eventId) {
+        updates[`/templates/${t.id}/eventId`] = null;
       }
-      if (t.eventId === eventId) {
-        return { ...t, eventId: undefined }; // Unassign if it was previously assigned
-      }
-      return t;
     });
-    saveTemplates(newTemplates);
+    update(ref(db), updates);
     setAssigningTemplatesEvent(null);
-  }, [templates, saveTemplates]);
+  }, [templates]);
 
   // QR Code handlers
   const handleStartEditQrCode = useCallback((event: Event) => setEditingEventQr(event), []);
   const handleCancelEditQrCode = useCallback(() => setEditingEventQr(null), []);
   const handleSaveQrCodeSettings = useCallback((eventId: string, settings: { qrCodeImageUrl?: string, isQrCodeEnabled?: boolean}) => {
-      saveEvents(events.map(e => e.id === eventId ? { ...e, ...settings } : e));
+      update(ref(db, `events/${eventId}`), settings);
       setEditingEventQr(null);
-  }, [events, saveEvents]);
+  }, []);
 
   // History Handlers
   const handleSaveHistory = useCallback((imageDataUrl: string) => {
     const event = events.find(e => e.id === selectedEventId);
     if (!event) return;
     
-    const newEntry: HistoryEntry = {
-        id: `hist-${Date.now()}`,
+    const newEntry: Omit<HistoryEntry, 'id'> = {
         eventId: event.id,
         eventName: event.name,
         imageDataUrl,
         timestamp: Date.now(),
     };
-    saveHistory([newEntry, ...history]);
-  }, [events, selectedEventId, history, saveHistory]);
+    push(ref(db, 'history'), newEntry);
+  }, [events, selectedEventId]);
 
   const handleDeleteHistoryEntry = useCallback((entryId: string) => {
       if (!window.confirm("Are you sure you want to delete this history entry?")) return;
-      saveHistory(history.filter(entry => entry.id !== entryId));
-  }, [history, saveHistory]);
+      remove(ref(db, `history/${entryId}`));
+  }, []);
 
   const handleBack = useCallback(() => {
     switch (appState) {
