@@ -17,6 +17,9 @@ import HistoryScreen from './components/HistoryScreen';
 import { AppState, PhotoSlot, Settings, Template, Event, HistoryEntry } from './types';
 import { db, ref, onValue, off, set, push, update, remove, firebaseObjectToArray } from './firebase';
 import { getAllHistoryEntries, addHistoryEntry, deleteHistoryEntry, cacheImage } from './utils/db';
+import { AdminIcon } from './components/icons/AdminIcon';
+import { LogoutIcon } from './components/icons/LogoutIcon';
+import { FullscreenIcon } from './components/icons/FullscreenIcon';
 
 
 const INITIAL_PHOTO_SLOTS: PhotoSlot[] = [
@@ -60,6 +63,7 @@ const App: React.FC = () => {
   
   const [isCaching, setIsCaching] = useState(false);
   const [cachingProgress, setCachingProgress] = useState(0);
+  const [isFullscreen, setIsFullscreen] = useState(!!document.fullscreenElement);
 
   // Fungsi untuk meng-cache semua gambar templat di latar belakang
   const cacheAllTemplates = useCallback(async (templatesToCache: Template[]) => {
@@ -121,6 +125,27 @@ const App: React.FC = () => {
       off(eventsRef, 'value', eventsListener);
     };
   }, [cacheAllTemplates]);
+  
+  // Fullscreen management
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    };
+  }, []);
+
+  const toggleFullscreen = useCallback(() => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch((err) => {
+        alert(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+      });
+    } else if (document.exitFullscreen) {
+      document.exitFullscreen();
+    }
+  }, []);
 
   const handleStartSession = useCallback(() => {
     setAppState(AppState.EVENT_SELECTION);
@@ -344,7 +369,7 @@ const App: React.FC = () => {
       
     switch (appState) {
       case AppState.WELCOME:
-        return <WelcomeScreen onStart={handleStartSession} onAdminLoginClick={handleOpenLoginModal} onAdminLogout={handleAdminLogout} onSettingsClick={handleGoToSettings} onViewHistory={handleViewHistory} isAdminLoggedIn={isAdminLoggedIn} isCaching={isCaching} cachingProgress={cachingProgress} />;
+        return <WelcomeScreen onStart={handleStartSession} onSettingsClick={handleGoToSettings} onViewHistory={handleViewHistory} isAdminLoggedIn={isAdminLoggedIn} isCaching={isCaching} cachingProgress={cachingProgress} />;
       
       case AppState.EVENT_SELECTION:
         return <EventSelectionScreen events={events.filter(e => !e.isArchived)} onSelect={handleEventSelect} onBack={handleBack} />;
@@ -397,7 +422,7 @@ const App: React.FC = () => {
         return <PreviewScreen images={capturedImages} onRestart={handleRestart} template={selectedTemplate} onBack={handleBack} onSaveHistory={handleSaveHistoryFromSession} event={selectedEvent} />;
       
       default:
-        return <WelcomeScreen onStart={handleStartSession} onAdminLoginClick={handleOpenLoginModal} onAdminLogout={handleAdminLogout} onSettingsClick={handleGoToSettings} onViewHistory={handleViewHistory} isAdminLoggedIn={isAdminLoggedIn} isCaching={isCaching} cachingProgress={cachingProgress} />;
+        return <WelcomeScreen onStart={handleStartSession} onSettingsClick={handleGoToSettings} onViewHistory={handleViewHistory} isAdminLoggedIn={isAdminLoggedIn} isCaching={isCaching} cachingProgress={cachingProgress} />;
     }
   };
   
@@ -409,6 +434,23 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center p-2 md:p-4">
+      <div className="absolute top-4 right-4 z-50 flex gap-2">
+         <button 
+          onClick={isAdminLoggedIn ? handleAdminLogout : handleOpenLoginModal}
+          className="bg-gray-800/50 hover:bg-gray-700/70 text-white font-bold p-3 rounded-full transition-colors"
+          aria-label={isAdminLoggedIn ? 'Admin Logout' : 'Admin Login'}
+        >
+          {isAdminLoggedIn ? <LogoutIcon /> : <AdminIcon />}
+        </button>
+        <button 
+          onClick={toggleFullscreen}
+          className="bg-gray-800/50 hover:bg-gray-700/70 text-white font-bold p-3 rounded-full transition-colors"
+          aria-label={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
+        >
+          <FullscreenIcon isFullscreen={isFullscreen} />
+        </button>
+      </div>
+      
       {isLoginModalOpen && <LoginModal onLogin={handleAdminLogin} onClose={handleCloseLoginModal} />}
       {editingEvent && <RenameEventModal event={editingEvent} onSave={handleSaveRenameEvent} onClose={handleCancelRenameEvent} />}
       {assigningTemplatesEvent && <AssignTemplatesModal event={assigningTemplatesEvent} allTemplates={templates} onSave={handleSaveTemplateAssignments} onClose={handleCancelAssigningTemplates} />}

@@ -1,14 +1,10 @@
 
 import React from 'react';
-import { AdminIcon } from './icons/AdminIcon';
-import { LogoutIcon } from './icons/LogoutIcon';
 import { SettingsIcon } from './icons/SettingsIcon';
 import { HistoryIcon } from './icons/HistoryIcon';
 
 interface WelcomeScreenProps {
   onStart: () => void;
-  onAdminLoginClick: () => void;
-  onAdminLogout: () => void;
   onSettingsClick: () => void;
   onViewHistory: () => void;
   isAdminLoggedIn: boolean;
@@ -32,18 +28,9 @@ const CachingStatus: React.FC<{ progress: number }> = ({ progress }) => (
 );
 
 
-const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStart, onAdminLoginClick, onAdminLogout, onSettingsClick, onViewHistory, isAdminLoggedIn, isCaching, cachingProgress }) => {
+const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStart, onSettingsClick, onViewHistory, isAdminLoggedIn, isCaching, cachingProgress }) => {
   return (
     <div className="relative text-center flex flex-col items-center justify-center h-screen">
-      <div className="absolute top-4 right-4">
-        <button 
-          onClick={isAdminLoggedIn ? onAdminLogout : onAdminLoginClick}
-          className="bg-gray-800/50 hover:bg-gray-700/70 text-white font-bold p-3 rounded-full transition-colors"
-          aria-label={isAdminLoggedIn ? 'Admin Logout' : 'Admin Login'}
-        >
-          {isAdminLoggedIn ? <LogoutIcon /> : <AdminIcon />}
-        </button>
-      </div>
       <h1 className="font-bebas text-8xl md:text-9xl tracking-widest text-white animate-pulse">SANS PHOTO</h1>
       <p className="text-gray-400 mb-8">Your personal web photobooth</p>
       {isAdminLoggedIn ? (
