@@ -9,8 +9,8 @@ interface CaptureScreenProps {
   flashEffectEnabled: boolean;
 }
 
-const TEMPLATE_WIDTH = 1000;
-const TEMPLATE_HEIGHT = 1500;
+const TEMPLATE_WIDTH = 1200;
+const TEMPLATE_HEIGHT = 1800;
 
 const CaptureScreen: React.FC<CaptureScreenProps> = ({ onComplete, template, countdownDuration, flashEffectEnabled }) => {
   const [photoIndex, setPhotoIndex] = useState(0);

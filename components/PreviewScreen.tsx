@@ -13,20 +13,47 @@ interface PreviewScreenProps {
   event: Event | null;
 }
 
-const TEMPLATE_WIDTH = 1000;
-const TEMPLATE_HEIGHT = 1500;
+const TEMPLATE_WIDTH = 1200;
+const TEMPLATE_HEIGHT = 1800;
 
 const loadImage = (src: string, isCrossOrigin: boolean = false): Promise<HTMLImageElement> => {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    if (isCrossOrigin) {
-      img.crossOrigin = "anonymous";
+  return new Promise(async (resolve, reject) => {
+    // If it's a data URL or not intended to be cross-origin, load it directly.
+    if (src.startsWith('data:') || !isCrossOrigin) {
+      const img = new Image();
+      img.src = src;
+      img.onload = () => resolve(img);
+      img.onerror = (err) => reject(new Error(`Failed to load image directly: ${src} - ${err.toString()}`));
+      return;
     }
-    img.src = src;
-    img.onload = () => resolve(img);
-    img.onerror = (err) => reject(new Error(`Failed to load image: ${src} - ${err}`));
+
+    // For cross-origin images, fetch as a blob to bypass canvas tainting issues.
+    try {
+      const response = await fetch(src);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const blob = await response.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      
+      const img = new Image();
+      img.src = objectUrl;
+      img.onload = () => {
+        // Revoke the object URL after the image is loaded to prevent memory leaks.
+        URL.revokeObjectURL(objectUrl);
+        resolve(img);
+      };
+      img.onerror = (err) => {
+        URL.revokeObjectURL(objectUrl);
+        reject(new Error(`Failed to load image from blob URL: ${src} - ${err.toString()}`));
+      };
+    } catch (error) {
+        console.error("Error fetching cross-origin image:", error);
+        reject(new Error(`Failed to fetch cross-origin image: ${src} - ${error}`));
+    }
   });
 };
+
 
 const PreviewScreen: React.FC<PreviewScreenProps> = ({ images, onRestart, onBack, template, onSaveHistory, event }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -65,8 +92,8 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({ images, onRestart, onBack
 
       try {
         const imagePromises: Promise<HTMLImageElement>[] = [
-          loadImage(template.imageUrl, true), // Load template
-          ...images.map(src => loadImage(src)) // Load captured images
+          loadImage(template.imageUrl, true), // Load template cross-origin safely
+          ...images.map(src => loadImage(src)) // Load captured images (data URLs)
         ];
 
         const [templateImg, ...loadedImages] = await Promise.all(imagePromises);

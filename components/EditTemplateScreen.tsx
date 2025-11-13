@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { PhotoSlot, Template } from '../types';
 
-const TEMPLATE_WIDTH = 1000;
-const TEMPLATE_HEIGHT = 1500;
+const TEMPLATE_WIDTH = 1200;
+const TEMPLATE_HEIGHT = 1800;
 
 const DEFAULT_SLOTS: PhotoSlot[] = [
   { id: 1, inputId: 1, x: 90,  y: 70,   width: 480, height: 480 },
