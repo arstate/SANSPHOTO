@@ -1,0 +1,127 @@
+import React from 'react';
+import { Settings } from '../types';
+import { BackIcon } from './icons/BackIcon';
+
+interface SettingsScreenProps {
+    settings: Settings;
+    onSettingsChange: (newSettings: Settings) => void;
+    onManageTemplates: () => void;
+    onManageEvents: () => void;
+    onViewHistory: () => void;
+    onBack: () => void;
+}
+
+const SettingsScreen: React.FC<SettingsScreenProps> = ({ settings, onSettingsChange, onManageTemplates, onManageEvents, onViewHistory, onBack }) => {
+
+  const handleSettingsInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value, type, checked } = e.target;
+    
+    if (type === 'checkbox') {
+        onSettingsChange({ ...settings, [name]: checked });
+    } else {
+        const numericValue = parseInt(value, 10);
+        if (isNaN(numericValue) || numericValue < 0) return;
+        onSettingsChange({ ...settings, [name]: numericValue });
+    }
+  };
+
+  return (
+    <div className="relative text-center flex flex-col items-center justify-center p-4 min-h-screen">
+      <div className="absolute top-4 left-4">
+        <button 
+          onClick={onBack}
+          className="bg-gray-800/50 hover:bg-gray-700/70 text-white font-bold p-3 rounded-full transition-colors"
+          aria-label="Go Back"
+        >
+          <BackIcon />
+        </button>
+      </div>
+      
+      <h2 className="text-4xl font-bebas tracking-wider text-white mb-8">Admin Settings</h2>
+
+      <div className="w-full max-w-md space-y-6">
+        {/* Event Management */}
+        <div className="p-6 bg-gray-800 rounded-lg border border-gray-700 text-left">
+          <h3 className="text-xl font-bold mb-4 text-purple-400">Event Management</h3>
+          <p className="text-gray-400 mb-4">
+            Create, manage, and archive events. Assign specific templates to each event.
+          </p>
+          <button
+            onClick={onManageEvents}
+            className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-full text-lg transition-transform transform hover:scale-105"
+          >
+            Manage Events
+          </button>
+        </div>
+
+        {/* Template Settings */}
+        <div className="p-6 bg-gray-800 rounded-lg border border-gray-700 text-left">
+          <h3 className="text-xl font-bold mb-4 text-purple-400">Template Library</h3>
+          <p className="text-gray-400 mb-4">
+            Add, edit, or delete photobooth templates from your global library.
+          </p>
+          <button
+            onClick={onManageTemplates}
+            className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-full text-lg transition-transform transform hover:scale-105"
+          >
+            Manage All Templates
+          </button>
+        </div>
+        
+        {/* History */}
+        <div className="p-6 bg-gray-800 rounded-lg border border-gray-700 text-left">
+            <h3 className="text-xl font-bold mb-4 text-purple-400">Photobooth History</h3>
+            <p className="text-gray-400 mb-4">
+                View, filter, and manage all photos taken during events.
+            </p>
+            <button
+                onClick={onViewHistory}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-full text-lg transition-transform transform hover:scale-105"
+            >
+                View Photobooth History
+            </button>
+        </div>
+
+
+        {/* Session Settings */}
+        <div className="p-6 bg-gray-800 rounded-lg border border-gray-700 text-left space-y-4">
+          <h3 className="text-xl font-bold text-purple-400">Session Settings</h3>
+          <div>
+            <label htmlFor="countdownDuration" className="block text-sm font-medium text-gray-300">Countdown Duration (seconds)</label>
+            <p className="text-xs text-gray-500 mb-2">How long the countdown lasts before each photo is taken.</p>
+            <input
+                type="number"
+                id="countdownDuration"
+                name="countdownDuration"
+                value={settings.countdownDuration}
+                onChange={handleSettingsInputChange}
+                min="0"
+                className="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
+            />
+          </div>
+          <div className="border-t border-gray-700 pt-4">
+             <label htmlFor="flashEffectEnabled" className="flex items-center justify-between cursor-pointer">
+                <div>
+                    <span className="block text-sm font-medium text-gray-300">Enable Flash Effect</span>
+                    <p className="text-xs text-gray-500">Shows a white flash on screen when a photo is taken.</p>
+                </div>
+                <div className="relative">
+                    <input
+                        type="checkbox"
+                        id="flashEffectEnabled"
+                        name="flashEffectEnabled"
+                        checked={settings.flashEffectEnabled}
+                        onChange={handleSettingsInputChange}
+                        className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-600 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                </div>
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default SettingsScreen;

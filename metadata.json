@@ -1,0 +1,7 @@
+{
+  "name": "SANS PHOTO - Photobooth",
+  "description": "A web-based photobooth application that allows users to take a series of photos with a stylish template and download the final result. Features include a live camera preview, countdown timers, and a final image composition.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
