@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useCallback } from 'react';
 import { DownloadIcon } from './icons/DownloadIcon';
 import { RestartIcon } from './icons/RestartIcon';
@@ -14,8 +13,8 @@ interface PreviewScreenProps {
   event: Event | null;
 }
 
-const TEMPLATE_WIDTH = 1200;
-const TEMPLATE_HEIGHT = 1800;
+const TEMPLATE_WIDTH = 1000;
+const TEMPLATE_HEIGHT = 1500;
 
 const loadImage = (src: string, isCrossOrigin: boolean = false): Promise<HTMLImageElement> => {
   return new Promise((resolve, reject) => {
@@ -151,34 +150,43 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({ images, onRestart, onBack
         </button>
       </div>
       <h2 className="font-bebas text-4xl mb-4">Here's Your Photo!</h2>
-      <div className="relative w-full max-w-sm">
-        <img ref={finalImageRef} alt="Your final photobooth picture" className="w-full rounded-lg shadow-2xl shadow-purple-500/30" />
-      </div>
-      <canvas ref={canvasRef} className="hidden"></canvas>
       
-      {event?.isQrCodeEnabled && event.qrCodeImageUrl && (
-          <div className="mt-6 p-4 bg-gray-800 rounded-lg text-center">
-              <p className="text-sm text-gray-300 mb-2">Scan QR Code</p>
-              <img src={event.qrCodeImageUrl} alt="QR Code" className="w-32 h-32 mx-auto rounded-md" />
-          </div>
-      )}
+      <div className="w-full max-w-5xl flex flex-col lg:flex-row justify-center items-center lg:items-start gap-8">
+    
+        {/* Photo Column */}
+        <div className="relative w-full max-w-sm">
+            <img ref={finalImageRef} alt="Your final photobooth picture" className="w-full rounded-lg shadow-2xl shadow-purple-500/30" />
+        </div>
+        
+        {/* Actions & QR Column */}
+        <div className="flex flex-col items-center lg:items-start gap-6 w-full max-w-sm lg:max-w-xs">
+            {event?.isQrCodeEnabled && event.qrCodeImageUrl && (
+                <div className="p-4 bg-gray-800 rounded-lg text-center lg:text-left">
+                    <p className="text-sm text-gray-300 mb-2">Scan QR Code</p>
+                    <img src={event.qrCodeImageUrl} alt="QR Code" className="w-32 h-32 mx-auto lg:mx-0 rounded-md" />
+                </div>
+            )}
 
-      <div className="mt-6 flex flex-col sm:flex-row gap-4 w-full max-w-sm">
-        <button
-          onClick={() => handleDownload()}
-          className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-full text-lg transition-transform transform hover:scale-105 flex items-center justify-center gap-2"
-        >
-          <DownloadIcon />
-          Download
-        </button>
-        <button
-          onClick={onRestart}
-          className="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-full text-lg transition-transform transform hover:scale-105 flex items-center justify-center gap-2"
-        >
-          <RestartIcon />
-          Start Over
-        </button>
+            <div className="flex flex-col sm:flex-row lg:flex-col gap-4 w-full">
+                <button
+                  onClick={() => handleDownload()}
+                  className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-full text-lg transition-transform transform hover:scale-105 flex items-center justify-center gap-2"
+                >
+                  <DownloadIcon />
+                  Download
+                </button>
+                <button
+                  onClick={onRestart}
+                  className="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-full text-lg transition-transform transform hover:scale-105 flex items-center justify-center gap-2"
+                >
+                  <RestartIcon />
+                  Start Over
+                </button>
+            </div>
+        </div>
       </div>
+      
+      <canvas ref={canvasRef} className="hidden"></canvas>
     </div>
   );
 };
