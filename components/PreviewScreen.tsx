@@ -17,45 +17,28 @@ const TEMPLATE_WIDTH = 1200;
 const TEMPLATE_HEIGHT = 1800;
 
 const loadImage = (src: string): Promise<HTMLImageElement> => {
-  // Jika ini sudah merupakan URL data (seperti gambar yang diambil dari kamera), muat secara langsung.
-  if (src.startsWith('data:')) {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.onload = () => resolve(img);
-      img.onerror = (err) => {
-        console.error('Gagal memuat gambar data URL', err);
-        reject(new Error('Gagal memuat gambar dari data URL'));
-      };
-      img.src = src;
-    });
-  }
-
-  // Untuk URL eksternal (seperti templat dari Google Photos), ambil sebagai blob.
-  // Ini secara efektif "mengunduh" gambar ke memori browser, yang menghindari
-  // masalah keamanan CORS saat menggambar ke kanvas.
-  return fetch(src)
-    .then(response => {
-      if (!response.ok) {
-        throw new Error(`Gagal mengambil gambar: ${response.status} ${response.statusText}`);
-      }
-      return response.blob();
-    })
-    .then(blob => {
-      return new Promise((resolve, reject) => {
-        const img = new Image();
-        const url = URL.createObjectURL(blob);
-        img.onload = () => {
-          URL.revokeObjectURL(url); // Bersihkan memori setelah gambar dimuat
-          resolve(img);
-        };
-        img.onerror = (err) => {
-          URL.revokeObjectURL(url); // Bersihkan memori juga jika terjadi kesalahan
-          console.error(`Gagal memuat gambar dari blob: ${src}`, err);
-          reject(new Error(`Gagal memuat gambar dari blob untuk URL: ${src}`));
-        };
-        img.src = url;
-      });
-    });
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    
+    // Untuk URL eksternal, kita harus mengatur atribut crossOrigin.
+    // Ini memberitahu browser untuk mengambil gambar dengan header CORS,
+    // yang, jika diizinkan server, akan mencegah kanvas menjadi "tercemar" (tainted).
+    // Server Google User Content umumnya mendukung ini.
+    if (!src.startsWith('data:')) {
+      img.crossOrigin = 'Anonymous';
+    }
+    
+    img.onload = () => resolve(img);
+    
+    img.onerror = (event, source, lineno, colno, error) => {
+      // Event kesalahan bawaan tidak terlalu deskriptif untuk masalah CORS.
+      // Kita bisa memberikan pesan yang lebih membantu.
+      console.error(`Gagal memuat gambar: ${src}`, error);
+      reject(new Error(`Tidak dapat memuat gambar dari ${src}. Ini mungkin masalah CORS atau URL tidak benar.`));
+    };
+    
+    img.src = src;
+  });
 };
 
 
