@@ -17,25 +17,45 @@ const TEMPLATE_WIDTH = 1200;
 const TEMPLATE_HEIGHT = 1800;
 
 const loadImage = (src: string): Promise<HTMLImageElement> => {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
+  // Jika ini sudah merupakan URL data (seperti gambar yang diambil dari kamera), muat secara langsung.
+  if (src.startsWith('data:')) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = (err) => {
+        console.error('Gagal memuat gambar data URL', err);
+        reject(new Error('Gagal memuat gambar dari data URL'));
+      };
+      img.src = src;
+    });
+  }
 
-    // Setel event handler SEBELUM menetapkan .src. Ini mencegah race condition
-    // di mana gambar (terutama jika di-cache) dapat memuat sebelum handler terpasang.
-    img.onload = () => resolve(img);
-    img.onerror = (err) => {
-        console.error(`Gagal memuat gambar: ${src}`, err);
-        reject(new Error(`Gagal memuat gambar dari URL: ${src}`));
-    };
-
-    // Untuk gambar eksternal, kita perlu flag crossOrigin agar dapat digunakan di kanvas
-    // tanpa "menodai" (tainting), yang akan menyebabkan kesalahan keamanan.
-    if (!src.startsWith('data:')) {
-        img.crossOrigin = 'anonymous';
-    }
-
-    img.src = src;
-  });
+  // Untuk URL eksternal (seperti templat dari Google Photos), ambil sebagai blob.
+  // Ini secara efektif "mengunduh" gambar ke memori browser, yang menghindari
+  // masalah keamanan CORS saat menggambar ke kanvas.
+  return fetch(src)
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`Gagal mengambil gambar: ${response.status} ${response.statusText}`);
+      }
+      return response.blob();
+    })
+    .then(blob => {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        const url = URL.createObjectURL(blob);
+        img.onload = () => {
+          URL.revokeObjectURL(url); // Bersihkan memori setelah gambar dimuat
+          resolve(img);
+        };
+        img.onerror = (err) => {
+          URL.revokeObjectURL(url); // Bersihkan memori juga jika terjadi kesalahan
+          console.error(`Gagal memuat gambar dari blob: ${src}`, err);
+          reject(new Error(`Gagal memuat gambar dari blob untuk URL: ${src}`));
+        };
+        img.src = url;
+      });
+    });
 };
 
 
