@@ -1,8 +1,10 @@
+
 import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { DownloadIcon } from './icons/DownloadIcon';
 import { RestartIcon } from './icons/RestartIcon';
 import { BackIcon } from './icons/BackIcon';
 import { Template, Event } from '../types';
+import { getCachedImage } from '../utils/db';
 
 interface PreviewScreenProps {
   images: string[];
@@ -18,41 +20,45 @@ const TEMPLATE_HEIGHT = 1800;
 
 const loadImage = (src: string): Promise<HTMLImageElement> => {
   return new Promise(async (resolve, reject) => {
-    // Data URL dapat digunakan secara langsung karena sudah lokal.
+    // Untuk URL data (dari kamera), gunakan secara langsung karena sudah lokal.
     if (src.startsWith('data:')) {
       const img = new Image();
       img.onload = () => resolve(img);
-      img.onerror = () => reject(new Error('Gagal memuat gambar dari data URL.'));
+      img.onerror = () => reject(new Error('Gagal memuat gambar dari URL data.'));
       img.src = src;
       return;
     }
 
-    // Untuk URL eksternal, kita akan mengambilnya sebagai blob untuk menghindari masalah CORS pada kanvas.
-    // Ini adalah metode yang paling andal.
+    // Untuk URL templat eksternal, coba dapatkan dari cache IndexedDB terlebih dahulu.
     try {
-      const response = await fetch(src);
-      if (!response.ok) {
-        throw new Error(`Gagal mengambil gambar. Status: ${response.status}`);
+      const cachedBlob = await getCachedImage(src);
+      let blobToLoad: Blob | null = cachedBlob;
+
+      // Jika tidak ada di cache, ambil sekarang sebagai fallback dan catat peringatan.
+      if (!blobToLoad) {
+        console.warn(`Gambar templat tidak ditemukan di cache. Mengambil langsung: ${src}`);
+        const response = await fetch(src);
+        if (!response.ok) {
+          throw new Error(`Gagal mengambil gambar. Status: ${response.status}`);
+        }
+        blobToLoad = await response.blob();
       }
-      const blob = await response.blob();
-      const objectURL = URL.createObjectURL(blob);
       
+      const objectURL = URL.createObjectURL(blobToLoad);
       const img = new Image();
       img.onload = () => {
-        // Bersihkan object URL setelah gambar dimuat untuk menghindari kebocoran memori
-        URL.revokeObjectURL(objectURL);
+        URL.revokeObjectURL(objectURL); // Bersihkan memori
         resolve(img);
       };
       img.onerror = () => {
-        // Bersihkan juga jika terjadi kesalahan
         URL.revokeObjectURL(objectURL);
-        reject(new Error(`Gagal memuat gambar dari URL objek yang dibuat: ${src}`));
+        reject(new Error(`Gagal memuat gambar dari URL objek untuk: ${src}`));
       };
       img.src = objectURL;
 
     } catch (error) {
-      console.error(`Gagal memuat atau memproses gambar dari ${src}:`, error);
-      reject(new Error(`Tidak dapat mengambil gambar dari ${src}. Periksa URL dan kebijakan CORS server.`));
+      console.error(`Kesalahan kritis saat memuat gambar templat dari ${src}:`, error);
+      reject(error);
     }
   });
 };

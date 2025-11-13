@@ -2,8 +2,9 @@
 import { HistoryEntry } from '../types';
 
 const DB_NAME = 'SansPhotoDB';
-const DB_VERSION = 1;
-const STORE_NAME = 'history';
+const DB_VERSION = 2; // Naikkan versi untuk memicu pembaruan skema
+const HISTORY_STORE_NAME = 'history';
+const IMAGE_CACHE_STORE_NAME = 'imageCache';
 
 let db: IDBDatabase;
 
@@ -27,9 +28,13 @@ function openDB(): Promise<IDBDatabase> {
 
     request.onupgradeneeded = (event) => {
       const db = (event.target as IDBOpenDBRequest).result;
-      if (!db.objectStoreNames.contains(STORE_NAME)) {
-        const store = db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+      if (!db.objectStoreNames.contains(HISTORY_STORE_NAME)) {
+        const store = db.createObjectStore(HISTORY_STORE_NAME, { keyPath: 'id' });
         store.createIndex('timestamp', 'timestamp', { unique: false });
+      }
+      // Tambahkan object store baru untuk cache gambar
+      if (!db.objectStoreNames.contains(IMAGE_CACHE_STORE_NAME)) {
+        db.createObjectStore(IMAGE_CACHE_STORE_NAME);
       }
     };
   });
@@ -38,8 +43,8 @@ function openDB(): Promise<IDBDatabase> {
 export async function addHistoryEntry(entry: HistoryEntry): Promise<void> {
   const db = await openDB();
   return new Promise((resolve, reject) => {
-    const transaction = db.transaction(STORE_NAME, 'readwrite');
-    const store = transaction.objectStore(STORE_NAME);
+    const transaction = db.transaction(HISTORY_STORE_NAME, 'readwrite');
+    const store = transaction.objectStore(HISTORY_STORE_NAME);
     const request = store.add(entry);
 
     request.onsuccess = () => resolve();
@@ -53,8 +58,8 @@ export async function addHistoryEntry(entry: HistoryEntry): Promise<void> {
 export async function getAllHistoryEntries(): Promise<HistoryEntry[]> {
   const db = await openDB();
   return new Promise((resolve, reject) => {
-    const transaction = db.transaction(STORE_NAME, 'readonly');
-    const store = transaction.objectStore(STORE_NAME);
+    const transaction = db.transaction(HISTORY_STORE_NAME, 'readonly');
+    const store = transaction.objectStore(HISTORY_STORE_NAME);
     const request = store.getAll();
 
     request.onsuccess = () => {
@@ -72,8 +77,8 @@ export async function getAllHistoryEntries(): Promise<HistoryEntry[]> {
 export async function deleteHistoryEntry(id: string): Promise<void> {
   const db = await openDB();
   return new Promise((resolve, reject) => {
-    const transaction = db.transaction(STORE_NAME, 'readwrite');
-    const store = transaction.objectStore(STORE_NAME);
+    const transaction = db.transaction(HISTORY_STORE_NAME, 'readwrite');
+    const store = transaction.objectStore(HISTORY_STORE_NAME);
     const request = store.delete(id);
 
     request.onsuccess = () => resolve();
@@ -82,4 +87,58 @@ export async function deleteHistoryEntry(id: string): Promise<void> {
       reject('Error deleting entry');
     };
   });
+}
+
+// --- Fungsi Cache Gambar ---
+
+// Mengambil gambar, mengubahnya menjadi blob, dan menyimpannya di IndexedDB.
+export async function cacheImage(url: string): Promise<void> {
+  if (!url || url.startsWith('data:')) return;
+
+  try {
+    const db = await openDB();
+    const existingBlob = await getCachedImage(url);
+    if (existingBlob) {
+      console.log(`Gambar dari ${url} sudah di-cache.`);
+      return;
+    }
+    
+    console.log(`Menyimpan gambar dari ${url} ke cache...`);
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Gagal mengambil gambar. Status: ${response.status}`);
+    }
+    const blob = await response.blob();
+    
+    const transaction = db.transaction(IMAGE_CACHE_STORE_NAME, 'readwrite');
+    const store = transaction.objectStore(IMAGE_CACHE_STORE_NAME);
+    store.put(blob, url);
+
+  } catch (error) {
+    console.error(`Gagal menyimpan gambar dari ${url} ke cache:`, error);
+    // Jangan menolak promise agar aplikasi dapat melanjutkan dengan fallback.
+  }
+}
+
+// Mengambil blob gambar dari IndexedDB.
+export async function getCachedImage(url: string): Promise<Blob | null> {
+  try {
+    const db = await openDB();
+    return new Promise((resolve) => {
+      const transaction = db.transaction(IMAGE_CACHE_STORE_NAME, 'readonly');
+      const store = transaction.objectStore(IMAGE_CACHE_STORE_NAME);
+      const request = store.get(url);
+
+      request.onsuccess = () => {
+          resolve(request.result || null);
+      };
+      request.onerror = () => {
+        console.error('Gagal mendapatkan gambar dari cache:', request.error);
+        resolve(null); // Selesaikan dengan null pada kesalahan untuk memungkinkan fallback
+      };
+    });
+  } catch (error) {
+    console.error('Gagal membuka DB untuk mendapatkan gambar dari cache:', error);
+    return null;
+  }
 }
