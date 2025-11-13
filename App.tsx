@@ -16,6 +16,8 @@ import EventQrCodeModal from './components/EventQrCodeModal';
 import HistoryScreen from './components/HistoryScreen';
 import { AppState, PhotoSlot, Settings, Template, Event, HistoryEntry } from './types';
 import { db, ref, onValue, off, set, push, update, remove, firebaseObjectToArray } from './firebase';
+import { getAllHistoryEntries, addHistoryEntry, deleteHistoryEntry } from './utils/db';
+
 
 const INITIAL_PHOTO_SLOTS: PhotoSlot[] = [
   { id: 1, inputId: 1, x: 90,  y: 70,   width: 480, height: 480 },
@@ -57,6 +59,13 @@ const App: React.FC = () => {
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
 
   useEffect(() => {
+    // Load local history from IndexedDB on startup
+    const loadHistory = async () => {
+        const localHistory = await getAllHistoryEntries();
+        setHistory(localHistory);
+    };
+    loadHistory();
+
     // Settings listener
     const settingsRef = ref(db, 'settings');
     const settingsListener = onValue(settingsRef, (snapshot) => {
@@ -83,19 +92,10 @@ const App: React.FC = () => {
         setEvents(firebaseObjectToArray<Event>(snapshot.val()));
     });
 
-    // History listener
-    const historyRef = ref(db, 'history');
-    const historyListener = onValue(historyRef, (snapshot) => {
-        const historyData = firebaseObjectToArray<HistoryEntry>(snapshot.val());
-        historyData.sort((a, b) => b.timestamp - a.timestamp);
-        setHistory(historyData);
-    });
-
     return () => {
       off(settingsRef, 'value', settingsListener);
       off(templatesRef, 'value', templatesListener);
       off(eventsRef, 'value', eventsListener);
-      off(historyRef, 'value', historyListener);
     };
   }, []);
 
@@ -194,9 +194,6 @@ const App: React.FC = () => {
   
   // Event Management Handlers
   const handleAddEvent = useCallback((name: string) => {
-    // FIX: The type of newEvent was changed from `Omit<Event, 'id'>` to `Event`.
-    // The original type caused an error because the object literal included an `id` property.
-    // This change also fixes the subsequent destructuring error on the next line.
     const newEvent: Event = { id: '', name, isArchived: false, isQrCodeEnabled: false, qrCodeImageUrl: '' };
     const { id, ...dataToSave } = newEvent;
     push(ref(db, 'events'), dataToSave);
@@ -255,38 +252,27 @@ const App: React.FC = () => {
       setEditingEventQr(null);
   }, []);
 
-  // History Handlers
-  const handleSaveHistoryFromSession = useCallback((imageDataUrl: string) => {
+  // History Handlers (Now using IndexedDB)
+  const handleSaveHistoryFromSession = useCallback(async (imageDataUrl: string) => {
     const event = events.find(e => e.id === selectedEventId);
     if (!event) return;
     
-    const newEntry: Omit<HistoryEntry, 'id'> = {
+    const timestamp = Date.now();
+    const newEntry: HistoryEntry = {
+        id: String(timestamp), // Use timestamp as a unique ID for local storage
         eventId: event.id,
         eventName: event.name,
         imageDataUrl,
-        timestamp: Date.now(),
+        timestamp: timestamp,
     };
-    push(ref(db, 'history'), newEntry);
+    await addHistoryEntry(newEntry);
+    setHistory(prev => [newEntry, ...prev].sort((a,b) => b.timestamp - a.timestamp));
   }, [events, selectedEventId]);
 
-  const handleUploadHistory = useCallback((imageDataUrl: string, eventId: string) => {
-    const event = events.find(e => e.id === eventId);
-    if (!event) {
-        console.error('Selected event for upload not found');
-        return;
-    }
-     const newEntry: Omit<HistoryEntry, 'id'> = {
-        eventId: event.id,
-        eventName: event.name,
-        imageDataUrl,
-        timestamp: Date.now(),
-    };
-    push(ref(db, 'history'), newEntry);
-  }, [events]);
-
-  const handleDeleteHistoryEntry = useCallback((entryId: string) => {
+  const handleDeleteHistoryEntry = useCallback(async (entryId: string) => {
       if (!window.confirm("Are you sure you want to delete this history entry?")) return;
-      remove(ref(db, `history/${entryId}`));
+      await deleteHistoryEntry(entryId);
+      setHistory(prev => prev.filter(entry => entry.id !== entryId));
   }, []);
 
   const handleBack = useCallback(() => {
@@ -369,7 +355,7 @@ const App: React.FC = () => {
          
       case AppState.HISTORY:
           if (!isAdminLoggedIn) { setAppState(AppState.WELCOME); return null; }
-          return <HistoryScreen history={history} events={events} onDelete={handleDeleteHistoryEntry} onBack={handleBack} onUpload={handleUploadHistory} />;
+          return <HistoryScreen history={history} events={events} onDelete={handleDeleteHistoryEntry} onBack={handleBack} />;
 
       case AppState.EDIT_TEMPLATE_METADATA:
         if (!isAdminLoggedIn || !editingTemplate) { setAppState(AppState.WELCOME); return null; }

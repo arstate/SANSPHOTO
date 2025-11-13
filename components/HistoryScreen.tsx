@@ -1,25 +1,19 @@
 
-import React, { useState, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { HistoryEntry, Event } from '../types';
 import { BackIcon } from './icons/BackIcon';
 import { TrashIcon } from './icons/TrashIcon';
 import { DownloadIcon } from './icons/DownloadIcon';
-import { UploadIcon } from './icons/UploadIcon';
-
 
 interface HistoryScreenProps {
   history: HistoryEntry[];
   events: Event[];
   onDelete: (entryId: string) => void;
   onBack: () => void;
-  onUpload: (imageDataUrl: string, eventId: string) => void;
 }
 
-const HistoryScreen: React.FC<HistoryScreenProps> = ({ history, events, onDelete, onBack, onUpload }) => {
+const HistoryScreen: React.FC<HistoryScreenProps> = ({ history, events, onDelete, onBack }) => {
   const [filterEventId, setFilterEventId] = useState<string>('all');
-  const [uploadEventId, setUploadEventId] = useState<string>(events.find(e => !e.isArchived)?.id || '');
-  const [isUploading, setIsUploading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const filteredHistory = useMemo(() => {
     if (filterEventId === 'all') {
@@ -28,8 +22,6 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ history, events, onDelete
     return history.filter(entry => entry.eventId === filterEventId);
   }, [history, filterEventId]);
   
-  const activeEvents = useMemo(() => events.filter(e => !e.isArchived), [events]);
-
   const handleDownload = useCallback((imageDataUrl: string, filename: string) => {
     const link = document.createElement('a');
     link.href = imageDataUrl;
@@ -38,46 +30,6 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ history, events, onDelete
     link.click();
     document.body.removeChild(link);
   }, []);
-
-  const handleUploadClick = () => {
-    fileInputRef.current?.click();
-  };
-  
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-      if (!e.target.files || e.target.files.length === 0) return;
-      if (!uploadEventId) {
-          alert('Please select an event to upload to.');
-          return;
-      }
-      setIsUploading(true);
-
-      const files = Array.from(e.target.files);
-
-      // FIX: Explicitly type `file` as `File` to resolve a type inference issue.
-      // `file` was being inferred as `unknown`, causing an error with `readAsDataURL` which expects a `Blob`.
-      await Promise.all(files.map((file: File) => {
-          return new Promise<void>((resolve) => {
-              const reader = new FileReader();
-              reader.onload = (event) => {
-                  if (event.target?.result) {
-                      onUpload(event.target.result as string, uploadEventId);
-                  }
-                  resolve();
-              };
-              reader.onerror = (error) => {
-                  console.error('Error reading file:', error);
-                  resolve(); // Resolve even on error to not hang the process
-              };
-              reader.readAsDataURL(file);
-          });
-      }));
-      
-      if (fileInputRef.current) {
-          fileInputRef.current.value = ''; // Reset file input
-      }
-      setIsUploading(false);
-  };
-
 
   return (
     <div className="relative flex flex-col w-full min-h-screen p-4">
@@ -95,59 +47,19 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ history, events, onDelete
         <h2 className="text-4xl font-bebas tracking-wider text-white">Photobooth History</h2>
       </header>
       
-      <div className="w-full max-w-4xl mx-auto mb-6 p-4 bg-gray-800/50 border border-gray-700 rounded-lg">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
-            <div>
-                <label htmlFor="uploadEvent" className="block text-sm font-medium text-gray-300 mb-2">Upload Photos to Event</label>
-                <div className="flex gap-2">
-                    <select
-                        id="uploadEvent"
-                        value={uploadEventId}
-                        onChange={(e) => setUploadEventId(e.target.value)}
-                        className="flex-grow bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-                        disabled={activeEvents.length === 0}
-                    >
-                        {activeEvents.length > 0 ? (
-                            activeEvents.map(event => (
-                                <option key={event.id} value={event.id}>{event.name}</option>
-                            ))
-                        ) : (
-                            <option value="">No active events</option>
-                        )}
-                    </select>
-                     <input
-                        type="file"
-                        ref={fileInputRef}
-                        onChange={handleFileSelect}
-                        multiple
-                        accept="image/*"
-                        className="hidden"
-                    />
-                    <button 
-                        onClick={handleUploadClick}
-                        disabled={isUploading || activeEvents.length === 0}
-                        className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-md flex items-center gap-2 transition-colors disabled:bg-gray-500 disabled:cursor-not-allowed"
-                    >
-                       <UploadIcon />
-                       {isUploading ? 'Uploading...' : 'Upload'}
-                    </button>
-                </div>
-            </div>
-            <div>
-                <label htmlFor="eventFilter" className="block text-sm font-medium text-gray-300 mb-2">Filter by Event</label>
-                <select
-                id="eventFilter"
-                value={filterEventId}
-                onChange={(e) => setFilterEventId(e.target.value)}
-                className="w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-                >
-                <option value="all">All Events</option>
-                {events.map(event => (
-                    <option key={event.id} value={event.id}>{event.name}</option>
-                ))}
-                </select>
-            </div>
-        </div>
+      <div className="w-full max-w-md mx-auto mb-6">
+          <label htmlFor="eventFilter" className="block text-sm font-medium text-gray-300 mb-2">Filter by Event</label>
+          <select
+            id="eventFilter"
+            value={filterEventId}
+            onChange={(e) => setFilterEventId(e.target.value)}
+            className="w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+          >
+            <option value="all">All Events</option>
+            {events.map(event => (
+                <option key={event.id} value={event.id}>{event.name}</option>
+            ))}
+          </select>
       </div>
 
 

@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect, useCallback } from 'react';
 import { DownloadIcon } from './icons/DownloadIcon';
 import { RestartIcon } from './icons/RestartIcon';
@@ -32,6 +33,17 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({ images, onRestart, onBack
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const finalImageRef = useRef<HTMLImageElement>(null);
   const historySavedRef = useRef(false);
+  const downloadTriggeredRef = useRef(false);
+
+  const handleDownload = useCallback((imageDataUrl?: string) => {
+    const url = imageDataUrl || canvasRef.current?.toDataURL('image/png');
+    if (url) {
+      const link = document.createElement('a');
+      link.download = `sans-photo-${Date.now()}.png`;
+      link.href = url;
+      link.click();
+    }
+  }, []);
 
   useEffect(() => {
     const drawCanvas = async () => {
@@ -103,31 +115,29 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({ images, onRestart, onBack
         // Draw template on top
         ctx.drawImage(templateImg, 0, 0, canvasWidth, canvasHeight);
         
+        const finalImageDataUrl = canvas.toDataURL('image/png');
+
         if(finalImageRef.current) {
-            const finalImageDataUrl = canvas.toDataURL('image/png');
             finalImageRef.current.src = finalImageDataUrl;
-            if (onSaveHistory && !historySavedRef.current) {
-                onSaveHistory(finalImageDataUrl);
-                historySavedRef.current = true;
-            }
         }
+        
+        if (onSaveHistory && !historySavedRef.current) {
+            onSaveHistory(finalImageDataUrl);
+            historySavedRef.current = true;
+        }
+
+        if (!downloadTriggeredRef.current) {
+            handleDownload(finalImageDataUrl);
+            downloadTriggeredRef.current = true;
+        }
+
       } catch (error) {
         console.error("Error drawing canvas:", error);
       }
     };
 
     drawCanvas();
-  }, [images, template, onSaveHistory]);
-
-  const handleDownload = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (canvas) {
-      const link = document.createElement('a');
-      link.download = 'sans-photo-result.png';
-      link.href = canvas.toDataURL('image/png');
-      link.click();
-    }
-  }, []);
+  }, [images, template, onSaveHistory, handleDownload]);
 
   return (
     <div className="relative flex flex-col items-center p-4 min-h-screen justify-center">
@@ -155,7 +165,7 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({ images, onRestart, onBack
 
       <div className="mt-6 flex flex-col sm:flex-row gap-4 w-full max-w-sm">
         <button
-          onClick={handleDownload}
+          onClick={() => handleDownload()}
           className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-full text-lg transition-transform transform hover:scale-105 flex items-center justify-center gap-2"
         >
           <DownloadIcon />
