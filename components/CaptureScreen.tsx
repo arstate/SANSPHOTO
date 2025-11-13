@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { CameraIcon } from './icons/CameraIcon';
 import { Template } from '../types';
@@ -121,13 +120,13 @@ const CaptureScreen: React.FC<CaptureScreenProps> = ({ onComplete, template, cou
   return (
     <>
       {showFlash && <div className="fixed inset-0 bg-white z-50"></div>}
-      <div className="flex flex-col md:flex-row w-full h-full gap-8 items-center md:items-stretch">
+      <div className="flex flex-col md:flex-row w-full h-full gap-8 items-stretch">
           
         {/* Left Column: Main Camera Preview */}
-        <div className="w-full md:w-3/5 flex flex-col items-center justify-center">
-          <div className="w-full flex flex-col items-center">
+        <div className="w-full md:w-3/5 flex flex-col items-center justify-center p-4 md:p-2">
+          <div className="w-full flex-grow flex items-center justify-center min-h-0">
             <div 
-              className="relative w-full bg-black rounded-lg overflow-hidden border-4 border-gray-700 shadow-2xl shadow-purple-500/20 transition-all duration-300 ease-in-out"
+              className="relative w-full h-auto max-h-full bg-black rounded-lg overflow-hidden border-4 border-gray-700 shadow-2xl shadow-purple-500/20"
               style={{ aspectRatio: aspectRatio }}
             >
               <video
@@ -143,7 +142,8 @@ const CaptureScreen: React.FC<CaptureScreenProps> = ({ onComplete, template, cou
                 </div>
               )}
             </div>
-              <div className="mt-6 w-full max-w-md">
+          </div>
+          <div className="mt-4 md:mt-6 w-full max-w-md shrink-0">
               {countdown === null && !isSessionFinished ? (
                 <button
                   onClick={startCountdown}
@@ -158,31 +158,32 @@ const CaptureScreen: React.FC<CaptureScreenProps> = ({ onComplete, template, cou
                 </div>
               )}
             </div>
-          </div>
         </div>
 
         {/* Right Column: Live Template Preview */}
-        <div className="w-full md:w-2/5 flex flex-col items-center">
+        <div className="w-full md:w-2/5 flex flex-col items-center p-4 md:p-2">
           <h2 className="font-bebas text-4xl mb-4 shrink-0">PHOTO {Math.min(photoIndex + 1, totalPhotos)} / {totalPhotos}</h2>
-          <div className="relative w-auto h-full aspect-[2/3] bg-white rounded-lg overflow-hidden shadow-lg">
-            {images.map((imgSrc, index) => {
-                const inputId = index + 1;
-                return template.photoSlots.filter(slot => slot.inputId === inputId).map(slot => (
-                    <img
-                        key={`captured-${slot.id}`}
-                        src={imgSrc}
-                        alt={`Captured photo ${inputId}`}
-                        className="absolute object-cover transform -scale-x-100"
-                        style={{
-                            left: `${(slot.x / TEMPLATE_WIDTH) * 100}%`,
-                            top: `${(slot.y / TEMPLATE_HEIGHT) * 100}%`,
-                            width: `${(slot.width / TEMPLATE_WIDTH) * 100}%`,
-                            height: `${(slot.height / TEMPLATE_HEIGHT) * 100}%`,
-                        }}
-                    />
-                ));
-            })}
-            <img src={template.imageUrl} alt="Template" className="absolute inset-0 w-full h-full pointer-events-none" />
+          <div className="w-full flex-grow flex items-center justify-center min-h-0">
+            <div className="relative w-auto h-full max-h-full aspect-[2/3] bg-white rounded-lg overflow-hidden shadow-lg">
+                {images.map((imgSrc, index) => {
+                    const inputId = index + 1;
+                    return template.photoSlots.filter(slot => slot.inputId === inputId).map(slot => (
+                        <img
+                            key={`captured-${slot.id}`}
+                            src={imgSrc}
+                            alt={`Captured photo ${inputId}`}
+                            className="absolute object-cover transform -scale-x-100"
+                            style={{
+                                left: `${(slot.x / TEMPLATE_WIDTH) * 100}%`,
+                                top: `${(slot.y / TEMPLATE_HEIGHT) * 100}%`,
+                                width: `${(slot.width / TEMPLATE_WIDTH) * 100}%`,
+                                height: `${(slot.height / TEMPLATE_HEIGHT) * 100}%`,
+                            }}
+                        />
+                    ));
+                })}
+                <img src={template.imageUrl} alt="Template" className="absolute inset-0 w-full h-full pointer-events-none" />
+            </div>
           </div>
         </div>
         
