@@ -5,6 +5,8 @@ const DB_NAME = 'SansPhotoDB';
 const DB_VERSION = 2; // Naikkan versi untuk memicu pembaruan skema
 const HISTORY_STORE_NAME = 'history';
 const IMAGE_CACHE_STORE_NAME = 'imageCache';
+const PROXY_URL = 'https://api.allorigins.win/raw?url=';
+
 
 let db: IDBDatabase;
 
@@ -93,7 +95,7 @@ export async function deleteHistoryEntry(id: string): Promise<void> {
 
 // Mengambil gambar, mengubahnya menjadi blob, dan menyimpannya di IndexedDB.
 export async function cacheImage(url: string): Promise<void> {
-  if (!url || url.startsWith('data:')) return;
+  if (!url || url.startsWith('data:') || url.startsWith('blob:')) return;
 
   try {
     const db = await openDB();
@@ -103,8 +105,11 @@ export async function cacheImage(url: string): Promise<void> {
       return;
     }
     
-    console.log(`Menyimpan gambar dari ${url} ke cache...`);
-    const response = await fetch(url);
+    // Selalu gunakan proxy untuk URL http(s) untuk menghindari masalah CORS.
+    const fetchUrl = url.startsWith('http') ? `${PROXY_URL}${encodeURIComponent(url)}` : url;
+
+    console.log(`Menyimpan gambar dari ${url} ke cache... (melalui: ${fetchUrl})`);
+    const response = await fetch(fetchUrl);
     if (!response.ok) {
       throw new Error(`Gagal mengambil gambar. Status: ${response.status}`);
     }
@@ -112,6 +117,7 @@ export async function cacheImage(url: string): Promise<void> {
     
     const transaction = db.transaction(IMAGE_CACHE_STORE_NAME, 'readwrite');
     const store = transaction.objectStore(IMAGE_CACHE_STORE_NAME);
+    // Penting: Gunakan URL asli sebagai kunci, bukan URL proxy.
     store.put(blob, url);
 
   } catch (error) {

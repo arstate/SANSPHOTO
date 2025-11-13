@@ -17,6 +17,8 @@ interface PreviewScreenProps {
 
 const TEMPLATE_WIDTH = 1200;
 const TEMPLATE_HEIGHT = 1800;
+const PROXY_URL = 'https://api.allorigins.win/raw?url=';
+
 
 const loadImage = (src: string): Promise<HTMLImageElement> => {
   return new Promise(async (resolve, reject) => {
@@ -34,10 +36,11 @@ const loadImage = (src: string): Promise<HTMLImageElement> => {
       const cachedBlob = await getCachedImage(src);
       let blobToLoad: Blob | null = cachedBlob;
 
-      // Jika tidak ada di cache, ambil sekarang sebagai fallback dan catat peringatan.
+      // Jika tidak ada di cache, ambil sekarang melalui proxy sebagai fallback.
       if (!blobToLoad) {
-        console.warn(`Gambar templat tidak ditemukan di cache. Mengambil langsung: ${src}`);
-        const response = await fetch(src);
+        console.warn(`Gambar templat tidak ditemukan di cache. Mengambil melalui proxy: ${src}`);
+        const fetchUrl = src.startsWith('http') ? `${PROXY_URL}${encodeURIComponent(src)}` : src;
+        const response = await fetch(fetchUrl);
         if (!response.ok) {
           throw new Error(`Gagal mengambil gambar. Status: ${response.status}`);
         }
