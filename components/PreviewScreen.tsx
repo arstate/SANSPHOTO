@@ -16,9 +16,6 @@ interface PreviewScreenProps {
 
 const TEMPLATE_WIDTH = 1200;
 const TEMPLATE_HEIGHT = 1800;
-// Ganti proxy ke layanan yang lebih andal
-const PROXY_URL = 'https://api.allorigins.win/raw?url=';
-
 
 const loadImage = (src: string): Promise<HTMLImageElement> => {
   return new Promise(async (resolve, reject) => {
@@ -39,7 +36,14 @@ const loadImage = (src: string): Promise<HTMLImageElement> => {
       // Jika tidak ada di cache, ambil sekarang melalui proxy sebagai fallback.
       if (!blobToLoad) {
         console.warn(`Gambar templat tidak ditemukan di cache. Mengambil melalui proxy: ${src}`);
-        const fetchUrl = src.startsWith('http') ? `${PROXY_URL}${encodeURIComponent(src)}` : src;
+        
+        let fetchUrl = src;
+        if (src.startsWith('http')) {
+          // Use the faster images.weserv.nl proxy, removing the protocol for best performance.
+          const urlWithoutProtocol = src.replace(/^https?:\/\//, '');
+          fetchUrl = `https://images.weserv.nl/?url=${urlWithoutProtocol}`;
+        }
+        
         const response = await fetch(fetchUrl);
         if (!response.ok) {
           throw new Error(`Gagal mengambil gambar. Status: ${response.status}`);

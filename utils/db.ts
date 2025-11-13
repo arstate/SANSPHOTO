@@ -4,9 +4,6 @@ const DB_NAME = 'SansPhotoDB';
 const DB_VERSION = 2; // Naikkan versi untuk memicu pembaruan skema
 const HISTORY_STORE_NAME = 'history';
 const IMAGE_CACHE_STORE_NAME = 'imageCache';
-// Ganti proxy ke layanan yang lebih andal
-const PROXY_URL = 'https://api.allorigins.win/raw?url=';
-
 
 let db: IDBDatabase;
 
@@ -105,8 +102,12 @@ export async function cacheImage(url: string): Promise<void> {
       return;
     }
     
-    // Gunakan proxy gambar yang andal untuk URL http(s) untuk menghindari masalah CORS.
-    const fetchUrl = url.startsWith('http') ? `${PROXY_URL}${encodeURIComponent(url)}` : url;
+    let fetchUrl = url;
+    if (url.startsWith('http')) {
+        // Use the faster images.weserv.nl proxy, removing the protocol for best performance.
+        const urlWithoutProtocol = url.replace(/^https?:\/\//, '');
+        fetchUrl = `https://images.weserv.nl/?url=${urlWithoutProtocol}`;
+    }
 
     console.log(`Menyimpan gambar dari ${url} ke cache... (melalui: ${fetchUrl})`);
     const response = await fetch(fetchUrl);
