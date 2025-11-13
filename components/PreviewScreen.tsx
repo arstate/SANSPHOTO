@@ -19,16 +19,22 @@ const TEMPLATE_HEIGHT = 1800;
 const loadImage = (src: string): Promise<HTMLImageElement> => {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    // Untuk URL eksternal, atur crossOrigin ke "anonymous" untuk mencegah tainting pada canvas
-    if (!src.startsWith('data:')) {
-        img.crossOrigin = 'anonymous';
-    }
-    img.src = src;
+
+    // Setel event handler SEBELUM menetapkan .src. Ini mencegah race condition
+    // di mana gambar (terutama jika di-cache) dapat memuat sebelum handler terpasang.
     img.onload = () => resolve(img);
     img.onerror = (err) => {
         console.error(`Gagal memuat gambar: ${src}`, err);
-        reject(new Error(`Gagal memuat gambar: ${src}`));
+        reject(new Error(`Gagal memuat gambar dari URL: ${src}`));
     };
+
+    // Untuk gambar eksternal, kita perlu flag crossOrigin agar dapat digunakan di kanvas
+    // tanpa "menodai" (tainting), yang akan menyebabkan kesalahan keamanan.
+    if (!src.startsWith('data:')) {
+        img.crossOrigin = 'anonymous';
+    }
+
+    img.src = src;
   });
 };
 
