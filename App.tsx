@@ -256,7 +256,7 @@ const App: React.FC = () => {
   }, []);
 
   // History Handlers
-  const handleSaveHistory = useCallback((imageDataUrl: string) => {
+  const handleSaveHistoryFromSession = useCallback((imageDataUrl: string) => {
     const event = events.find(e => e.id === selectedEventId);
     if (!event) return;
     
@@ -268,6 +268,21 @@ const App: React.FC = () => {
     };
     push(ref(db, 'history'), newEntry);
   }, [events, selectedEventId]);
+
+  const handleUploadHistory = useCallback((imageDataUrl: string, eventId: string) => {
+    const event = events.find(e => e.id === eventId);
+    if (!event) {
+        console.error('Selected event for upload not found');
+        return;
+    }
+     const newEntry: Omit<HistoryEntry, 'id'> = {
+        eventId: event.id,
+        eventName: event.name,
+        imageDataUrl,
+        timestamp: Date.now(),
+    };
+    push(ref(db, 'history'), newEntry);
+  }, [events]);
 
   const handleDeleteHistoryEntry = useCallback((entryId: string) => {
       if (!window.confirm("Are you sure you want to delete this history entry?")) return;
@@ -354,7 +369,7 @@ const App: React.FC = () => {
          
       case AppState.HISTORY:
           if (!isAdminLoggedIn) { setAppState(AppState.WELCOME); return null; }
-          return <HistoryScreen history={history} events={events} onDelete={handleDeleteHistoryEntry} onBack={handleBack} />;
+          return <HistoryScreen history={history} events={events} onDelete={handleDeleteHistoryEntry} onBack={handleBack} onUpload={handleUploadHistory} />;
 
       case AppState.EDIT_TEMPLATE_METADATA:
         if (!isAdminLoggedIn || !editingTemplate) { setAppState(AppState.WELCOME); return null; }
@@ -370,7 +385,7 @@ const App: React.FC = () => {
       
       case AppState.PREVIEW:
         if (!selectedTemplate) { setAppState(AppState.WELCOME); return null; }
-        return <PreviewScreen images={capturedImages} onRestart={handleRestart} template={selectedTemplate} onBack={handleBack} onSaveHistory={handleSaveHistory} event={selectedEvent} />;
+        return <PreviewScreen images={capturedImages} onRestart={handleRestart} template={selectedTemplate} onBack={handleBack} onSaveHistory={handleSaveHistoryFromSession} event={selectedEvent} />;
       
       default:
         return <WelcomeScreen onStart={handleStartSession} onAdminLoginClick={handleOpenLoginModal} onAdminLogout={handleAdminLogout} onSettingsClick={handleGoToSettings} onViewHistory={handleViewHistory} isAdminLoggedIn={isAdminLoggedIn} />;
