@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { CameraIcon } from './icons/CameraIcon';
 import { Template } from '../types';
-import { getCachedImage } from '../utils/db';
 
 interface CaptureScreenProps {
   onComplete: (images: string[]) => void;
@@ -13,21 +12,12 @@ interface CaptureScreenProps {
 const TEMPLATE_WIDTH = 1200;
 const TEMPLATE_HEIGHT = 1800;
 
-const getProxiedUrl = (url: string) => {
-    if (!url || !url.startsWith('http')) {
-        return url;
-    }
-    // Gunakan api.allorigins.win untuk melewati masalah CORS.
-    return `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
-};
-
 const CaptureScreen: React.FC<CaptureScreenProps> = ({ onComplete, template, countdownDuration, flashEffectEnabled }) => {
   const [photoIndex, setPhotoIndex] = useState(0);
   const [countdown, setCountdown] = useState<number | null>(null);
   const [images, setImages] = useState<string[]>([]);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [showFlash, setShowFlash] = useState(false);
-  const [templateImageUrl, setTemplateImageUrl] = useState<string>('');
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -41,35 +31,6 @@ const CaptureScreen: React.FC<CaptureScreenProps> = ({ onComplete, template, cou
     }
     return '16 / 9'; 
   }, [photoIndex, template.photoSlots]);
-
-  useEffect(() => {
-    let objectUrl: string | null = null;
-    const loadTemplateImage = async () => {
-        try {
-            const cachedBlob = await getCachedImage(template.imageUrl);
-            if (cachedBlob) {
-                objectUrl = URL.createObjectURL(cachedBlob);
-                setTemplateImageUrl(objectUrl);
-            } else {
-                console.warn("Template image not found in cache for CaptureScreen, using proxy fallback.");
-                setTemplateImageUrl(getProxiedUrl(template.imageUrl));
-            }
-        } catch (error) {
-            console.error("Error loading template image for CaptureScreen, falling back to proxy:", error);
-            setTemplateImageUrl(getProxiedUrl(template.imageUrl));
-        }
-    };
-    
-    if (template.imageUrl) {
-        loadTemplateImage();
-    }
-    
-    return () => {
-        if (objectUrl) {
-            URL.revokeObjectURL(objectUrl);
-        }
-    };
-  }, [template.imageUrl]);
 
   useEffect(() => {
     let stream: MediaStream | null = null;
@@ -159,13 +120,13 @@ const CaptureScreen: React.FC<CaptureScreenProps> = ({ onComplete, template, cou
   return (
     <>
       {showFlash && <div className="fixed inset-0 bg-white z-50"></div>}
-      <div className="flex flex-col md:flex-row w-full gap-8 items-center h-[calc(100vh-1rem)] md:h-[calc(100vh-2rem)]">
+      <div className="flex flex-col md:flex-row w-full gap-8 items-center md:items-stretch md:h-[calc(100vh-5rem)]">
           
-        {/* Left Column: Full height flex column */}
-        <div className="w-full md:w-3/5 h-full flex flex-col items-center">
-          <div className="w-full flex-grow flex items-center justify-center min-h-0 py-4">
+        {/* Left Column: Main Camera Preview */}
+        <div className="w-full md:w-3/5 flex flex-col items-center justify-center">
+          <div className="w-full flex flex-col items-center">
             <div 
-              className="relative h-full bg-black rounded-lg overflow-hidden border-4 border-gray-700 shadow-2xl shadow-purple-500/20 transition-all duration-300 ease-in-out"
+              className="relative w-full bg-black rounded-lg overflow-hidden border-4 border-gray-700 shadow-2xl shadow-purple-500/20 transition-all duration-300 ease-in-out"
               style={{ aspectRatio: aspectRatio }}
             >
               <video
@@ -181,8 +142,7 @@ const CaptureScreen: React.FC<CaptureScreenProps> = ({ onComplete, template, cou
                 </div>
               )}
             </div>
-          </div>
-          <div className="py-4 w-full max-w-md shrink-0">
+              <div className="mt-6 w-full max-w-md">
               {countdown === null && !isSessionFinished ? (
                 <button
                   onClick={startCountdown}
@@ -197,12 +157,13 @@ const CaptureScreen: React.FC<CaptureScreenProps> = ({ onComplete, template, cou
                 </div>
               )}
             </div>
+          </div>
         </div>
 
-        {/* Right Column: Full height flex column */}
-        <div className="w-full md:w-2/5 h-full flex flex-col items-center justify-center">
+        {/* Right Column: Live Template Preview */}
+        <div className="w-full md:w-2/5 flex flex-col items-center">
           <h2 className="font-bebas text-4xl mb-4 shrink-0">PHOTO {Math.min(photoIndex + 1, totalPhotos)} / {totalPhotos}</h2>
-          <div className="relative w-auto max-h-full aspect-[2/3] bg-white rounded-lg overflow-hidden shadow-lg">
+          <div className="relative w-auto h-full aspect-[2/3] bg-white rounded-lg overflow-hidden shadow-lg">
             {images.map((imgSrc, index) => {
                 const inputId = index + 1;
                 return template.photoSlots.filter(slot => slot.inputId === inputId).map(slot => (
@@ -220,7 +181,7 @@ const CaptureScreen: React.FC<CaptureScreenProps> = ({ onComplete, template, cou
                     />
                 ));
             })}
-            {templateImageUrl && <img src={templateImageUrl} alt="Template" className="absolute inset-0 w-full h-full pointer-events-none" />}
+            <img src={template.imageUrl} alt="Template" className="absolute inset-0 w-full h-full pointer-events-none" />
           </div>
         </div>
         
