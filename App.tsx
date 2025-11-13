@@ -43,7 +43,7 @@ const DEFAULT_TEMPLATE_DATA: Omit<Template, 'id'> = {
 
 const App: React.FC = () => {
   const [appState, setAppState] = useState<AppState>(AppState.WELCOME);
-  const [capturedImages, setCapturedImages] = useState<Blob[]>([]);
+  const [capturedImages, setCapturedImages] = useState<string[]>([]);
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
@@ -304,7 +304,7 @@ const App: React.FC = () => {
   const handleAdminLogin = useCallback(() => { setIsAdminLoggedIn(true); setIsLoginModalOpen(false); }, []);
   const handleAdminLogout = useCallback(() => { setIsAdminLoggedIn(false); }, []);
 
-  const handleCaptureComplete = useCallback((images: Blob[]) => {
+  const handleCaptureComplete = useCallback((images: string[]) => {
     setCapturedImages(images);
     setAppState(AppState.PREVIEW);
   }, []);
@@ -371,7 +371,7 @@ const App: React.FC = () => {
       
       case AppState.PREVIEW:
         if (!selectedTemplate) { setAppState(AppState.WELCOME); return null; }
-        return <PreviewScreen images={capturedImages} onRestart={handleRestart} onBack={handleBack} template={selectedTemplate} onSaveHistory={handleSaveHistoryFromSession} event={selectedEvent} />;
+        return <PreviewScreen images={capturedImages} onRestart={handleRestart} template={selectedTemplate} onBack={handleBack} onSaveHistory={handleSaveHistoryFromSession} event={selectedEvent} />;
       
       default:
         return <WelcomeScreen onStart={handleStartSession} onAdminLoginClick={handleOpenLoginModal} onAdminLogout={handleAdminLogout} onSettingsClick={handleGoToSettings} onViewHistory={handleViewHistory} isAdminLoggedIn={isAdminLoggedIn} />;

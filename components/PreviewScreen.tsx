@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { DownloadIcon } from './icons/DownloadIcon';
 import { RestartIcon } from './icons/RestartIcon';
@@ -6,7 +7,7 @@ import { Template, Event } from '../types';
 import { getCachedImage } from '../utils/db';
 
 interface PreviewScreenProps {
-  images: Blob[];
+  images: string[];
   onRestart: () => void;
   onBack: () => void;
   template: Template;
@@ -16,42 +17,55 @@ interface PreviewScreenProps {
 
 const TEMPLATE_WIDTH = 1200;
 const TEMPLATE_HEIGHT = 1800;
-const PROXY_PREFIX = 'https://api.allorigins.win/raw?url=';
+// Ganti proxy ke layanan yang lebih andal dan khusus untuk gambar
+const PROXY_URL = 'https://images.weserv.nl/?url=';
 
-// Helper untuk memuat URL gambar eksternal (templat) ke dalam ImageBitmap.
-// Ini menangani caching dan pengambilan melalui proxy.
-const loadTemplateImageAsBitmap = async (src: string): Promise<ImageBitmap> => {
+
+const loadImage = (src: string): Promise<HTMLImageElement> => {
+  return new Promise(async (resolve, reject) => {
+    // Untuk URL data (dari kamera), gunakan secara langsung karena sudah lokal.
+    if (src.startsWith('data:')) {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error('Gagal memuat gambar dari URL data.'));
+      img.src = src;
+      return;
+    }
+
+    // Untuk URL templat eksternal, coba dapatkan dari cache IndexedDB terlebih dahulu.
     try {
-        let blob: Blob | null = await getCachedImage(src);
+      const cachedBlob = await getCachedImage(src);
+      let blobToLoad: Blob | null = cachedBlob;
 
-        if (!blob) {
-            console.warn(`Gambar templat tidak ditemukan di cache. Mengambil melalui proxy: ${src}`);
-            
-            let fetchUrl = src;
-            if (src.startsWith('http')) {
-                try {
-                    new URL(src); // Validate URL
-                    fetchUrl = `${PROXY_PREFIX}${encodeURIComponent(src)}`;
-                } catch (e) {
-                     console.error(`Invalid URL provided for proxying: ${src}`);
-                     // Error will be thrown by fetch below if URL is malformed
-                }
-            }
-            
-            const response = await fetch(fetchUrl);
-            if (!response.ok) {
-                throw new Error(`Gagal mengambil gambar. Status: ${response.status}`);
-            }
-            blob = await response.blob();
+      // Jika tidak ada di cache, ambil sekarang melalui proxy sebagai fallback.
+      if (!blobToLoad) {
+        console.warn(`Gambar templat tidak ditemukan di cache. Mengambil melalui proxy: ${src}`);
+        // Hapus `encodeURIComponent` karena `images.weserv.nl` menangani URL mentah dengan lebih baik.
+        const fetchUrl = src.startsWith('http') ? `${PROXY_URL}${src.replace(/^https?:\/\//, '')}` : src;
+        const response = await fetch(fetchUrl);
+        if (!response.ok) {
+          throw new Error(`Gagal mengambil gambar. Status: ${response.status}`);
         }
-        
-        // Dekode blob menjadi ImageBitmap di luar thread utama
-        return await createImageBitmap(blob);
+        blobToLoad = await response.blob();
+      }
+      
+      const objectURL = URL.createObjectURL(blobToLoad);
+      const img = new Image();
+      img.onload = () => {
+        URL.revokeObjectURL(objectURL); // Bersihkan memori
+        resolve(img);
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(objectURL);
+        reject(new Error(`Gagal memuat gambar dari URL objek untuk: ${src}`));
+      };
+      img.src = objectURL;
 
     } catch (error) {
-        console.error(`Kesalahan kritis saat memuat gambar templat dari ${src}:`, error);
-        throw error; // Lemparkan kembali error untuk ditangani oleh drawCanvas
+      console.error(`Kesalahan kritis saat memuat gambar templat dari ${src}:`, error);
+      reject(error);
     }
+  });
 };
 
 
@@ -98,51 +112,24 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({ images, onRestart, onBack
     canvas.width = canvasWidth;
     canvas.height = canvasHeight;
 
-    let templateBitmap: ImageBitmap | null = null;
-    let loadedImageBitmaps: ImageBitmap[] = [];
-
     try {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.fillStyle = 'white';
       ctx.fillRect(0,0,canvas.width, canvas.height);
 
-      // Membuat ImageBitmaps secara bersamaan untuk kinerja maksimum
-      const templateBitmapPromise = loadTemplateImageAsBitmap(template.imageUrl);
-      const capturedBitmapsPromises = images.map(blob => createImageBitmap(blob));
+      const imagePromises: Promise<HTMLImageElement>[] = [
+        loadImage(template.imageUrl), 
+        ...images.map(src => loadImage(src))
+      ];
 
-      const [templateBmp, ...loadedBmps] = await Promise.all([
-          templateBitmapPromise,
-          ...capturedBitmapsPromises
-      ]);
-      templateBitmap = templateBmp;
-      loadedImageBitmaps = loadedBmps;
-
-      // Tentukan urutan kanonis dari ID input dengan mengurutkannya secara numerik.
-      // Array `images` dari CaptureScreen sesuai dengan urutan yang diurutkan ini.
-      // FIX: Add type assertion to resolve incorrect type inference for sortedInputIds.
-      const sortedInputIds = ([...new Set(template.photoSlots.map(slot => slot.inputId))] as number[]).sort((a, b) => a - b);
-
-      // Periksa apakah jumlah gambar yang diambil cocok dengan jumlah input unik.
-      if (loadedImageBitmaps.length !== sortedInputIds.length) {
-          throw new Error(`Jumlah gambar (${loadedImageBitmaps.length}) tidak cocok dengan jumlah input foto unik (${sortedInputIds.length}).`);
-      }
-
-      // Buat peta dari setiap inputId ke ImageBitmap yang sesuai.
-      const bitmapMap = new Map<number, ImageBitmap>();
-      sortedInputIds.forEach((id, index) => {
-          // Gambar-gambar diambil dalam urutan ID input yang diurutkan.
-          bitmapMap.set(id, loadedImageBitmaps[index]);
-      });
+      const [templateImg, ...loadedImages] = await Promise.all(imagePromises);
 
       // Gambar foto yang diambil dan pangkas agar sesuai dengan slot
       template.photoSlots.forEach(slot => {
         if (!slot) return;
-        // THE FIX: Gunakan peta untuk mendapatkan bitmap yang benar untuk inputId slot
-        const bitmap = bitmapMap.get(slot.inputId);
-        if (!bitmap) {
-            console.warn(`Tidak ada bitmap yang ditemukan untuk inputId: ${slot.inputId}`);
-            return;
-        }
+        // inputId berbasis 1, loadedImages berbasis 0
+        const img = loadedImages[slot.inputId - 1];
+        if (!img) return;
         
         ctx.save();
         // Balikkan secara horizontal agar sesuai dengan pratinjau kamera
@@ -150,22 +137,22 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({ images, onRestart, onBack
         ctx.translate(-canvasWidth, 0);
 
         const slotAspectRatio = slot.width / slot.height;
-        const imgAspectRatio = bitmap.width / bitmap.height;
+        const imgAspectRatio = img.width / img.height;
         
         let sx, sy, sWidth, sHeight;
 
         if (imgAspectRatio > slotAspectRatio) {
             // Gambar lebih lebar dari slot
-            sHeight = bitmap.height;
+            sHeight = img.height;
             sWidth = sHeight * slotAspectRatio;
-            sx = (bitmap.width - sWidth) / 2;
+            sx = (img.width - sWidth) / 2;
             sy = 0;
         } else {
             // Gambar lebih tinggi dari slot
-            sWidth = bitmap.width;
+            sWidth = img.width;
             sHeight = sWidth / slotAspectRatio;
             sx = 0;
-            sy = (bitmap.height - sHeight) / 2;
+            sy = (img.height - sHeight) / 2;
         }
         const destX = (slot.x / TEMPLATE_WIDTH) * canvasWidth;
         const destY = (slot.y / TEMPLATE_HEIGHT) * canvasHeight;
@@ -173,13 +160,12 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({ images, onRestart, onBack
         const destHeight = (slot.height / TEMPLATE_HEIGHT) * canvasHeight;
 
 
-        ctx.drawImage(bitmap, sx, sy, sWidth, sHeight, canvasWidth - destX - destWidth, destY, destWidth, destHeight);
+        ctx.drawImage(img, sx, sy, sWidth, sHeight, canvasWidth - destX - destWidth, destY, destWidth, destHeight);
         ctx.restore();
-        // JANGAN tutup bitmap di sini karena bisa digunakan oleh slot lain
       });
 
       // Gambar templat di atasnya
-      ctx.drawImage(templateBitmap, 0, 0, canvasWidth, canvasHeight);
+      ctx.drawImage(templateImg, 0, 0, canvasWidth, canvasHeight);
       
       const finalImageDataUrl = canvas.toDataURL('image/png');
 
@@ -196,15 +182,12 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({ images, onRestart, onBack
           handleDownload(finalImageDataUrl);
           downloadTriggeredRef.current = true;
       }
+      setIsLoading(false);
 
     } catch (error) {
       console.error("Kesalahan saat menggambar kanvas:", error);
       setErrorMsg("Tidak dapat menghasilkan gambar akhir. Templat mungkin tidak tersedia atau ada masalah jaringan.");
-    } finally {
-        // Selalu bersihkan sumber daya setelah selesai
-        templateBitmap?.close();
-        loadedImageBitmaps.forEach(bitmap => bitmap.close());
-        setIsLoading(false);
+      setIsLoading(false);
     }
   }, [images, template, onSaveHistory, handleDownload]);
 

@@ -18,23 +18,6 @@ interface TemplateSelectionProps {
   onDelete: (templateId: string) => void;
 }
 
-const PROXY_PREFIX = 'https://api.allorigins.win/raw?url=';
-
-const getProxiedUrl = (url: string) => {
-  if (!url || url.startsWith('data:') || url.startsWith('blob:')) {
-    return url;
-  }
-  try {
-    // This will throw an error if the URL is not valid
-    new URL(url);
-    return `${PROXY_PREFIX}${encodeURIComponent(url)}`;
-  } catch (e) {
-    console.error(`Invalid URL provided for proxying: ${url}`);
-    return url; // Return original URL if invalid
-  }
-};
-
-
 const TemplateSelection: React.FC<TemplateSelectionProps> = ({ 
   templates, onSelect, onBack, isAdminLoggedIn, onAddTemplate, onEditMetadata, onEditLayout, onDelete 
 }) => {
@@ -78,9 +61,9 @@ const TemplateSelection: React.FC<TemplateSelectionProps> = ({
             <div className="group relative w-full max-w-xs border-4 border-gray-700 rounded-lg p-2 bg-gray-800 flex flex-col text-center">
                 <div className="relative">
                     <img 
-                        src={getProxiedUrl(previewedTemplate.imageUrl)} 
+                        src={previewedTemplate.imageUrl} 
                         alt={previewedTemplate.name}
-                        className="rounded-md shadow-lg w-full aspect-[2/3] object-cover bg-gray-700"
+                        className="rounded-md shadow-lg w-full aspect-[2/3] object-cover"
                     />
                     {isAdminLoggedIn && (
                         <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -128,11 +111,11 @@ const TemplateSelection: React.FC<TemplateSelectionProps> = ({
                 <button
                     key={template.id}
                     onClick={() => setPreviewedTemplate(template)}
-                    className={`relative shrink-0 w-24 h-36 rounded-md overflow-hidden border-4 transition-colors bg-gray-700 ${previewedTemplate?.id === template.id ? 'border-purple-500' : 'border-gray-700 hover:border-gray-500'}`}
+                    className={`relative shrink-0 w-24 h-36 rounded-md overflow-hidden border-4 transition-colors ${previewedTemplate?.id === template.id ? 'border-purple-500' : 'border-gray-700 hover:border-gray-500'}`}
                     aria-label={`Select ${template.name}`}
                 >
                     <img 
-                        src={getProxiedUrl(template.imageUrl)} 
+                        src={template.imageUrl} 
                         alt={template.name}
                         className="w-full h-full object-cover"
                     />
