@@ -120,13 +120,13 @@ const CaptureScreen: React.FC<CaptureScreenProps> = ({ onComplete, template, cou
   return (
     <>
       {showFlash && <div className="fixed inset-0 bg-white z-50"></div>}
-      <div className="flex flex-col md:flex-row w-full gap-8 items-center md:items-stretch md:h-[calc(100vh-5rem)]">
+      <div className="flex flex-col md:flex-row w-full gap-8 items-center h-[calc(100vh-1rem)] md:h-[calc(100vh-2rem)]">
           
-        {/* Left Column: Main Camera Preview */}
-        <div className="w-full md:w-3/5 flex flex-col items-center justify-center">
-          <div className="w-full flex flex-col items-center">
+        {/* Left Column: Full height flex column */}
+        <div className="w-full md:w-3/5 h-full flex flex-col items-center">
+          <div className="w-full flex-grow flex items-center justify-center min-h-0 py-4">
             <div 
-              className="relative w-full bg-black rounded-lg overflow-hidden border-4 border-gray-700 shadow-2xl shadow-purple-500/20 transition-all duration-300 ease-in-out"
+              className="relative h-full bg-black rounded-lg overflow-hidden border-4 border-gray-700 shadow-2xl shadow-purple-500/20 transition-all duration-300 ease-in-out"
               style={{ aspectRatio: aspectRatio }}
             >
               <video
@@ -142,7 +142,8 @@ const CaptureScreen: React.FC<CaptureScreenProps> = ({ onComplete, template, cou
                 </div>
               )}
             </div>
-              <div className="mt-6 w-full max-w-md">
+          </div>
+          <div className="py-4 w-full max-w-md shrink-0">
               {countdown === null && !isSessionFinished ? (
                 <button
                   onClick={startCountdown}
@@ -157,13 +158,12 @@ const CaptureScreen: React.FC<CaptureScreenProps> = ({ onComplete, template, cou
                 </div>
               )}
             </div>
-          </div>
         </div>
 
-        {/* Right Column: Live Template Preview */}
-        <div className="w-full md:w-2/5 flex flex-col items-center">
+        {/* Right Column: Full height flex column */}
+        <div className="w-full md:w-2/5 h-full flex flex-col items-center justify-center">
           <h2 className="font-bebas text-4xl mb-4 shrink-0">PHOTO {Math.min(photoIndex + 1, totalPhotos)} / {totalPhotos}</h2>
-          <div className="relative w-auto h-full aspect-[2/3] bg-white rounded-lg overflow-hidden shadow-lg">
+          <div className="relative w-auto max-h-full aspect-[2/3] bg-white rounded-lg overflow-hidden shadow-lg">
             {images.map((imgSrc, index) => {
                 const inputId = index + 1;
                 return template.photoSlots.filter(slot => slot.inputId === inputId).map(slot => (
