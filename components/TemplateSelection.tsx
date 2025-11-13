@@ -18,15 +18,20 @@ interface TemplateSelectionProps {
   onDelete: (templateId: string) => void;
 }
 
-const PROXY_URL = 'https://images.weserv.nl/?url=';
+const PROXY_PREFIX = 'https://api.allorigins.win/raw?url=';
 
 const getProxiedUrl = (url: string) => {
   if (!url || url.startsWith('data:') || url.startsWith('blob:')) {
     return url;
   }
-  // Hapus protokol untuk membuat URL yang valid untuk proxy
-  const cleanedUrl = url.replace(/^https?:\/\//, '');
-  return `${PROXY_URL}${cleanedUrl}`;
+  try {
+    // This will throw an error if the URL is not valid
+    new URL(url);
+    return `${PROXY_PREFIX}${encodeURIComponent(url)}`;
+  } catch (e) {
+    console.error(`Invalid URL provided for proxying: ${url}`);
+    return url; // Return original URL if invalid
+  }
 };
 
 

@@ -1,9 +1,10 @@
+
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { CameraIcon } from './icons/CameraIcon';
 import { Template } from '../types';
 
 interface CaptureScreenProps {
-  onComplete: (images: string[]) => void;
+  onComplete: (images: Blob[]) => void;
   template: Template;
   countdownDuration: number;
   flashEffectEnabled: boolean;
@@ -15,7 +16,8 @@ const TEMPLATE_HEIGHT = 1800;
 const CaptureScreen: React.FC<CaptureScreenProps> = ({ onComplete, template, countdownDuration, flashEffectEnabled }) => {
   const [photoIndex, setPhotoIndex] = useState(0);
   const [countdown, setCountdown] = useState<number | null>(null);
-  const [images, setImages] = useState<string[]>([]);
+  const [images, setImages] = useState<Blob[]>([]);
+  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [showFlash, setShowFlash] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -31,6 +33,17 @@ const CaptureScreen: React.FC<CaptureScreenProps> = ({ onComplete, template, cou
     }
     return '16 / 9'; 
   }, [photoIndex, template.photoSlots]);
+
+  // Kelola URL objek untuk pratinjau Blob
+  useEffect(() => {
+    const newUrls = images.map(blob => URL.createObjectURL(blob));
+    setPreviewUrls(newUrls);
+
+    // Bersihkan URL objek saat komponen di-unmount atau gambar berubah
+    return () => {
+      newUrls.forEach(url => URL.revokeObjectURL(url));
+    };
+  }, [images]);
 
   useEffect(() => {
     let stream: MediaStream | null = null;
@@ -59,7 +72,7 @@ const CaptureScreen: React.FC<CaptureScreenProps> = ({ onComplete, template, cou
     };
   }, []);
 
-  const takePicture = useCallback(() => {
+  const takePicture = useCallback(async () => {
     const video = videoRef.current;
     const canvas = canvasRef.current;
     if (video && canvas) {
@@ -68,14 +81,19 @@ const CaptureScreen: React.FC<CaptureScreenProps> = ({ onComplete, template, cou
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
         context.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
-        const dataUrl = canvas.toDataURL('image/jpeg');
-        const newImages = [...images, dataUrl];
-        setImages(newImages);
         
-        if (newImages.length === totalPhotos) {
-          onComplete(newImages);
-        } else {
-          setPhotoIndex(photoIndex + 1);
+        // Gunakan toBlob untuk efisiensi memori
+        const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.9));
+        
+        if (blob) {
+            const newImages = [...images, blob];
+            setImages(newImages);
+            
+            if (newImages.length === totalPhotos) {
+              onComplete(newImages);
+            } else {
+              setPhotoIndex(photoIndex + 1);
+            }
         }
       }
     }
@@ -86,21 +104,24 @@ const CaptureScreen: React.FC<CaptureScreenProps> = ({ onComplete, template, cou
       const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
       return () => clearTimeout(timer);
     } else if (countdown === 0) {
-      const captureMoment = () => {
+      const captureMoment = async () => {
         if (flashEffectEnabled) {
           setShowFlash(true);
-          setTimeout(() => {
-            takePicture();
-            setTimeout(() => setShowFlash(false), 100);
-          }, 50);
+          // Tunggu sebentar agar efek flash terlihat sebelum mengambil gambar
+          await new Promise(resolve => setTimeout(resolve, 50));
+          await takePicture();
+          // Biarkan flash terlihat sebentar setelahnya
+          await new Promise(resolve => setTimeout(resolve, 100));
+          setShowFlash(false);
         } else {
-          takePicture();
+          await takePicture();
         }
         setCountdown(null);
       };
       captureMoment();
     }
   }, [countdown, flashEffectEnabled, takePicture]);
+
 
   const startCountdown = () => {
     setCountdown(countdownDuration);
@@ -164,7 +185,7 @@ const CaptureScreen: React.FC<CaptureScreenProps> = ({ onComplete, template, cou
         <div className="w-full md:w-2/5 flex flex-col items-center">
           <h2 className="font-bebas text-4xl mb-4 shrink-0">PHOTO {Math.min(photoIndex + 1, totalPhotos)} / {totalPhotos}</h2>
           <div className="relative w-auto h-full aspect-[2/3] bg-white rounded-lg overflow-hidden shadow-lg">
-            {images.map((imgSrc, index) => {
+            {previewUrls.map((imgSrc, index) => {
                 const inputId = index + 1;
                 return template.photoSlots.filter(slot => slot.inputId === inputId).map(slot => (
                     <img
