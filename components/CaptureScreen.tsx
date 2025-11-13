@@ -12,6 +12,14 @@ interface CaptureScreenProps {
 const TEMPLATE_WIDTH = 1200;
 const TEMPLATE_HEIGHT = 1800;
 
+const getProxiedUrl = (url: string) => {
+    if (!url || !url.startsWith('http')) {
+        return url;
+    }
+    // Gunakan api.allorigins.win untuk melewati masalah CORS.
+    return `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+};
+
 const CaptureScreen: React.FC<CaptureScreenProps> = ({ onComplete, template, countdownDuration, flashEffectEnabled }) => {
   const [photoIndex, setPhotoIndex] = useState(0);
   const [countdown, setCountdown] = useState<number | null>(null);
@@ -181,7 +189,7 @@ const CaptureScreen: React.FC<CaptureScreenProps> = ({ onComplete, template, cou
                     />
                 ));
             })}
-            <img src={template.imageUrl} alt="Template" className="absolute inset-0 w-full h-full pointer-events-none" />
+            <img src={getProxiedUrl(template.imageUrl)} alt="Template" className="absolute inset-0 w-full h-full pointer-events-none" />
           </div>
         </div>
         
