@@ -17,9 +17,18 @@ interface PreviewScreenProps {
 
 const TEMPLATE_WIDTH = 1200;
 const TEMPLATE_HEIGHT = 1800;
-// Ganti proxy ke layanan yang lebih andal dan khusus untuk gambar
 const PROXY_URL = 'https://images.weserv.nl/?url=';
 
+// Helper untuk mengubah Blob menjadi URL Data Base64.
+// Ini seringkali lebih kompatibel di peramban seluler daripada URL.createObjectURL.
+const blobToDataURL = (blob: Blob): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result as string);
+    reader.onerror = (error) => reject(error);
+    reader.readAsDataURL(blob);
+  });
+};
 
 const loadImage = (src: string): Promise<HTMLImageElement> => {
   return new Promise(async (resolve, reject) => {
@@ -32,15 +41,13 @@ const loadImage = (src: string): Promise<HTMLImageElement> => {
       return;
     }
 
-    // Untuk URL templat eksternal, coba dapatkan dari cache IndexedDB terlebih dahulu.
+    // Untuk URL templat eksternal, coba dapatkan dari cache atau ambil.
     try {
-      const cachedBlob = await getCachedImage(src);
-      let blobToLoad: Blob | null = cachedBlob;
+      let blobToLoad: Blob | null = await getCachedImage(src);
 
-      // Jika tidak ada di cache, ambil sekarang melalui proxy sebagai fallback.
+      // Jika tidak ada di cache, ambil sekarang melalui proxy.
       if (!blobToLoad) {
         console.warn(`Gambar templat tidak ditemukan di cache. Mengambil melalui proxy: ${src}`);
-        // Hapus `encodeURIComponent` karena `images.weserv.nl` menangani URL mentah dengan lebih baik.
         const fetchUrl = src.startsWith('http') ? `${PROXY_URL}${src.replace(/^https?:\/\//, '')}` : src;
         const response = await fetch(fetchUrl);
         if (!response.ok) {
@@ -49,17 +56,12 @@ const loadImage = (src: string): Promise<HTMLImageElement> => {
         blobToLoad = await response.blob();
       }
       
-      const objectURL = URL.createObjectURL(blobToLoad);
+      // Ubah blob menjadi URL Data untuk kompatibilitas seluler yang lebih baik.
+      const dataUrl = await blobToDataURL(blobToLoad);
       const img = new Image();
-      img.onload = () => {
-        URL.revokeObjectURL(objectURL); // Bersihkan memori
-        resolve(img);
-      };
-      img.onerror = () => {
-        URL.revokeObjectURL(objectURL);
-        reject(new Error(`Gagal memuat gambar dari URL objek untuk: ${src}`));
-      };
-      img.src = objectURL;
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error(`Gagal memuat gambar dari URL data yang dikonversi untuk: ${src}`));
+      img.src = dataUrl;
 
     } catch (error) {
       console.error(`Kesalahan kritis saat memuat gambar templat dari ${src}:`, error);
