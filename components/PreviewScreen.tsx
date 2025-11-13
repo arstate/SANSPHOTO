@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { DownloadIcon } from './icons/DownloadIcon';
 import { RestartIcon } from './icons/RestartIcon';
@@ -17,8 +16,8 @@ interface PreviewScreenProps {
 
 const TEMPLATE_WIDTH = 1200;
 const TEMPLATE_HEIGHT = 1800;
-// Ganti proxy ke layanan yang lebih andal dan khusus untuk gambar
-const PROXY_URL = 'https://images.weserv.nl/?url=';
+// Ganti proxy ke layanan yang lebih andal
+const PROXY_URL = 'https://api.allorigins.win/raw?url=';
 
 
 const loadImage = (src: string): Promise<HTMLImageElement> => {
@@ -40,8 +39,7 @@ const loadImage = (src: string): Promise<HTMLImageElement> => {
       // Jika tidak ada di cache, ambil sekarang melalui proxy sebagai fallback.
       if (!blobToLoad) {
         console.warn(`Gambar templat tidak ditemukan di cache. Mengambil melalui proxy: ${src}`);
-        // Hapus `encodeURIComponent` karena `images.weserv.nl` menangani URL mentah dengan lebih baik.
-        const fetchUrl = src.startsWith('http') ? `${PROXY_URL}${src.replace(/^https?:\/\//, '')}` : src;
+        const fetchUrl = src.startsWith('http') ? `${PROXY_URL}${encodeURIComponent(src)}` : src;
         const response = await fetch(fetchUrl);
         if (!response.ok) {
           throw new Error(`Gagal mengambil gambar. Status: ${response.status}`);

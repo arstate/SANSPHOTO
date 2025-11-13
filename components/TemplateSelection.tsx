@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { BackIcon } from './icons/BackIcon';
 import { AddIcon } from './icons/AddIcon';
@@ -17,6 +16,16 @@ interface TemplateSelectionProps {
   onEditLayout: (template: Template) => void;
   onDelete: (templateId: string) => void;
 }
+
+const PROXY_URL = 'https://api.allorigins.win/raw?url=';
+
+const getProxiedUrl = (url: string) => {
+    if (!url || !url.startsWith('http')) {
+        return url;
+    }
+    return `${PROXY_URL}${encodeURIComponent(url)}`;
+};
+
 
 const TemplateSelection: React.FC<TemplateSelectionProps> = ({ 
   templates, onSelect, onBack, isAdminLoggedIn, onAddTemplate, onEditMetadata, onEditLayout, onDelete 
@@ -61,7 +70,7 @@ const TemplateSelection: React.FC<TemplateSelectionProps> = ({
             <div className="group relative w-full max-w-xs border-4 border-gray-700 rounded-lg p-2 bg-gray-800 flex flex-col text-center">
                 <div className="relative">
                     <img 
-                        src={previewedTemplate.imageUrl} 
+                        src={getProxiedUrl(previewedTemplate.imageUrl)} 
                         alt={previewedTemplate.name}
                         className="rounded-md shadow-lg w-full aspect-[2/3] object-cover"
                     />
@@ -115,7 +124,7 @@ const TemplateSelection: React.FC<TemplateSelectionProps> = ({
                     aria-label={`Select ${template.name}`}
                 >
                     <img 
-                        src={template.imageUrl} 
+                        src={getProxiedUrl(template.imageUrl)} 
                         alt={template.name}
                         className="w-full h-full object-cover"
                     />
