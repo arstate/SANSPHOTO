@@ -16,41 +16,19 @@ interface PreviewScreenProps {
 const TEMPLATE_WIDTH = 1200;
 const TEMPLATE_HEIGHT = 1800;
 
-const loadImage = (src: string, isCrossOrigin: boolean = false): Promise<HTMLImageElement> => {
-  return new Promise(async (resolve, reject) => {
-    // If it's a data URL or not intended to be cross-origin, load it directly.
-    if (src.startsWith('data:') || !isCrossOrigin) {
-      const img = new Image();
-      img.src = src;
-      img.onload = () => resolve(img);
-      img.onerror = (err) => reject(new Error(`Failed to load image directly: ${src} - ${err.toString()}`));
-      return;
+const loadImage = (src: string): Promise<HTMLImageElement> => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    // Untuk URL eksternal, atur crossOrigin ke "anonymous" untuk mencegah tainting pada canvas
+    if (!src.startsWith('data:')) {
+        img.crossOrigin = 'anonymous';
     }
-
-    // For cross-origin images, fetch as a blob to bypass canvas tainting issues.
-    try {
-      const response = await fetch(src);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const blob = await response.blob();
-      const objectUrl = URL.createObjectURL(blob);
-      
-      const img = new Image();
-      img.src = objectUrl;
-      img.onload = () => {
-        // Revoke the object URL after the image is loaded to prevent memory leaks.
-        URL.revokeObjectURL(objectUrl);
-        resolve(img);
-      };
-      img.onerror = (err) => {
-        URL.revokeObjectURL(objectUrl);
-        reject(new Error(`Failed to load image from blob URL: ${src} - ${err.toString()}`));
-      };
-    } catch (error) {
-        console.error("Error fetching cross-origin image:", error);
-        reject(new Error(`Failed to fetch cross-origin image: ${src} - ${error}`));
-    }
+    img.src = src;
+    img.onload = () => resolve(img);
+    img.onerror = (err) => {
+        console.error(`Gagal memuat gambar: ${src}`, err);
+        reject(new Error(`Gagal memuat gambar: ${src}`));
+    };
   });
 };
 
@@ -79,14 +57,14 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({ images, onRestart, onBack
 
     const canvas = canvasRef.current;
     if (!canvas || images.length === 0) {
-        setErrorMsg("No images were captured.");
+        setErrorMsg("Tidak ada gambar yang diambil.");
         setIsLoading(false);
         return;
     }
 
     const ctx = canvas.getContext('2d');
     if (!ctx) {
-        setErrorMsg("Could not get canvas context.");
+        setErrorMsg("Tidak dapat memperoleh konteks kanvas.");
         setIsLoading(false);
         return;
     }
@@ -104,21 +82,21 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({ images, onRestart, onBack
       ctx.fillRect(0,0,canvas.width, canvas.height);
 
       const imagePromises: Promise<HTMLImageElement>[] = [
-        loadImage(template.imageUrl, true), // Load template cross-origin safely
-        ...images.map(src => loadImage(src)) // Load captured images (data URLs)
+        loadImage(template.imageUrl), 
+        ...images.map(src => loadImage(src))
       ];
 
       const [templateImg, ...loadedImages] = await Promise.all(imagePromises);
 
-      // Draw captured images cropped to fit slots
+      // Gambar foto yang diambil dan pangkas agar sesuai dengan slot
       template.photoSlots.forEach(slot => {
         if (!slot) return;
-        // inputId is 1-based, loadedImages is 0-based
+        // inputId berbasis 1, loadedImages berbasis 0
         const img = loadedImages[slot.inputId - 1];
         if (!img) return;
         
         ctx.save();
-        // Flip horizontally to match camera preview
+        // Balikkan secara horizontal agar sesuai dengan pratinjau kamera
         ctx.scale(-1, 1);
         ctx.translate(-canvasWidth, 0);
 
@@ -128,13 +106,13 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({ images, onRestart, onBack
         let sx, sy, sWidth, sHeight;
 
         if (imgAspectRatio > slotAspectRatio) {
-            // Image is wider than the slot
+            // Gambar lebih lebar dari slot
             sHeight = img.height;
             sWidth = sHeight * slotAspectRatio;
             sx = (img.width - sWidth) / 2;
             sy = 0;
         } else {
-            // Image is taller than the slot
+            // Gambar lebih tinggi dari slot
             sWidth = img.width;
             sHeight = sWidth / slotAspectRatio;
             sx = 0;
@@ -150,7 +128,7 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({ images, onRestart, onBack
         ctx.restore();
       });
 
-      // Draw template on top
+      // Gambar templat di atasnya
       ctx.drawImage(templateImg, 0, 0, canvasWidth, canvasHeight);
       
       const finalImageDataUrl = canvas.toDataURL('image/png');
@@ -171,8 +149,8 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({ images, onRestart, onBack
       setIsLoading(false);
 
     } catch (error) {
-      console.error("Error drawing canvas:", error);
-      setErrorMsg("Could not generate the final image. The template might be unavailable or there was a network issue.");
+      console.error("Kesalahan saat menggambar kanvas:", error);
+      setErrorMsg("Tidak dapat menghasilkan gambar akhir. Templat mungkin tidak tersedia atau ada masalah jaringan.");
       setIsLoading(false);
     }
   }, [images, template, onSaveHistory, handleDownload]);
@@ -187,16 +165,16 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({ images, onRestart, onBack
         <button 
           onClick={onBack}
           className="bg-gray-800/50 hover:bg-gray-700/70 text-white font-bold p-3 rounded-full transition-colors"
-          aria-label="Go Back"
+          aria-label="Kembali"
         >
           <BackIcon />
         </button>
       </div>
-      <h2 className="font-bebas text-4xl mb-4">Here's Your Photo!</h2>
+      <h2 className="font-bebas text-4xl mb-4">Ini Foto Anda!</h2>
       
       <div className="w-full max-w-5xl flex flex-col lg:flex-row justify-center items-center lg:items-start gap-8">
     
-        {/* Photo Column */}
+        {/* Kolom Foto */}
         <div className="relative w-full max-w-sm">
             {isLoading && (
                 <div className="w-full aspect-[2/3] bg-gray-800 rounded-lg flex flex-col items-center justify-center text-center p-4">
@@ -204,30 +182,30 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({ images, onRestart, onBack
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    <p className="mt-4 text-gray-300">Generating your masterpiece...</p>
+                    <p className="mt-4 text-gray-300">Membuat karya agung Anda...</p>
                 </div>
             )}
             {errorMsg && (
                 <div className="w-full aspect-[2/3] bg-red-900/30 border-2 border-red-500 rounded-lg flex flex-col items-center justify-center text-center p-4">
-                    <p className="font-bold text-red-300">Oops! An error occurred.</p>
+                    <p className="font-bold text-red-300">Oops! Terjadi kesalahan.</p>
                     <p className="text-sm text-red-200 mt-2">{errorMsg}</p>
                     <button
                         onClick={drawCanvas}
                         className="mt-4 bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-full text-sm"
                     >
-                        Try Again
+                        Coba Lagi
                     </button>
                 </div>
             )}
-            <img ref={finalImageRef} alt="Your final photobooth picture" className={`w-full rounded-lg shadow-2xl shadow-purple-500/30 ${isLoading || errorMsg ? 'hidden' : 'block'}`} />
+            <img ref={finalImageRef} alt="Gambar photobooth akhir Anda" className={`w-full rounded-lg shadow-2xl shadow-purple-500/30 ${isLoading || errorMsg ? 'hidden' : 'block'}`} />
         </div>
         
-        {/* Actions & QR Column */}
+        {/* Kolom Aksi & QR */}
         <div className="flex flex-col items-center lg:items-start gap-6 w-full max-w-sm lg:max-w-xs">
             {event?.isQrCodeEnabled && event.qrCodeImageUrl && (
                 <div className="p-4 bg-gray-800 rounded-lg text-center lg:text-left">
-                    <p className="text-sm text-gray-300 mb-2">Scan QR Code</p>
-                    <img src={event.qrCodeImageUrl} alt="QR Code" className="w-32 h-32 mx-auto lg:mx-0 rounded-md" />
+                    <p className="text-sm text-gray-300 mb-2">Pindai Kode QR</p>
+                    <img src={event.qrCodeImageUrl} alt="Kode QR" className="w-32 h-32 mx-auto lg:mx-0 rounded-md" />
                 </div>
             )}
 
@@ -238,14 +216,14 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({ images, onRestart, onBack
                   className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-full text-lg transition-transform transform hover:scale-105 flex items-center justify-center gap-2 disabled:bg-gray-500 disabled:cursor-not-allowed disabled:transform-none"
                 >
                   <DownloadIcon />
-                  Download
+                  Unduh
                 </button>
                 <button
                   onClick={onRestart}
                   className="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-full text-lg transition-transform transform hover:scale-105 flex items-center justify-center gap-2"
                 >
                   <RestartIcon />
-                  Start Over
+                  Mulai Ulang
                 </button>
             </div>
         </div>
