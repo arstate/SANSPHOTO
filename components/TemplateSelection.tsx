@@ -21,9 +21,8 @@ const getProxiedUrl = (url: string) => {
     if (!url || !url.startsWith('http')) {
         return url;
     }
-    // Use the faster images.weserv.nl proxy, removing the protocol for best performance.
-    const urlWithoutProtocol = url.replace(/^https?:\/\//, '');
-    return `https://images.weserv.nl/?url=${urlWithoutProtocol}`;
+    // Gunakan api.allorigins.win untuk melewati masalah CORS.
+    return `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
 };
 
 

@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { DownloadIcon } from './icons/DownloadIcon';
 import { RestartIcon } from './icons/RestartIcon';
@@ -39,9 +40,8 @@ const loadImage = (src: string): Promise<HTMLImageElement> => {
         
         let fetchUrl = src;
         if (src.startsWith('http')) {
-          // Use the faster images.weserv.nl proxy, removing the protocol for best performance.
-          const urlWithoutProtocol = src.replace(/^https?:\/\//, '');
-          fetchUrl = `https://images.weserv.nl/?url=${urlWithoutProtocol}`;
+          // Gunakan api.allorigins.win untuk melewati masalah CORS.
+          fetchUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(src)}`;
         }
         
         const response = await fetch(fetchUrl);

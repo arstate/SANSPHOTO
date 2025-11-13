@@ -106,9 +106,8 @@ export async function cacheImage(url: string): Promise<void> {
     
     let fetchUrl = url;
     if (url.startsWith('http')) {
-        // Use the faster images.weserv.nl proxy, removing the protocol for best performance.
-        const urlWithoutProtocol = url.replace(/^https?:\/\//, '');
-        fetchUrl = `https://images.weserv.nl/?url=${urlWithoutProtocol}`;
+        // Gunakan api.allorigins.win untuk melewati masalah CORS.
+        fetchUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
     }
 
     console.log(`Menyimpan gambar dari ${url} ke cache...`);
