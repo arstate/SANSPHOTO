@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { CameraIcon } from './icons/CameraIcon';
 import { Template } from '../types';
+import { getCachedImage } from '../utils/db';
 
 interface CaptureScreenProps {
   onComplete: (images: string[]) => void;
@@ -26,6 +27,7 @@ const CaptureScreen: React.FC<CaptureScreenProps> = ({ onComplete, template, cou
   const [images, setImages] = useState<string[]>([]);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [showFlash, setShowFlash] = useState(false);
+  const [templateImageUrl, setTemplateImageUrl] = useState<string>('');
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -39,6 +41,35 @@ const CaptureScreen: React.FC<CaptureScreenProps> = ({ onComplete, template, cou
     }
     return '16 / 9'; 
   }, [photoIndex, template.photoSlots]);
+
+  useEffect(() => {
+    let objectUrl: string | null = null;
+    const loadTemplateImage = async () => {
+        try {
+            const cachedBlob = await getCachedImage(template.imageUrl);
+            if (cachedBlob) {
+                objectUrl = URL.createObjectURL(cachedBlob);
+                setTemplateImageUrl(objectUrl);
+            } else {
+                console.warn("Template image not found in cache for CaptureScreen, using proxy fallback.");
+                setTemplateImageUrl(getProxiedUrl(template.imageUrl));
+            }
+        } catch (error) {
+            console.error("Error loading template image for CaptureScreen, falling back to proxy:", error);
+            setTemplateImageUrl(getProxiedUrl(template.imageUrl));
+        }
+    };
+    
+    if (template.imageUrl) {
+        loadTemplateImage();
+    }
+    
+    return () => {
+        if (objectUrl) {
+            URL.revokeObjectURL(objectUrl);
+        }
+    };
+  }, [template.imageUrl]);
 
   useEffect(() => {
     let stream: MediaStream | null = null;
@@ -189,7 +220,7 @@ const CaptureScreen: React.FC<CaptureScreenProps> = ({ onComplete, template, cou
                     />
                 ));
             })}
-            <img src={getProxiedUrl(template.imageUrl)} alt="Template" className="absolute inset-0 w-full h-full pointer-events-none" />
+            {templateImageUrl && <img src={templateImageUrl} alt="Template" className="absolute inset-0 w-full h-full pointer-events-none" />}
           </div>
         </div>
         
