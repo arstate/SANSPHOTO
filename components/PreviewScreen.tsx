@@ -17,27 +17,43 @@ const TEMPLATE_WIDTH = 1200;
 const TEMPLATE_HEIGHT = 1800;
 
 const loadImage = (src: string): Promise<HTMLImageElement> => {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    
-    // Untuk URL eksternal, kita harus mengatur atribut crossOrigin.
-    // Ini memberitahu browser untuk mengambil gambar dengan header CORS,
-    // yang, jika diizinkan server, akan mencegah kanvas menjadi "tercemar" (tainted).
-    // Server Google User Content umumnya mendukung ini.
-    if (!src.startsWith('data:')) {
-      img.crossOrigin = 'Anonymous';
+  return new Promise(async (resolve, reject) => {
+    // Data URL dapat digunakan secara langsung karena sudah lokal.
+    if (src.startsWith('data:')) {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error('Gagal memuat gambar dari data URL.'));
+      img.src = src;
+      return;
     }
-    
-    img.onload = () => resolve(img);
-    
-    img.onerror = (event, source, lineno, colno, error) => {
-      // Event kesalahan bawaan tidak terlalu deskriptif untuk masalah CORS.
-      // Kita bisa memberikan pesan yang lebih membantu.
-      console.error(`Gagal memuat gambar: ${src}`, error);
-      reject(new Error(`Tidak dapat memuat gambar dari ${src}. Ini mungkin masalah CORS atau URL tidak benar.`));
-    };
-    
-    img.src = src;
+
+    // Untuk URL eksternal, kita akan mengambilnya sebagai blob untuk menghindari masalah CORS pada kanvas.
+    // Ini adalah metode yang paling andal.
+    try {
+      const response = await fetch(src);
+      if (!response.ok) {
+        throw new Error(`Gagal mengambil gambar. Status: ${response.status}`);
+      }
+      const blob = await response.blob();
+      const objectURL = URL.createObjectURL(blob);
+      
+      const img = new Image();
+      img.onload = () => {
+        // Bersihkan object URL setelah gambar dimuat untuk menghindari kebocoran memori
+        URL.revokeObjectURL(objectURL);
+        resolve(img);
+      };
+      img.onerror = () => {
+        // Bersihkan juga jika terjadi kesalahan
+        URL.revokeObjectURL(objectURL);
+        reject(new Error(`Gagal memuat gambar dari URL objek yang dibuat: ${src}`));
+      };
+      img.src = objectURL;
+
+    } catch (error) {
+      console.error(`Gagal memuat atau memproses gambar dari ${src}:`, error);
+      reject(new Error(`Tidak dapat mengambil gambar dari ${src}. Periksa URL dan kebijakan CORS server.`));
+    }
   });
 };
 
