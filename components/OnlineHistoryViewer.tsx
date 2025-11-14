@@ -56,7 +56,7 @@ const OnlineHistoryViewer: React.FC<OnlineHistoryViewerProps> = ({ onlineHistory
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {onlineHistory.map(entry => (
               <div key={entry.id} className="group relative bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)] rounded-lg p-2 flex flex-col">
-                <img src={entry.embedUrl} alt="Online history item" className="w-full aspect-[2/3] object-contain rounded-md" loading="lazy" />
+                <img src={entry.embedUrl} alt="Online history item" className="w-full object-contain rounded-md" loading="lazy" />
                 <div className="absolute bottom-2 left-2 right-2 p-2 flex justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                     <button
                         onClick={() => handleDownload(entry.embedUrl)}
