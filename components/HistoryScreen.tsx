@@ -36,7 +36,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ history, events, onDelete
       <div className="absolute top-4 left-4 z-20">
         <button
           onClick={onBack}
-          className="bg-gray-800/50 hover:bg-gray-700/70 text-white font-bold p-3 rounded-full transition-colors"
+          className="bg-[var(--color-bg-secondary)]/50 hover:bg-[var(--color-bg-tertiary)]/70 text-[var(--color-text-primary)] font-bold p-3 rounded-full transition-colors"
           aria-label="Go Back"
         >
           <BackIcon />
@@ -44,16 +44,16 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ history, events, onDelete
       </div>
 
       <header className="text-center shrink-0 my-4">
-        <h2 className="text-4xl font-bebas tracking-wider text-white">Photobooth History</h2>
+        <h2 className="text-4xl font-bebas tracking-wider text-[var(--color-text-primary)]">Photobooth History</h2>
       </header>
       
       <div className="w-full max-w-md mx-auto mb-6 shrink-0">
-          <label htmlFor="eventFilter" className="block text-sm font-medium text-gray-300 mb-2">Filter by Event</label>
+          <label htmlFor="eventFilter" className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">Filter by Event</label>
           <select
             id="eventFilter"
             value={filterEventId}
             onChange={(e) => setFilterEventId(e.target.value)}
-            className="w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+            className="w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md py-2 px-3 text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-border-focus)]"
           >
             <option value="all">All Events</option>
             {events.map(event => (
@@ -67,23 +67,23 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ history, events, onDelete
         {filteredHistory.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {filteredHistory.map(entry => (
-              <div key={entry.id} className="bg-gray-800 border border-gray-700 rounded-lg p-2 flex flex-col">
+              <div key={entry.id} className="bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)] rounded-lg p-2 flex flex-col">
                 <img src={entry.imageDataUrl} alt={`Photo from ${entry.eventName}`} className="w-full aspect-[2/3] object-cover rounded-md" />
                 <div className="mt-2 text-center">
-                  <p className="font-bold text-white">{entry.eventName}</p>
-                  <p className="text-xs text-gray-400">{new Date(entry.timestamp).toLocaleString()}</p>
+                  <p className="font-bold text-[var(--color-text-primary)]">{entry.eventName}</p>
+                  <p className="text-xs text-[var(--color-text-muted)]">{new Date(entry.timestamp).toLocaleString()}</p>
                 </div>
-                <div className="mt-2 pt-2 border-t border-gray-700 flex items-center justify-center gap-4">
+                <div className="mt-2 pt-2 border-t border-[var(--color-border-primary)] flex items-center justify-center gap-4">
                     <button
                         onClick={() => handleDownload(entry.imageDataUrl, `sans-photo-${entry.timestamp}.png`)}
-                        className="bg-green-600 hover:bg-green-700 text-white font-bold p-3 rounded-lg transition-transform transform hover:scale-110"
+                        className="bg-[var(--color-positive)] hover:bg-[var(--color-positive-hover)] text-[var(--color-positive-text)] font-bold p-3 rounded-lg transition-transform transform hover:scale-110"
                         aria-label="Download Photo"
                     >
                         <DownloadIcon />
                     </button>
                     <button
                         onClick={() => onDelete(entry.id)}
-                        className="bg-red-600 hover:bg-red-700 text-white font-bold p-3 rounded-lg transition-transform transform hover:scale-110"
+                        className="bg-[var(--color-negative)] hover:bg-[var(--color-negative-hover)] text-[var(--color-negative-text)] font-bold p-3 rounded-lg transition-transform transform hover:scale-110"
                         aria-label="Delete History Entry"
                     >
                         <TrashIcon />
@@ -93,7 +93,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ history, events, onDelete
             ))}
           </div>
         ) : (
-          <div className="text-center text-gray-500 py-16">
+          <div className="text-center text-[var(--color-text-muted)] py-16">
             <p>No history found for the selected filter.</p>
           </div>
         )}

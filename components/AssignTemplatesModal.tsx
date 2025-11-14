@@ -39,14 +39,14 @@ const AssignTemplatesModal: React.FC<AssignTemplatesModalProps> = ({ event, allT
   };
   
   const TemplateItem: React.FC<{template: Template, action: 'assign' | 'unassign'}> = ({ template, action }) => (
-    <div className="bg-gray-700 p-2 rounded-md flex items-center justify-between text-sm">
+    <div className="bg-[var(--color-bg-tertiary)] p-2 rounded-md flex items-center justify-between text-sm">
         <div className="flex items-center gap-2">
             <img src={template.imageUrl} alt={template.name} className="w-8 h-12 object-cover rounded-sm" />
             <span>{template.name}</span>
         </div>
         <button 
             onClick={() => action === 'assign' ? handleAssign(template.id) : handleUnassign(template.id)}
-            className={`px-3 py-1 rounded-full text-xs font-bold ${action === 'assign' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}`}
+            className={`px-3 py-1 rounded-full text-xs font-bold ${action === 'assign' ? 'bg-[var(--color-positive)] hover:bg-[var(--color-positive-hover)] text-[var(--color-positive-text)]' : 'bg-[var(--color-negative)] hover:bg-[var(--color-negative-hover)] text-[var(--color-negative-text)]'}`}
         >
             {action === 'assign' ? 'Add' : 'Remove'}
         </button>
@@ -55,33 +55,33 @@ const AssignTemplatesModal: React.FC<AssignTemplatesModalProps> = ({ event, allT
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4" onClick={onClose}>
-      <div className="bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-3xl border border-gray-700 flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
+      <div className="bg-[var(--color-bg-secondary)] rounded-lg shadow-xl p-6 w-full max-w-3xl border border-[var(--color-border-primary)] flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
         <h2 className="font-bebas text-3xl text-center mb-1">Assign Templates</h2>
-        <p className="text-center text-purple-300 font-bold text-xl mb-4">{event.name}</p>
+        <p className="text-center text-[var(--color-text-accent)] font-bold text-xl mb-4">{event.name}</p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-grow overflow-hidden">
           {/* Assigned Templates */}
-          <div className="bg-gray-900/50 p-3 rounded-lg flex flex-col">
+          <div className="bg-[var(--color-bg-primary)]/50 p-3 rounded-lg flex flex-col">
             <h3 className="font-bold text-center mb-2 text-green-400">Assigned Templates ({assigned.length})</h3>
             <div className="space-y-2 overflow-y-auto flex-grow">
-              {assigned.length > 0 ? assigned.map(t => <TemplateItem key={t.id} template={t} action="unassign" />) : <p className="text-gray-500 text-center pt-8">No templates assigned.</p>}
+              {assigned.length > 0 ? assigned.map(t => <TemplateItem key={t.id} template={t} action="unassign" />) : <p className="text-[var(--color-text-muted)] text-center pt-8">No templates assigned.</p>}
             </div>
           </div>
 
           {/* Available Templates */}
-          <div className="bg-gray-900/50 p-3 rounded-lg flex flex-col">
+          <div className="bg-[var(--color-bg-primary)]/50 p-3 rounded-lg flex flex-col">
             <h3 className="font-bold text-center mb-2 text-yellow-400">Available Templates ({available.length})</h3>
             <div className="space-y-2 overflow-y-auto flex-grow">
-              {available.length > 0 ? available.map(t => <TemplateItem key={t.id} template={t} action="assign" />) : <p className="text-gray-500 text-center pt-8">No available templates.</p>}
+              {available.length > 0 ? available.map(t => <TemplateItem key={t.id} template={t} action="assign" />) : <p className="text-[var(--color-text-muted)] text-center pt-8">No available templates.</p>}
             </div>
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-3 pt-4 mt-4 border-t border-gray-700">
-          <button onClick={handleSave} className="flex-1 w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded-full text-lg">
+        <div className="flex flex-col sm:flex-row gap-3 pt-4 mt-4 border-t border-[var(--color-border-primary)]">
+          <button onClick={handleSave} className="flex-1 w-full bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-[var(--color-accent-primary-text)] font-bold py-3 px-4 rounded-full text-lg">
             Save Changes
           </button>
-          <button onClick={onClose} className="flex-1 w-full bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-4 rounded-full text-lg">
+          <button onClick={onClose} className="flex-1 w-full bg-[var(--color-bg-tertiary)] hover:bg-[var(--color-border-secondary)] text-[var(--color-text-primary)] font-bold py-3 px-4 rounded-full text-lg">
             Cancel
           </button>
         </div>

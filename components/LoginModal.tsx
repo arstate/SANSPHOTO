@@ -27,39 +27,39 @@ const LoginModal: React.FC<LoginModalProps> = ({ onLogin, onClose }) => {
       onClick={onClose}
     >
       <div 
-        className="bg-gray-800 rounded-lg shadow-xl p-8 w-full max-w-sm border border-gray-700"
+        className="bg-[var(--color-bg-secondary)] rounded-lg shadow-xl p-8 w-full max-w-sm border border-[var(--color-border-primary)]"
         onClick={(e) => e.stopPropagation()}
       >
         <h2 className="font-bebas text-4xl text-center mb-6">Admin Login</h2>
         <form onSubmit={handleLogin}>
           <div className="mb-4">
-            <label htmlFor="username" className="block text-sm font-bold mb-2 text-gray-300">Username</label>
+            <label htmlFor="username" className="block text-sm font-bold mb-2 text-[var(--color-text-secondary)]">Username</label>
             <input
               id="username"
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md py-2 px-3 text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-border-focus)]"
               required
             />
           </div>
           <div className="mb-6">
-            <label htmlFor="password" className="block text-sm font-bold mb-2 text-gray-300">Password</label>
+            <label htmlFor="password" className="block text-sm font-bold mb-2 text-[var(--color-text-secondary)]">Password</label>
             <input
               id="password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md py-2 px-3 text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-border-focus)]"
               required
             />
           </div>
           {error && <p className="text-red-400 text-center mb-4">{error}</p>}
           <div className="flex flex-col gap-3">
-            <button type="submit" className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded-full text-lg">
+            <button type="submit" className="w-full bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-[var(--color-accent-primary-text)] font-bold py-3 px-4 rounded-full text-lg">
               Login
             </button>
-            <button type="button" onClick={onClose} className="w-full bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-4 rounded-full text-lg">
+            <button type="button" onClick={onClose} className="w-full bg-[var(--color-bg-tertiary)] hover:bg-[var(--color-border-secondary)] text-[var(--color-text-primary)] font-bold py-3 px-4 rounded-full text-lg">
               Cancel
             </button>
           </div>

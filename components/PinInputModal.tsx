@@ -38,8 +38,8 @@ const PinInputModal: React.FC<PinInputModalProps> = ({ correctPin, onCorrectPin,
       {[0, 1, 2, 3].map(i => (
         <div
           key={i}
-          className={`w-12 h-16 bg-gray-700 border-2 rounded-lg flex items-center justify-center text-4xl font-bold
-            ${pin.length > i ? 'border-purple-400' : 'border-gray-600'}
+          className={`w-12 h-16 bg-[var(--color-bg-tertiary)] border-2 rounded-lg flex items-center justify-center text-4xl font-bold
+            ${pin.length > i ? 'border-[var(--color-border-active)]' : 'border-[var(--color-border-secondary)]'}
             ${isWrong ? 'border-red-500' : ''}`}
         >
           {pin.length > i ? '•' : ''}
@@ -58,7 +58,7 @@ const PinInputModal: React.FC<PinInputModalProps> = ({ correctPin, onCorrectPin,
   const KeypadButton: React.FC<{ value: string }> = ({ value }) => (
     <button
       onClick={() => handleKeyPress(value)}
-      className="w-20 h-20 bg-gray-700 hover:bg-gray-600 rounded-full text-3xl font-bold transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500"
+      className="w-20 h-20 bg-[var(--color-bg-tertiary)] hover:bg-[var(--color-border-secondary)] rounded-full text-3xl font-bold transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--color-border-focus)]"
     >
       {value === 'backspace' ? <BackspaceIcon /> : value}
     </button>
@@ -74,11 +74,11 @@ const PinInputModal: React.FC<PinInputModalProps> = ({ correctPin, onCorrectPin,
   return (
     <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div
-        className={`bg-gray-800 rounded-lg shadow-xl p-8 w-full max-w-sm border border-gray-700 text-white ${isWrong ? 'animate-shake' : ''}`}
+        className={`bg-[var(--color-bg-secondary)] rounded-lg shadow-xl p-8 w-full max-w-sm border border-[var(--color-border-primary)] text-[var(--color-text-primary)] ${isWrong ? 'animate-shake' : ''}`}
         onClick={e => e.stopPropagation()}
       >
         <h2 className="font-bebas text-4xl text-center mb-2">Enter PIN to Exit</h2>
-        <p className="text-center text-gray-400 mb-6">Enter the 4-digit PIN to exit fullscreen mode.</p>
+        <p className="text-center text-[var(--color-text-muted)] mb-6">Enter the 4-digit PIN to exit fullscreen mode.</p>
         <PinDisplay />
         <div className="grid grid-cols-3 gap-4 justify-items-center">
             {keypadLayout.map((key, i) => (

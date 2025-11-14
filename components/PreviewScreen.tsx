@@ -159,7 +159,7 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
        <div className="absolute top-4 left-4">
         <button 
           onClick={onBack}
-          className="bg-gray-800/50 hover:bg-gray-700/70 text-white font-bold p-3 rounded-full transition-colors"
+          className="bg-[var(--color-bg-secondary)]/50 hover:bg-[var(--color-bg-tertiary)]/70 text-[var(--color-text-primary)] font-bold p-3 rounded-full transition-colors"
           aria-label="Kembali"
         >
           <BackIcon />
@@ -172,12 +172,12 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
         {/* Kolom Foto - DIBUAT LEBIH BESAR */}
         <div className={`relative w-full max-w-lg ${isLandscape ? 'aspect-[3/2]' : 'aspect-[2/3]'}`}>
             {isLoading && (
-                <div className="absolute inset-0 bg-gray-800 rounded-lg flex flex-col items-center justify-center text-center p-4">
-                    <svg className="animate-spin h-12 w-12 text-purple-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <div className="absolute inset-0 bg-[var(--color-bg-secondary)] rounded-lg flex flex-col items-center justify-center text-center p-4">
+                    <svg className="animate-spin h-12 w-12 text-[var(--color-text-accent)]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    <p className="mt-4 text-gray-300">Membuat karya agung Anda...</p>
+                    <p className="mt-4 text-[var(--color-text-secondary)]">Membuat karya agung Anda...</p>
                 </div>
             )}
             {errorMsg && (
@@ -186,13 +186,13 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
                     <p className="text-sm text-red-200 mt-2">{errorMsg}</p>
                     <button
                         onClick={drawCanvas}
-                        className="mt-4 bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-full text-sm"
+                        className="mt-4 bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-[var(--color-accent-primary-text)] font-bold py-2 px-4 rounded-full text-sm"
                     >
                         Coba Lagi
                     </button>
                 </div>
             )}
-            <img ref={finalImageRef} alt="Gambar photobooth akhir Anda" className={`w-full h-full object-contain rounded-lg shadow-2xl shadow-purple-500/30 ${isLoading || errorMsg ? 'hidden' : 'block'}`} />
+            <img ref={finalImageRef} alt="Gambar photobooth akhir Anda" className={`w-full h-full object-contain rounded-lg shadow-2xl shadow-[var(--color-accent-primary)]/30 ${isLoading || errorMsg ? 'hidden' : 'block'}`} />
         </div>
         
         {/* Kolom Aksi & QR */}
@@ -200,7 +200,7 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
             {isLastTake ? (
                 <button
                     onClick={onRestart}
-                    className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-8 rounded-full text-xl transition-transform transform hover:scale-105 flex items-center justify-center gap-3"
+                    className="w-full bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-[var(--color-accent-primary-text)] font-bold py-4 px-8 rounded-full text-xl transition-transform transform hover:scale-105 flex items-center justify-center gap-3"
                     >
                     <CheckIcon />
                     Selesai
@@ -208,7 +208,7 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
             ) : (
                 <button
                     onClick={onNextTake}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-full text-xl transition-transform transform hover:scale-105 flex items-center justify-center gap-3"
+                    className="w-full bg-[var(--color-info)] hover:bg-[var(--color-info-hover)] text-[var(--color-info-text)] font-bold py-4 px-8 rounded-full text-xl transition-transform transform hover:scale-105 flex items-center justify-center gap-3"
                     >
                     <RestartIcon />
                     Mulai Pengambilan Berikutnya
@@ -218,15 +218,15 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
             <button
               onClick={() => handleDownload()}
               disabled={isLoading || !!errorMsg}
-              className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-8 rounded-full text-xl transition-transform transform hover:scale-105 flex items-center justify-center gap-3 disabled:bg-gray-500 disabled:cursor-not-allowed disabled:transform-none"
+              className="w-full bg-[var(--color-positive)] hover:bg-[var(--color-positive-hover)] text-[var(--color-positive-text)] font-bold py-4 px-8 rounded-full text-xl transition-transform transform hover:scale-105 flex items-center justify-center gap-3 disabled:bg-[var(--color-bg-tertiary)] disabled:cursor-not-allowed disabled:transform-none"
             >
               <DownloadIcon />
               Unduh
             </button>
 
             {event?.isQrCodeEnabled && event.qrCodeImageUrl && (
-                <div className="p-4 bg-gray-800 rounded-lg text-center">
-                    <p className="text-sm text-gray-300 mb-2">Pindai untuk mengunduh ke ponsel Anda</p>
+                <div className="p-4 bg-[var(--color-bg-secondary)] rounded-lg text-center">
+                    <p className="text-sm text-[var(--color-text-secondary)] mb-2">Pindai untuk mengunduh ke ponsel Anda</p>
                     <img src={event.qrCodeImageUrl} alt="Kode QR" className="w-64 h-64 mx-auto rounded-md" />
                 </div>
             )}

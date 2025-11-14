@@ -165,19 +165,19 @@ const EditTemplateScreen: React.FC<EditTemplateScreenProps> = ({ template, onSav
   const handleResetZoom = () => setZoom(1);
   
   return (
-    <div className="w-full h-full flex flex-col bg-gray-900">
+    <div className="w-full h-full flex flex-col bg-[var(--color-bg-primary)]">
       <header className="text-center shrink-0 pt-4 px-4">
         <h2 className="font-bebas text-4xl mb-2">Customize Layout: {template.name}</h2>
-        <p className="text-gray-400 text-center">Click a slot to select. Drag to move, or edit properties on the right.</p>
+        <p className="text-[var(--color-text-muted)] text-center">Click a slot to select. Drag to move, or edit properties on the right.</p>
       </header>
 
       <main className="flex-grow w-full flex flex-col md:flex-row min-h-0">
         {/* Left Column: Preview */}
         <div className="w-full md:w-2/3 p-4 flex flex-col items-stretch justify-center">
-            <div className="w-full flex-grow overflow-auto flex items-center justify-center rounded-lg bg-gray-900/50 scrollbar-thin min-h-0">
+            <div className="w-full flex-grow overflow-auto flex items-center justify-center rounded-lg bg-[var(--color-bg-primary)]/50 scrollbar-thin min-h-0">
                 <div
                     ref={containerRef}
-                    className="relative bg-gray-800 touch-none shadow-2xl shrink-0"
+                    className="relative bg-[var(--color-bg-secondary)] touch-none shadow-2xl shrink-0"
                     style={{
                         width: `${TEMPLATE_WIDTH}px`,
                         height: `${TEMPLATE_HEIGHT}px`,
@@ -216,86 +216,86 @@ const EditTemplateScreen: React.FC<EditTemplateScreenProps> = ({ template, onSav
                     })}
                 </div>
             </div>
-            <div className="shrink-0 mt-4 flex items-center justify-center gap-4 bg-gray-800 p-2 rounded-full">
-                <button onClick={handleZoomOut} className="p-2 text-gray-300 hover:text-white hover:bg-gray-700 rounded-full transition-colors" aria-label="Zoom Out"><ZoomOutIcon /></button>
-                <button onClick={handleResetZoom} className="p-2 text-gray-300 hover:text-white hover:bg-gray-700 rounded-full transition-colors" aria-label="Reset Zoom"><FitToScreenIcon /></button>
-                <button onClick={handleZoomIn} className="p-2 text-gray-300 hover:text-white hover:bg-gray-700 rounded-full transition-colors" aria-label="Zoom In"><ZoomInIcon /></button>
-                <div className="text-sm font-mono text-purple-300 w-16 text-center">{Math.round(zoom * 100)}%</div>
+            <div className="shrink-0 mt-4 flex items-center justify-center gap-4 bg-[var(--color-bg-secondary)] p-2 rounded-full">
+                <button onClick={handleZoomOut} className="p-2 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-tertiary)] rounded-full transition-colors" aria-label="Zoom Out"><ZoomOutIcon /></button>
+                <button onClick={handleResetZoom} className="p-2 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-tertiary)] rounded-full transition-colors" aria-label="Reset Zoom"><FitToScreenIcon /></button>
+                <button onClick={handleZoomIn} className="p-2 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-tertiary)] rounded-full transition-colors" aria-label="Zoom In"><ZoomInIcon /></button>
+                <div className="text-sm font-mono text-[var(--color-text-accent)] w-16 text-center">{Math.round(zoom * 100)}%</div>
             </div>
         </div>
 
         {/* Right Column: Controls & Actions */}
-        <div className="w-full md:w-1/3 flex flex-col border-t-4 md:border-t-0 md:border-l-4 border-gray-700 bg-gray-800/30">
+        <div className="w-full md:w-1/3 flex flex-col border-t-4 md:border-t-0 md:border-l-4 border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)]/30">
             <div className="flex-grow p-4 overflow-y-auto scrollbar-thin">
                 <div className="w-full flex flex-col gap-4">
                     <div className="grid grid-cols-2 gap-2 w-full">
-                        <button onClick={handleAddSlot} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Add New Slot</button>
-                        <button onClick={handleDuplicateSlot} disabled={selectedSlotId === null} className="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded disabled:bg-gray-500 disabled:cursor-not-allowed">Duplicate</button>
-                        <button onClick={handleDeleteSlot} disabled={selectedSlotId === null} className="col-span-2 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded disabled:bg-gray-500 disabled:cursor-not-allowed">Delete Selected</button>
+                        <button onClick={handleAddSlot} className="bg-[var(--color-info)] hover:bg-[var(--color-info-hover)] text-[var(--color-info-text)] font-bold py-2 px-4 rounded">Add New Slot</button>
+                        <button onClick={handleDuplicateSlot} disabled={selectedSlotId === null} className="bg-[var(--color-accent-secondary)] hover:bg-[var(--color-accent-secondary-hover)] text-[var(--color-accent-secondary-text)] font-bold py-2 px-4 rounded disabled:bg-[var(--color-bg-tertiary)] disabled:cursor-not-allowed">Duplicate</button>
+                        <button onClick={handleDeleteSlot} disabled={selectedSlotId === null} className="col-span-2 bg-[var(--color-negative)] hover:bg-[var(--color-negative-hover)] text-[var(--color-negative-text)] font-bold py-2 px-4 rounded disabled:bg-[var(--color-bg-tertiary)] disabled:cursor-not-allowed">Delete Selected</button>
                     </div>
 
                     {selectedSlot ? (
-                      <div className="w-full p-4 bg-gray-800 rounded-lg border border-gray-700">
+                      <div className="w-full p-4 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)]">
                           <h3 className="text-lg font-bold text-center mb-4 text-green-400">Edit Selected Slot</h3>
                           <div className="grid grid-cols-2 gap-x-4 gap-y-3">
                               <div>
-                                  <label htmlFor="inputId" className="block text-sm font-medium text-gray-300">Input ID</label>
+                                  <label htmlFor="inputId" className="block text-sm font-medium text-[var(--color-text-secondary)]">Input ID</label>
                                   <input
                                       type="number" id="inputId" name="inputId" value={selectedSlot.inputId}
                                       onChange={handlePropertyChange} min="1"
-                                      className="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
+                                      className="mt-1 block w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md shadow-sm py-2 px-3 text-[var(--color-text-primary)] focus:outline-none focus:ring-[var(--color-border-focus)] focus:border-[var(--color-border-focus)] sm:text-sm"
                                   />
                               </div>
                               <div /> 
                               <div>
-                                  <label htmlFor="x" className="block text-sm font-medium text-gray-300">X Position</label>
+                                  <label htmlFor="x" className="block text-sm font-medium text-[var(--color-text-secondary)]">X Position</label>
                                   <input
                                       type="number" id="x" name="x" value={selectedSlot.x} onChange={handlePropertyChange}
-                                      className="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
+                                      className="mt-1 block w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md shadow-sm py-2 px-3 text-[var(--color-text-primary)] focus:outline-none focus:ring-[var(--color-border-focus)] focus:border-[var(--color-border-focus)] sm:text-sm"
                                   />
                               </div>
                               <div>
-                                  <label htmlFor="y" className="block text-sm font-medium text-gray-300">Y Position</label>
+                                  <label htmlFor="y" className="block text-sm font-medium text-[var(--color-text-secondary)]">Y Position</label>
                                   <input
                                       type="number" id="y" name="y" value={selectedSlot.y} onChange={handlePropertyChange}
-                                      className="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
+                                      className="mt-1 block w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md shadow-sm py-2 px-3 text-[var(--color-text-primary)] focus:outline-none focus:ring-[var(--color-border-focus)] focus:border-[var(--color-border-focus)] sm:text-sm"
                                   />
                               </div>
                               <div>
-                                  <label htmlFor="width" className="block text-sm font-medium text-gray-300">Width</label>
+                                  <label htmlFor="width" className="block text-sm font-medium text-[var(--color-text-secondary)]">Width</label>
                                   <input
                                       type="number" id="width" name="width" value={selectedSlot.width} onChange={handlePropertyChange}
-                                      className="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
+                                      className="mt-1 block w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md shadow-sm py-2 px-3 text-[var(--color-text-primary)] focus:outline-none focus:ring-[var(--color-border-focus)] focus:border-[var(--color-border-focus)] sm:text-sm"
                                   />
                               </div>
                               <div>
-                                  <label htmlFor="height" className="block text-sm font-medium text-gray-300">Height</label>
+                                  <label htmlFor="height" className="block text-sm font-medium text-[var(--color-text-secondary)]">Height</label>
                                   <input
                                       type="number" id="height" name="height" value={selectedSlot.height} onChange={handlePropertyChange}
-                                      className="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
+                                      className="mt-1 block w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md shadow-sm py-2 px-3 text-[var(--color-text-primary)] focus:outline-none focus:ring-[var(--color-border-focus)] focus:border-[var(--color-border-focus)] sm:text-sm"
                                   />
                               </div>
                           </div>
                       </div>
                     ) : (
-                      <div className="w-full p-4 bg-gray-800 rounded-lg border border-gray-700 flex items-center justify-center min-h-[190px]">
-                          <p className="text-gray-500 text-center">Select a slot on the left to edit its properties.</p>
+                      <div className="w-full p-4 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] flex items-center justify-center min-h-[190px]">
+                          <p className="text-[var(--color-text-muted)] text-center">Select a slot on the left to edit its properties.</p>
                       </div>
                     )}
                 </div>
             </div>
 
-            <footer className="shrink-0 p-4 border-t border-gray-700 bg-gray-900">
+            <footer className="shrink-0 p-4 border-t border-[var(--color-border-primary)] bg-[var(--color-bg-primary)]">
                 <div className="w-full flex flex-col sm:flex-row gap-3">
                     <button
                         onClick={() => onSave(slots)}
-                        className="w-full flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-full text-lg transition-transform transform hover:scale-105"
+                        className="w-full flex-1 bg-[var(--color-positive)] hover:bg-[var(--color-positive-hover)] text-[var(--color-positive-text)] font-bold py-3 px-6 rounded-full text-lg transition-transform transform hover:scale-105"
                     >
                         Save & Exit
                     </button>
                     <button
                         onClick={onCancel}
-                        className="w-full flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-full text-lg transition-transform transform hover:scale-105"
+                        className="w-full flex-1 bg-[var(--color-bg-tertiary)] hover:bg-[var(--color-border-secondary)] text-[var(--color-text-primary)] font-bold py-3 px-6 rounded-full text-lg transition-transform transform hover:scale-105"
                     >
                         Cancel
                     </button>

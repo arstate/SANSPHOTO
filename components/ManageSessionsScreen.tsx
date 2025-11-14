@@ -45,7 +45,7 @@ const ManageSessionsScreen: React.FC<ManageSessionsScreenProps> = ({ sessionKeys
       <div className="absolute top-4 left-4 z-10">
         <button
           onClick={onBack}
-          className="bg-gray-800/50 hover:bg-gray-700/70 text-white font-bold p-3 rounded-full transition-colors"
+          className="bg-[var(--color-bg-secondary)]/50 hover:bg-[var(--color-bg-tertiary)]/70 text-[var(--color-text-primary)] font-bold p-3 rounded-full transition-colors"
           aria-label="Go Back"
         >
           <BackIcon />
@@ -53,26 +53,26 @@ const ManageSessionsScreen: React.FC<ManageSessionsScreenProps> = ({ sessionKeys
       </div>
 
       <header className="text-center shrink-0 my-4">
-        <h2 className="text-4xl font-bebas tracking-wider text-white">Manage Session Codes</h2>
+        <h2 className="text-4xl font-bebas tracking-wider text-[var(--color-text-primary)]">Manage Session Codes</h2>
       </header>
       
       <main className="w-full max-w-2xl mx-auto flex flex-col min-h-0">
           {/* Add New Key Form */}
-          <div className="shrink-0 p-4 bg-gray-800 border border-gray-700 rounded-lg mb-6">
-              <h3 className="text-2xl font-bebas tracking-wider text-purple-400 mb-4">Generate New Code</h3>
+          <div className="shrink-0 p-4 bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)] rounded-lg mb-6">
+              <h3 className="text-2xl font-bebas tracking-wider text-[var(--color-text-accent)] mb-4">Generate New Code</h3>
               <form onSubmit={handleAddKey} className="flex flex-col sm:flex-row items-center gap-4">
                   <div className="flex-grow w-full">
-                      <label htmlFor="maxTakes" className="block text-sm font-medium text-gray-300 mb-1">Number of Takes</label>
+                      <label htmlFor="maxTakes" className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">Number of Takes</label>
                       <input
                           type="number"
                           id="maxTakes"
                           value={maxTakes}
                           onChange={(e) => setMaxTakes(Math.max(1, parseInt(e.target.value, 10) || 1))}
                           min="1"
-                          className="w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                          className="w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md py-2 px-3 text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-border-focus)]"
                       />
                   </div>
-                  <button type="submit" className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-md flex items-center justify-center gap-2">
+                  <button type="submit" className="w-full sm:w-auto bg-[var(--color-positive)] hover:bg-[var(--color-positive-hover)] text-[var(--color-positive-text)] font-bold py-3 px-6 rounded-md flex items-center justify-center gap-2">
                       <AddIcon /> Generate
                   </button>
               </form>
@@ -85,10 +85,10 @@ const ManageSessionsScreen: React.FC<ManageSessionsScreenProps> = ({ sessionKeys
                       <div key={key.id} className={`p-4 rounded-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border ${getStatusClass(key.status)}`}>
                           <div className="flex-grow">
                               <div className="flex items-center gap-4 mb-2 sm:mb-0">
-                                  <span className="font-mono text-3xl font-bold tracking-widest text-purple-300 bg-gray-900/50 px-4 py-2 rounded-md">{key.code}</span>
+                                  <span className="font-mono text-3xl font-bold tracking-widest text-[var(--color-text-accent)] bg-[var(--color-bg-primary)]/50 px-4 py-2 rounded-md">{key.code}</span>
                                   <div>
-                                      <p className="font-bold text-white">Takes: {key.takesUsed} / {key.maxTakes}</p>
-                                      <p className="text-xs text-gray-400">Created: {new Date(key.createdAt).toLocaleString()}</p>
+                                      <p className="font-bold text-[var(--color-text-primary)]">Takes: {key.takesUsed} / {key.maxTakes}</p>
+                                      <p className="text-xs text-[var(--color-text-muted)]">Created: {new Date(key.createdAt).toLocaleString()}</p>
                                   </div>
                               </div>
                               {key.status === 'in_progress' && (
@@ -103,12 +103,12 @@ const ManageSessionsScreen: React.FC<ManageSessionsScreenProps> = ({ sessionKeys
                               <span className={`px-3 py-1 text-sm font-bold rounded-full bg-opacity-80`}>
                                 {(key.status || 'unknown').replace('_', ' ')}
                               </span>
-                              <button onClick={() => onDeleteKey(key.id)} className="text-gray-400 hover:text-red-500 p-2" aria-label="Delete Key">
+                              <button onClick={() => onDeleteKey(key.id)} className="text-[var(--color-text-muted)] hover:text-[var(--color-negative)] p-2" aria-label="Delete Key">
                                   <TrashIcon />
                               </button>
                           </div>
                       </div>
-                  )) : <p className="text-gray-500 text-center py-12">No session codes generated yet.</p>}
+                  )) : <p className="text-[var(--color-text-muted)] text-center py-12">No session codes generated yet.</p>}
               </div>
           </div>
       </main>

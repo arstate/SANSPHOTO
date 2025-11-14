@@ -15,14 +15,14 @@ const EventSelectionScreen: React.FC<EventSelectionScreenProps> = ({ events, onS
         <div className="absolute top-4 left-4">
             <button 
             onClick={onBack}
-            className="bg-gray-800/50 hover:bg-gray-700/70 text-white font-bold p-3 rounded-full transition-colors"
+            className="bg-[var(--color-bg-secondary)]/50 hover:bg-[var(--color-bg-tertiary)]/70 text-[var(--color-text-primary)] font-bold p-3 rounded-full transition-colors"
             aria-label="Go Back"
             >
             <BackIcon />
             </button>
         </div>
 
-        <h2 className="text-4xl font-bebas tracking-wider text-white mb-8">Choose Your Event</h2>
+        <h2 className="text-4xl font-bebas tracking-wider text-[var(--color-text-primary)] mb-8">Choose Your Event</h2>
         
         <div className="w-full max-w-sm space-y-4">
             {events.length > 0 ? (
@@ -30,13 +30,13 @@ const EventSelectionScreen: React.FC<EventSelectionScreenProps> = ({ events, onS
                     <button
                         key={event.id}
                         onClick={() => onSelect(event.id)}
-                        className="w-full text-left bg-gray-800 hover:bg-purple-800/50 border-2 border-gray-700 hover:border-purple-500 p-6 rounded-lg transition-all transform hover:scale-105"
+                        className="w-full text-left bg-[var(--color-bg-secondary)] hover:bg-[var(--color-accent-primary)]/20 border-2 border-[var(--color-border-primary)] hover:border-[var(--color-accent-primary)] p-6 rounded-lg transition-all transform hover:scale-105"
                     >
-                        <h3 className="text-2xl font-bold text-white">{event.name}</h3>
+                        <h3 className="text-2xl font-bold text-[var(--color-text-primary)]">{event.name}</h3>
                     </button>
                 ))
             ) : (
-                <div className="text-center text-gray-500 p-8 bg-gray-800 rounded-lg">
+                <div className="text-center text-[var(--color-text-muted)] p-8 bg-[var(--color-bg-secondary)] rounded-lg">
                     <p>No active events at the moment. Please check back later!</p>
                 </div>
             )}

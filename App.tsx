@@ -41,6 +41,7 @@ const DEFAULT_SETTINGS: Settings = {
   isStrictKioskMode: false,
   isSessionCodeEnabled: true,
   freePlayMaxTakes: 1,
+  theme: 'dark',
 };
 
 const DEFAULT_TEMPLATE_DATA: Omit<Template, 'id'> = {
@@ -150,6 +151,16 @@ const App: React.FC = () => {
       off(sessionKeysRef, 'value', sessionKeysListener);
     };
   }, [cacheAllTemplates]);
+
+  // Handle theme changes
+  useEffect(() => {
+    const root = document.documentElement;
+    if (settings.theme === 'light') {
+      root.classList.add('light');
+    } else {
+      root.classList.remove('light');
+    }
+  }, [settings.theme]);
 
   // Real-time progress update
   useEffect(() => {
@@ -732,11 +743,11 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="h-full bg-gray-900 flex flex-col items-center justify-center text-white relative">
+    <div className="h-full bg-[var(--color-bg-primary)] flex flex-col items-center justify-center text-[var(--color-text-primary)] relative">
       <div className="absolute top-4 right-4 z-50 flex gap-2">
         <button 
           onClick={toggleFullscreen}
-          className="bg-gray-800/50 hover:bg-gray-700/70 text-white font-bold p-3 rounded-full transition-colors"
+          className="bg-[var(--color-bg-secondary)]/50 hover:bg-[var(--color-bg-tertiary)]/70 text-[var(--color-text-primary)] font-bold p-3 rounded-full transition-colors"
           aria-label={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
         >
           <FullscreenIcon isFullscreen={isFullscreen} />
@@ -760,7 +771,7 @@ const App: React.FC = () => {
       
       <main className="w-full h-full p-4 flex flex-col items-center justify-center">
         {keyCodeError && appState === AppState.WELCOME && (
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-red-800/90 p-4 rounded-lg z-50 text-center border border-red-600">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-red-800/90 p-4 rounded-lg z-50 text-center border border-red-600 text-white">
             <p className="font-bold">Error</p>
             <p>{keyCodeError}</p>
             <button onClick={() => setKeyCodeError(null)} className="mt-2 text-sm text-gray-200 underline">Dismiss</button>

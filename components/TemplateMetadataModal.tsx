@@ -34,34 +34,34 @@ const TemplateMetadataModal: React.FC<TemplateMetadataModalProps> = ({ template,
       onClick={onClose}
     >
       <div 
-        className="bg-gray-800 rounded-lg shadow-xl p-8 w-full max-w-lg border border-gray-700"
+        className="bg-[var(--color-bg-secondary)] rounded-lg shadow-xl p-8 w-full max-w-lg border border-[var(--color-border-primary)]"
         onClick={(e) => e.stopPropagation()}
       >
         <h2 className="font-bebas text-4xl text-center mb-6">{isNew ? 'Add New Template' : 'Edit Template Details'}</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="name" className="block text-sm font-bold mb-2 text-gray-300">Template Name</label>
+            <label htmlFor="name" className="block text-sm font-bold mb-2 text-[var(--color-text-secondary)]">Template Name</label>
             <input
               id="name"
               name="name"
               type="text"
               value={currentTemplate.name}
               onChange={handleChange}
-              className="w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md py-2 px-3 text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-border-focus)]"
               required
             />
           </div>
 
           <div>
-            <label htmlFor="imageUrl" className="block text-sm font-bold mb-2 text-gray-300">Template Image URL</label>
-             <p className="text-xs text-gray-500 mb-2">Use a direct image link. For Google Photos, use the embed link.</p>
+            <label htmlFor="imageUrl" className="block text-sm font-bold mb-2 text-[var(--color-text-secondary)]">Template Image URL</label>
+             <p className="text-xs text-[var(--color-text-muted)] mb-2">Use a direct image link. For Google Photos, use the embed link.</p>
             <input
               id="imageUrl"
               name="imageUrl"
               type="url"
               value={currentTemplate.imageUrl}
               onChange={handleChange}
-              className="w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md py-2 px-3 text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-border-focus)]"
               placeholder="https://..."
               required
             />
@@ -69,7 +69,7 @@ const TemplateMetadataModal: React.FC<TemplateMetadataModalProps> = ({ template,
           
           <div className="grid grid-cols-2 gap-4">
             <div>
-                <label htmlFor="widthMM" className="block text-sm font-bold mb-2 text-gray-300">Width (mm)</label>
+                <label htmlFor="widthMM" className="block text-sm font-bold mb-2 text-[var(--color-text-secondary)]">Width (mm)</label>
                 <input
                   id="widthMM"
                   name="widthMM"
@@ -77,12 +77,12 @@ const TemplateMetadataModal: React.FC<TemplateMetadataModalProps> = ({ template,
                   value={currentTemplate.widthMM}
                   onChange={handleChange}
                   min="1"
-                  className="w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md py-2 px-3 text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-border-focus)]"
                   required
                 />
             </div>
             <div>
-                <label htmlFor="heightMM" className="block text-sm font-bold mb-2 text-gray-300">Height (mm)</label>
+                <label htmlFor="heightMM" className="block text-sm font-bold mb-2 text-[var(--color-text-secondary)]">Height (mm)</label>
                 <input
                   id="heightMM"
                   name="heightMM"
@@ -90,16 +90,16 @@ const TemplateMetadataModal: React.FC<TemplateMetadataModalProps> = ({ template,
                   value={currentTemplate.heightMM}
                   onChange={handleChange}
                   min="1"
-                  className="w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md py-2 px-3 text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-border-focus)]"
                   required
                 />
             </div>
           </div>
           
           <div>
-            <label className="block text-sm font-bold mb-2 text-gray-300">Orientation</label>
-            <div className="flex gap-4 p-2 bg-gray-700 rounded-md">
-                <label className="flex-1 text-center items-center gap-2 cursor-pointer p-2 rounded-md transition-colors" style={{backgroundColor: currentTemplate.orientation === 'portrait' ? '#581c87' : 'transparent'}}>
+            <label className="block text-sm font-bold mb-2 text-[var(--color-text-secondary)]">Orientation</label>
+            <div className="flex gap-4 p-2 bg-[var(--color-bg-tertiary)] rounded-md">
+                <label className={`flex-1 text-center items-center gap-2 cursor-pointer p-2 rounded-md transition-colors ${currentTemplate.orientation === 'portrait' ? 'bg-[var(--color-accent-primary)] text-[var(--color-accent-primary-text)]' : ''}`}>
                     <input
                         type="radio"
                         name="orientation"
@@ -110,7 +110,7 @@ const TemplateMetadataModal: React.FC<TemplateMetadataModalProps> = ({ template,
                     />
                     <span>Portrait</span>
                 </label>
-                <label className="flex-1 text-center items-center gap-2 cursor-pointer p-2 rounded-md transition-colors" style={{backgroundColor: currentTemplate.orientation === 'landscape' ? '#581c87' : 'transparent'}}>
+                <label className={`flex-1 text-center items-center gap-2 cursor-pointer p-2 rounded-md transition-colors ${currentTemplate.orientation === 'landscape' ? 'bg-[var(--color-accent-primary)] text-[var(--color-accent-primary-text)]' : ''}`}>
                     <input
                         type="radio"
                         name="orientation"
@@ -125,10 +125,10 @@ const TemplateMetadataModal: React.FC<TemplateMetadataModalProps> = ({ template,
           </div>
           
           <div className="flex flex-col gap-3 pt-4">
-            <button type="submit" className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-full text-lg">
+            <button type="submit" className="w-full bg-[var(--color-positive)] hover:bg-[var(--color-positive-hover)] text-[var(--color-positive-text)] font-bold py-3 px-4 rounded-full text-lg">
               Save Template
             </button>
-            <button type="button" onClick={onClose} className="w-full bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-4 rounded-full text-lg">
+            <button type="button" onClick={onClose} className="w-full bg-[var(--color-bg-tertiary)] hover:bg-[var(--color-border-secondary)] text-[var(--color-text-primary)] font-bold py-3 px-4 rounded-full text-lg">
               Cancel
             </button>
           </div>

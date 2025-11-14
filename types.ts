@@ -30,6 +30,7 @@ export interface Settings {
   isStrictKioskMode?: boolean;
   isSessionCodeEnabled?: boolean;
   freePlayMaxTakes?: number;
+  theme?: 'light' | 'dark';
 }
 
 export interface Template {

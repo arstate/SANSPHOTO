@@ -46,7 +46,7 @@ const KeyCodeScreen: React.FC<KeyCodeScreenProps> = ({ onKeyCodeSubmit, onBack, 
       <div className="absolute top-4 left-4">
         <button
           onClick={onBack}
-          className="bg-gray-800/50 hover:bg-gray-700/70 text-white font-bold p-3 rounded-full transition-colors"
+          className="bg-[var(--color-bg-secondary)]/50 hover:bg-[var(--color-bg-tertiary)]/70 text-[var(--color-text-primary)] font-bold p-3 rounded-full transition-colors"
           aria-label="Go Back"
         >
           <BackIcon />
@@ -54,12 +54,12 @@ const KeyCodeScreen: React.FC<KeyCodeScreenProps> = ({ onKeyCodeSubmit, onBack, 
       </div>
 
       <div className="w-full max-w-sm text-center">
-        <h2 className="text-4xl font-bebas tracking-wider text-white mb-2">Enter Session Code</h2>
-        <p className="text-gray-400 mb-6">Please enter the 4-character code provided to start.</p>
+        <h2 className="text-4xl font-bebas tracking-wider text-[var(--color-text-primary)] mb-2">Enter Session Code</h2>
+        <p className="text-[var(--color-text-muted)] mb-6">Please enter the 4-character code provided to start.</p>
 
-        <div className="bg-gray-800 p-4 rounded-lg text-left text-sm mb-8 border border-gray-700">
-            <h3 className="font-bold text-purple-300 mb-2">Cara Mendapatkan Kode:</h3>
-            <ol className="list-decimal list-inside space-y-1 text-gray-300">
+        <div className="bg-[var(--color-bg-secondary)] p-4 rounded-lg text-left text-sm mb-8 border border-[var(--color-border-primary)]">
+            <h3 className="font-bold text-[var(--color-text-accent)] mb-2">Cara Mendapatkan Kode:</h3>
+            <ol className="list-decimal list-inside space-y-1 text-[var(--color-text-secondary)]">
                 <li>Lakukan pembayaran di kasir.</li>
                 <li>Admin akan memberikan kode sesi unik.</li>
                 <li>Masukan kode sesi yang diberikan di bawah ini.</li>
@@ -72,13 +72,15 @@ const KeyCodeScreen: React.FC<KeyCodeScreenProps> = ({ onKeyCodeSubmit, onBack, 
             {code.map((digit, index) => (
               <input
                 key={index}
-                ref={el => inputsRef.current[index] = el}
+                // FIX: The ref callback was implicitly returning the assigned value, causing a type error.
+                // Wrapped the assignment in curly braces to ensure the callback returns void.
+                ref={el => { inputsRef.current[index] = el; }}
                 type="text"
                 maxLength={1}
                 value={digit}
                 onChange={(e) => handleChange(e, index)}
                 onKeyDown={(e) => handleKeyDown(e, index)}
-                className="w-16 h-20 bg-gray-800 border-2 border-gray-600 rounded-lg text-center text-4xl font-bold text-white focus:outline-none focus:border-purple-500 transition-colors"
+                className="w-16 h-20 bg-[var(--color-bg-secondary)] border-2 border-[var(--color-border-secondary)] rounded-lg text-center text-4xl font-bold text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-border-focus)] transition-colors"
                 autoFocus={index === 0}
                 disabled={isLoading}
               />
@@ -90,7 +92,7 @@ const KeyCodeScreen: React.FC<KeyCodeScreenProps> = ({ onKeyCodeSubmit, onBack, 
           <button
             type="submit"
             disabled={isLoading || code.join('').length < 4}
-            className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-10 rounded-full text-xl transition-all transform hover:scale-105 disabled:bg-gray-500 disabled:cursor-not-allowed disabled:transform-none"
+            className="w-full bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-[var(--color-accent-primary-text)] font-bold py-4 px-10 rounded-full text-xl transition-all transform hover:scale-105 disabled:bg-[var(--color-bg-tertiary)] disabled:cursor-not-allowed disabled:transform-none"
           >
             {isLoading ? (
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mx-auto"></div>

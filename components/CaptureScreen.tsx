@@ -134,7 +134,7 @@ const CaptureScreen: React.FC<CaptureScreenProps> = ({ onComplete, template, cou
         <div className="w-full md:w-3/5 flex flex-col items-center justify-center p-4 md:p-2">
           <div className="w-full flex-grow flex items-center justify-center min-h-0">
             <div 
-              className="relative max-w-full max-h-full bg-black rounded-lg overflow-hidden border-4 border-gray-700 shadow-2xl shadow-purple-500/20"
+              className="relative max-w-full max-h-full bg-black rounded-lg overflow-hidden border-4 border-[var(--color-border-primary)] shadow-2xl shadow-[var(--color-accent-primary)]/20"
               style={{ aspectRatio: aspectRatio }}
             >
               <video
@@ -155,7 +155,7 @@ const CaptureScreen: React.FC<CaptureScreenProps> = ({ onComplete, template, cou
               {countdown === null && !isSessionFinished ? (
                 <button
                   onClick={startCountdown}
-                  className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-10 rounded-full text-xl transition-transform transform hover:scale-105 flex items-center justify-center gap-2"
+                  className="w-full bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-[var(--color-accent-primary-text)] font-bold py-4 px-10 rounded-full text-xl transition-transform transform hover:scale-105 flex items-center justify-center gap-2"
                 >
                   <CameraIcon />
                   Take Photo {photoIndex + 1}
