@@ -1,4 +1,5 @@
 
+
 import React, { useState, useCallback, useEffect } from 'react';
 import WelcomeScreen from './components/WelcomeScreen';
 import TemplateSelection from './components/TemplateSelection';
@@ -575,10 +576,8 @@ const App: React.FC = () => {
 
   // Online History Handlers
   const handleAddOnlineHistory = useCallback(async (embedUrl: string) => {
-    // Membersihkan URL dari parameter ukuran seperti '=w2400'
-    const cleanedUrl = embedUrl.replace(/=w\d+(-h\d+)?(-c)?$/, '');
     const newEntry: Omit<OnlineHistoryEntry, 'id'> = {
-        embedUrl: cleanedUrl,
+        embedUrl: embedUrl, // Directly use the URL from og:image
         timestamp: Date.now(),
     };
     await push(ref(db, 'onlineHistory'), newEntry);
