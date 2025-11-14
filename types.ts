@@ -35,6 +35,12 @@ export interface Settings {
   welcomeSubtitle?: string;
   isDownloadButtonEnabled?: boolean;
   isAutoDownloadEnabled?: boolean;
+  welcomeTitleColor?: string;
+  welcomeSubtitleColor?: string;
+  welcomeBgType?: 'default' | 'color' | 'image';
+  welcomeBgColor?: string;
+  welcomeBgImageUrl?: string;
+  welcomeBgImageSize?: number;
 }
 
 export interface Template {

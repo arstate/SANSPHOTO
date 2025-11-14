@@ -46,13 +46,14 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ settings, onSettingsCha
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState<SettingsCategory>('general');
 
-  const handleSettingsInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type, checked } = e.target;
+  const handleSettingsInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value, type } = e.target;
     
     let finalValue: string | number | boolean = value;
-    if (type === 'checkbox') {
-        finalValue = checked;
-    } else if (type === 'number') {
+    
+    if (type === 'checkbox' && 'checked' in e.target) {
+        finalValue = e.target.checked;
+    } else if (type === 'number' || type === 'range') {
         finalValue = parseInt(value, 10) || 0;
     }
 
@@ -168,9 +169,9 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ settings, onSettingsCha
       case 'appearance':
         return (
            <div className="space-y-6">
-             {/* Welcome Screen Customization */}
+             {/* Welcome Screen Text Customization */}
             <div className="p-6 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] text-left space-y-4">
-              <h3 className="text-xl font-bold text-[var(--color-text-accent)]">Welcome Screen Customization</h3>
+              <h3 className="text-xl font-bold text-[var(--color-text-accent)]">Welcome Screen Text</h3>
               <div>
                 <label htmlFor="welcomeTitle" className="block text-sm font-medium text-[var(--color-text-secondary)]">Main Title</label>
                 <input
@@ -195,11 +196,75 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ settings, onSettingsCha
                     className="mt-1 block w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md shadow-sm py-2 px-3 text-[var(--color-text-primary)] focus:outline-none focus:ring-[var(--color-border-focus)] focus:border-[var(--color-border-focus)] sm:text-sm"
                 />
               </div>
+              <div className="grid grid-cols-2 gap-4 border-t border-[var(--color-border-primary)] pt-4">
+                  <div>
+                      <label htmlFor="welcomeTitleColor" className="block text-sm font-medium text-[var(--color-text-secondary)]">Title Color</label>
+                      <input type="color" id="welcomeTitleColor" name="welcomeTitleColor" value={settings.welcomeTitleColor || '#F9FAFB'} onChange={handleSettingsInputChange} className="mt-1 w-full h-10 p-1 bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md cursor-pointer"/>
+                  </div>
+                  <div>
+                      <label htmlFor="welcomeSubtitleColor" className="block text-sm font-medium text-[var(--color-text-secondary)]">Subtitle Color</label>
+                      <input type="color" id="welcomeSubtitleColor" name="welcomeSubtitleColor" value={settings.welcomeSubtitleColor || '#D1D5DB'} onChange={handleSettingsInputChange} className="mt-1 w-full h-10 p-1 bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md cursor-pointer"/>
+                  </div>
+              </div>
+            </div>
+
+            {/* Welcome Screen Background Customization */}
+            <div className="p-6 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] text-left space-y-4">
+              <h3 className="text-xl font-bold text-[var(--color-text-accent)]">Welcome Screen Background</h3>
+              <div>
+                <label className="block text-sm font-medium text-[var(--color-text-secondary)]">Background Type</label>
+                <div className="mt-2 grid grid-cols-3 gap-2 rounded-lg bg-[var(--color-bg-tertiary)] p-1">
+                  {(['default', 'color', 'image'] as const).map(type => (
+                    <label key={type} className={`block text-center cursor-pointer rounded-md py-2 px-3 text-sm font-semibold transition-colors ${settings.welcomeBgType === type ? 'bg-[var(--color-accent-primary)] text-[var(--color-accent-primary-text)]' : 'hover:bg-[var(--color-bg-primary)]'}`}>
+                      <input type="radio" name="welcomeBgType" value={type} checked={settings.welcomeBgType === type} onChange={handleSettingsInputChange} className="sr-only"/>
+                      {type.charAt(0).toUpperCase() + type.slice(1)}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {settings.welcomeBgType === 'color' && (
+                <div className="border-t border-[var(--color-border-primary)] pt-4">
+                  <label htmlFor="welcomeBgColor" className="block text-sm font-medium text-[var(--color-text-secondary)]">Background Color</label>
+                  <input type="color" id="welcomeBgColor" name="welcomeBgColor" value={settings.welcomeBgColor || '#111827'} onChange={handleSettingsInputChange} className="mt-1 w-full h-10 p-1 bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md cursor-pointer"/>
+                </div>
+              )}
+
+              {settings.welcomeBgType === 'image' && (
+                <div className="border-t border-[var(--color-border-primary)] pt-4 space-y-4">
+                  <div>
+                    <label htmlFor="welcomeBgImageUrl" className="block text-sm font-medium text-[var(--color-text-secondary)]">Background Image URL</label>
+                    <p className="text-xs text-[var(--color-text-muted)] mb-2">Use a direct image link. For Google Photos, use an embed link.</p>
+                    <input
+                        type="url"
+                        id="welcomeBgImageUrl"
+                        name="welcomeBgImageUrl"
+                        value={settings.welcomeBgImageUrl || ''}
+                        onChange={handleSettingsInputChange}
+                        placeholder="https://..."
+                        className="mt-1 block w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md shadow-sm py-2 px-3 text-[var(--color-text-primary)] focus:outline-none focus:ring-[var(--color-border-focus)] focus:border-[var(--color-border-focus)] sm:text-sm"
+                    />
+                  </div>
+                   <div>
+                    <label htmlFor="welcomeBgImageSize" className="block text-sm font-medium text-[var(--color-text-secondary)]">Image Zoom ({settings.welcomeBgImageSize || 100}%)</label>
+                    <input
+                      id="welcomeBgImageSize"
+                      name="welcomeBgImageSize"
+                      type="range"
+                      min="50"
+                      max="200"
+                      value={settings.welcomeBgImageSize || 100}
+                      onChange={handleSettingsInputChange}
+                      className="w-full h-2 bg-[var(--color-bg-tertiary)] rounded-lg appearance-none cursor-pointer"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
             
             {/* Theme Settings */}
             <div className="p-6 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] text-left space-y-4">
-              <h3 className="text-xl font-bold text-[var(--color-text-accent)]">Theme</h3>
+              <h3 className="text-xl font-bold text-[var(--color-text-accent)]">App Theme</h3>
               <div className="flex gap-2">
                 <button
                   onClick={() => handleThemeChange('dark')}

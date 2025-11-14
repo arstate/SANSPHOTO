@@ -1,9 +1,10 @@
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { SettingsIcon } from './icons/SettingsIcon';
 import { HistoryIcon } from './icons/HistoryIcon';
 import { AdminIcon } from './icons/AdminIcon';
 import { LogoutIcon } from './icons/LogoutIcon';
+import { Settings } from '../types';
 
 interface WelcomeScreenProps {
   onStart: () => void;
@@ -15,8 +16,7 @@ interface WelcomeScreenProps {
   onAdminLoginClick: () => void;
   onAdminLogoutClick: () => void;
   isLoading: boolean;
-  welcomeTitle?: string;
-  welcomeSubtitle?: string;
+  settings: Settings;
 }
 
 const CachingStatus: React.FC<{ progress: number }> = ({ progress }) => (
@@ -45,11 +45,45 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
     onAdminLoginClick,
     onAdminLogoutClick,
     isLoading,
-    welcomeTitle = 'SANS PHOTO',
-    welcomeSubtitle = 'Your personal web photobooth'
+    settings
 }) => {
+  const { 
+    welcomeTitle = 'SANS PHOTO', 
+    welcomeSubtitle = 'Your personal web photobooth',
+    welcomeTitleColor,
+    welcomeSubtitleColor,
+    welcomeBgType = 'default',
+    welcomeBgColor,
+    welcomeBgImageUrl,
+    welcomeBgImageSize = 100,
+  } = settings;
+
+  const backgroundStyles = useMemo(() => {
+    switch (welcomeBgType) {
+      case 'color':
+        return { backgroundColor: welcomeBgColor };
+      case 'image':
+        // Tambahkan proksi jika diperlukan untuk menghindari masalah CORS
+        const imageUrl = welcomeBgImageUrl?.startsWith('http') 
+          ? `https://api.allorigins.win/raw?url=${encodeURIComponent(welcomeBgImageUrl)}` 
+          : welcomeBgImageUrl;
+        return {
+          backgroundImage: `url('${imageUrl}')`,
+          backgroundSize: `${welcomeBgImageSize}%`,
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+        };
+      case 'default':
+      default:
+        return { backgroundColor: 'var(--color-bg-primary)'};
+    }
+  }, [welcomeBgType, welcomeBgColor, welcomeBgImageUrl, welcomeBgImageSize]);
+
   return (
-    <div className="relative text-center flex flex-col items-center justify-center h-full w-full">
+    <div 
+        className="relative text-center flex flex-col items-center justify-center h-full w-full transition-colors duration-300"
+        style={backgroundStyles}
+    >
       <div className="absolute top-4 left-4 z-10">
         <button 
           onClick={isAdminLoggedIn ? onAdminLogoutClick : onAdminLoginClick}
@@ -60,8 +94,18 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
         </button>
       </div>
 
-      <h1 className="font-bebas text-8xl md:text-9xl tracking-widest text-[var(--color-text-primary)] animate-pulse">{welcomeTitle}</h1>
-      <p className="text-[var(--color-text-muted)] mb-8">{welcomeSubtitle}</p>
+      <h1 
+        className="font-bebas text-8xl md:text-9xl tracking-widest text-[var(--color-text-primary)] animate-pulse"
+        style={{ color: welcomeTitleColor || undefined }}
+      >
+        {welcomeTitle}
+      </h1>
+      <p 
+        className="text-[var(--color-text-muted)] mb-8"
+        style={{ color: welcomeSubtitleColor || undefined }}
+      >
+        {welcomeSubtitle}
+      </p>
       {isAdminLoggedIn ? (
           <div className="flex flex-col sm:flex-row gap-4">
             <button

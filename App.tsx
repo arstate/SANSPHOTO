@@ -46,6 +46,12 @@ const DEFAULT_SETTINGS: Settings = {
   welcomeSubtitle: 'Your personal web photobooth',
   isDownloadButtonEnabled: true,
   isAutoDownloadEnabled: true,
+  welcomeTitleColor: '',
+  welcomeSubtitleColor: '',
+  welcomeBgType: 'default',
+  welcomeBgColor: '#111827',
+  welcomeBgImageUrl: '',
+  welcomeBgImageSize: 100,
 };
 
 const DEFAULT_TEMPLATE_DATA: Omit<Template, 'id'> = {
@@ -651,8 +657,7 @@ const App: React.FC = () => {
             onAdminLoginClick={handleOpenLoginModal}
             onAdminLogoutClick={handleAdminLogout}
             isLoading={isSessionLoading}
-            welcomeTitle={settings.welcomeTitle}
-            welcomeSubtitle={settings.welcomeSubtitle}
+            settings={settings}
         />;
       
       case AppState.KEY_CODE_ENTRY:
@@ -746,8 +751,7 @@ const App: React.FC = () => {
             onAdminLoginClick={handleOpenLoginModal}
             onAdminLogoutClick={handleAdminLogout}
             isLoading={isSessionLoading}
-            welcomeTitle={settings.welcomeTitle}
-            welcomeSubtitle={settings.welcomeSubtitle}
+            settings={settings}
         />;
     }
   };
