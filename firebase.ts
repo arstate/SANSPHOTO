@@ -8,7 +8,11 @@ import {
   push, 
   update, 
   remove,
-  DataSnapshot
+  DataSnapshot,
+  query,
+  orderByChild,
+  equalTo,
+  get
 } from "firebase/database";
 
 // Konfigurasi Firebase aplikasi web Anda
@@ -35,5 +39,5 @@ export const firebaseObjectToArray = <T extends {id: string}>(data: Record<strin
   } as T));
 };
 
-export { db, ref, onValue, off, set, push, update, remove };
+export { db, ref, onValue, off, set, push, update, remove, query, orderByChild, equalTo, get };
 export type { DataSnapshot };

@@ -15,8 +15,10 @@ import AssignTemplatesModal from './components/AssignTemplatesModal';
 import EventQrCodeModal from './components/EventQrCodeModal';
 import HistoryScreen from './components/HistoryScreen';
 import PinInputModal from './components/PinInputModal';
-import { AppState, PhotoSlot, Settings, Template, Event, HistoryEntry } from './types';
-import { db, ref, onValue, off, set, push, update, remove, firebaseObjectToArray } from './firebase';
+import KeyCodeScreen from './components/KeyCodeScreen';
+import ManageSessionsScreen from './components/ManageSessionsScreen';
+import { AppState, PhotoSlot, Settings, Template, Event, HistoryEntry, SessionKey } from './types';
+import { db, ref, onValue, off, set, push, update, remove, firebaseObjectToArray, query, orderByChild, equalTo, get } from './firebase';
 import { getAllHistoryEntries, addHistoryEntry, deleteHistoryEntry, cacheImage } from './utils/db';
 import { FullscreenIcon } from './components/icons/FullscreenIcon';
 
@@ -63,10 +65,17 @@ const App: React.FC = () => {
   const [events, setEvents] = useState<Event[]>([]);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
+  const [sessionKeys, setSessionKeys] = useState<SessionKey[]>([]);
   
+  const [currentSessionKey, setCurrentSessionKey] = useState<SessionKey | null>(null);
+  const [currentTakeCount, setCurrentTakeCount] = useState(0);
+
   const [isCaching, setIsCaching] = useState(false);
   const [cachingProgress, setCachingProgress] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(!!document.fullscreenElement);
+  const [keyCodeError, setKeyCodeError] = useState<string | null>(null);
+  const [isKeyCodeLoading, setIsKeyCodeLoading] = useState(false);
+
 
   // Fungsi untuk meng-cache semua gambar templat di latar belakang
   const cacheAllTemplates = useCallback(async (templatesToCache: Template[]) => {
@@ -121,11 +130,18 @@ const App: React.FC = () => {
     const eventsListener = onValue(eventsRef, (snapshot) => {
         setEvents(firebaseObjectToArray<Event>(snapshot.val()));
     });
+    
+    // Session Keys listener
+    const sessionKeysRef = ref(db, 'sessionKeys');
+    const sessionKeysListener = onValue(sessionKeysRef, (snapshot) => {
+        setSessionKeys(firebaseObjectToArray<SessionKey>(snapshot.val()));
+    });
 
     return () => {
       off(settingsRef, 'value', settingsListener);
       off(templatesRef, 'value', templatesListener);
       off(eventsRef, 'value', eventsListener);
+      off(sessionKeysRef, 'value', sessionKeysListener);
     };
   }, [cacheAllTemplates]);
   
@@ -165,7 +181,54 @@ const App: React.FC = () => {
   }, []);
 
   const handleStartSession = useCallback(() => {
-    setAppState(AppState.EVENT_SELECTION);
+    setKeyCodeError(null);
+    setAppState(AppState.KEY_CODE_ENTRY);
+  }, []);
+
+  const handleKeyCodeSubmit = useCallback(async (code: string) => {
+    setIsKeyCodeLoading(true);
+    setKeyCodeError(null);
+    const codeUpper = code.toUpperCase();
+
+    try {
+        const sessionKeysRef = ref(db, 'sessionKeys');
+        const q = query(sessionKeysRef, orderByChild('code'), equalTo(codeUpper));
+        const snapshot = await get(q);
+
+        if (!snapshot.exists()) {
+            setKeyCodeError("Kode sesi tidak valid.");
+            setIsKeyCodeLoading(false);
+            return;
+        }
+
+        const data = snapshot.val();
+        const keyId = Object.keys(data)[0];
+        const sessionKey: SessionKey = { id: keyId, ...data[keyId] };
+
+        if (sessionKey.status !== 'available') {
+            setKeyCodeError(`Kode ini telah ${sessionKey.status === 'completed' ? 'digunakan' : 'sedang berjalan'}.`);
+            setIsKeyCodeLoading(false);
+            return;
+        }
+
+        // Kode valid, mulai sesi
+        setCurrentSessionKey(sessionKey);
+        setCurrentTakeCount(1);
+        
+        // Perbarui status di Firebase
+        await update(ref(db, `sessionKeys/${sessionKey.id}`), { 
+            status: 'in_progress',
+            takesUsed: 1,
+        });
+
+        setAppState(AppState.EVENT_SELECTION);
+
+    } catch (error) {
+        console.error("Error validating session key:", error);
+        setKeyCodeError("Terjadi kesalahan. Coba lagi.");
+    } finally {
+        setIsKeyCodeLoading(false);
+    }
   }, []);
 
   const handleEventSelect = useCallback((eventId: string) => {
@@ -180,11 +243,17 @@ const App: React.FC = () => {
   }, []);
   
   const handleManageTemplates = useCallback(() => {
-    setAppState(AppState.TEMPLATE_SELECTION);
+    setAppState(AppState.SETTINGS); // Kembali ke settings dulu
+    setTimeout(() => setAppState(AppState.TEMPLATE_SELECTION), 0); // Buka manage templates
   }, []);
+
 
   const handleManageEvents = useCallback(() => {
     setAppState(AppState.MANAGE_EVENTS);
+  }, []);
+
+  const handleManageSessions = useCallback(() => {
+    setAppState(AppState.MANAGE_SESSIONS);
   }, []);
 
   const handleGoToSettings = useCallback(() => {
@@ -317,6 +386,39 @@ const App: React.FC = () => {
       update(ref(db, `events/${eventId}`), settings);
       setEditingEventQr(null);
   }, []);
+  
+  // Session Key Handlers
+  const handleAddSessionKey = useCallback(async (maxTakes: number) => {
+      const generateCode = () => {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        let result = '';
+        for (let i = 0; i < 4; i++) {
+          result += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        return result;
+      };
+
+      let newCode = generateCode();
+      // Pastikan kode unik, meskipun kemungkinannya kecil
+      while (sessionKeys.some(key => key.code === newCode)) {
+          newCode = generateCode();
+      }
+
+      const newKey: Omit<SessionKey, 'id'> = {
+          code: newCode,
+          maxTakes,
+          takesUsed: 0,
+          status: 'available',
+          createdAt: Date.now()
+      };
+      await push(ref(db, 'sessionKeys'), newKey);
+  }, [sessionKeys]);
+
+  const handleDeleteSessionKey = useCallback(async (keyId: string) => {
+      if (window.confirm("Are you sure you want to delete this session code?")) {
+          await remove(ref(db, `sessionKeys/${keyId}`));
+      }
+  }, []);
 
   // History Handlers (Now using IndexedDB)
   const handleSaveHistoryFromSession = useCallback(async (imageDataUrl: string) => {
@@ -353,11 +455,16 @@ const App: React.FC = () => {
             setAppState(AppState.EVENT_SELECTION);
             break;
         case AppState.EVENT_SELECTION:
+            // Tidak bisa kembali ke input kode, harus membatalkan sesi
+            handleCancelSession();
+            break;
+        case AppState.KEY_CODE_ENTRY:
         case AppState.SETTINGS:
         case AppState.HISTORY:
             setAppState(AppState.WELCOME);
             break;
         case AppState.MANAGE_EVENTS:
+        case AppState.MANAGE_SESSIONS:
             setAppState(AppState.SETTINGS);
             break;
         default:
@@ -374,13 +481,43 @@ const App: React.FC = () => {
     setCapturedImages(images);
     setAppState(AppState.PREVIEW);
   }, []);
-
-  const handleRestart = useCallback(() => {
+  
+  const handleSessionEnd = useCallback(() => {
+    if (currentSessionKey && currentSessionKey.status !== 'completed') {
+        update(ref(db, `sessionKeys/${currentSessionKey.id}`), { status: 'completed' });
+    }
     setCapturedImages([]);
     setSelectedTemplate(null);
     setSelectedEventId(null);
+    setCurrentSessionKey(null);
+    setCurrentTakeCount(0);
     setAppState(AppState.WELCOME);
-  }, []);
+  }, [currentSessionKey]);
+
+  const handleStartNextTake = useCallback(() => {
+      if (!currentSessionKey || currentTakeCount >= currentSessionKey.maxTakes) return;
+
+      const nextTake = currentTakeCount + 1;
+      setCurrentTakeCount(nextTake);
+      update(ref(db, `sessionKeys/${currentSessionKey.id}`), { takesUsed: nextTake });
+
+      // Reset untuk pengambilan berikutnya
+      setCapturedImages([]);
+      setSelectedTemplate(null);
+      // Kembali ke pemilihan template, acara tetap sama
+      setAppState(AppState.TEMPLATE_SELECTION);
+  }, [currentSessionKey, currentTakeCount]);
+
+  const handleCancelSession = useCallback(() => {
+      if (currentSessionKey) {
+          // Kembalikan status ke 'available' jika belum ada foto yang diambil
+          update(ref(db, `sessionKeys/${currentSessionKey.id}`), { status: 'available', takesUsed: 0 });
+      }
+      setCurrentSessionKey(null);
+      setCurrentTakeCount(0);
+      setSelectedEventId(null);
+      setAppState(AppState.WELCOME);
+  }, [currentSessionKey]);
 
   const renderContent = () => {
     const selectedEvent = events.find(e => e.id === selectedEventId) || null;
@@ -398,6 +535,9 @@ const App: React.FC = () => {
             onAdminLogoutClick={handleAdminLogout}
         />;
       
+      case AppState.KEY_CODE_ENTRY:
+        return <KeyCodeScreen onKeyCodeSubmit={handleKeyCodeSubmit} onBack={handleBack} error={keyCodeError} isLoading={isKeyCodeLoading} />;
+
       case AppState.EVENT_SELECTION:
         return <EventSelectionScreen events={events.filter(e => !e.isArchived)} onSelect={handleEventSelect} onBack={handleBack} />;
 
@@ -414,7 +554,7 @@ const App: React.FC = () => {
         />;
       
       case AppState.SETTINGS:
-        return <SettingsScreen settings={settings} onSettingsChange={handleSettingsChange} onManageTemplates={handleManageTemplates} onManageEvents={handleManageEvents} onViewHistory={handleViewHistory} onBack={handleBack} />;
+        return <SettingsScreen settings={settings} onSettingsChange={handleSettingsChange} onManageTemplates={handleManageTemplates} onManageEvents={handleManageEvents} onManageSessions={handleManageSessions} onViewHistory={handleViewHistory} onBack={handleBack} />;
       
       case AppState.MANAGE_EVENTS:
          return <ManageEventsScreen 
@@ -428,6 +568,15 @@ const App: React.FC = () => {
             onQrCodeSettings={handleStartEditQrCode}
          />;
          
+      case AppState.MANAGE_SESSIONS:
+          if (!isAdminLoggedIn) { setAppState(AppState.WELCOME); return null; }
+          return <ManageSessionsScreen 
+            sessionKeys={sessionKeys} 
+            onBack={handleBack} 
+            onAddKey={handleAddSessionKey} 
+            onDeleteKey={handleDeleteSessionKey}
+          />;
+
       case AppState.HISTORY:
           if (!isAdminLoggedIn) { setAppState(AppState.WELCOME); return null; }
           return <HistoryScreen history={history} events={events} onDelete={handleDeleteHistoryEntry} onBack={handleBack} />;
@@ -445,8 +594,18 @@ const App: React.FC = () => {
         return <CaptureScreen onComplete={handleCaptureComplete} template={selectedTemplate} countdownDuration={settings.countdownDuration} flashEffectEnabled={settings.flashEffectEnabled} />;
       
       case AppState.PREVIEW:
-        if (!selectedTemplate) { setAppState(AppState.WELCOME); return null; }
-        return <PreviewScreen images={capturedImages} onRestart={handleRestart} onBack={handleBack} template={selectedTemplate} onSaveHistory={handleSaveHistoryFromSession} event={selectedEvent} />;
+        if (!selectedTemplate || !currentSessionKey) { setAppState(AppState.WELCOME); return null; }
+        return <PreviewScreen 
+            images={capturedImages} 
+            onRestart={handleSessionEnd} 
+            onBack={handleBack} 
+            template={selectedTemplate} 
+            onSaveHistory={handleSaveHistoryFromSession} 
+            event={selectedEvent}
+            currentTake={currentTakeCount}
+            maxTakes={currentSessionKey.maxTakes}
+            onNextTake={handleStartNextTake}
+        />;
       
       default:
         return <WelcomeScreen 

@@ -3,19 +3,26 @@ import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { DownloadIcon } from './icons/DownloadIcon';
 import { CheckIcon } from './icons/CheckIcon';
 import { BackIcon } from './icons/BackIcon';
+import { RestartIcon } from './icons/RestartIcon';
 import { Template, Event } from '../types';
 import { getCachedImage } from '../utils/db';
 
 interface PreviewScreenProps {
   images: string[];
-  onRestart: () => void;
+  onRestart: () => void; // This is now "Finish Session"
   onBack: () => void;
   template: Template;
   onSaveHistory: (imageDataUrl: string) => void;
   event: Event | null;
+  currentTake: number;
+  maxTakes: number;
+  onNextTake: () => void;
 }
 
-const PreviewScreen: React.FC<PreviewScreenProps> = ({ images, onRestart, onBack, template, onSaveHistory, event }) => {
+const PreviewScreen: React.FC<PreviewScreenProps> = ({ 
+    images, onRestart, onBack, template, onSaveHistory, event,
+    currentTake, maxTakes, onNextTake
+}) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const finalImageRef = useRef<HTMLImageElement>(null);
   const historySavedRef = useRef(false);
@@ -23,6 +30,7 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({ images, onRestart, onBack
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  const isLastTake = currentTake >= maxTakes;
   const isLandscape = template.orientation === 'landscape';
   const TEMPLATE_WIDTH = isLandscape ? 1800 : 1200;
   const TEMPLATE_HEIGHT = isLandscape ? 1200 : 1800;
@@ -140,6 +148,9 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({ images, onRestart, onBack
   }, [images, template, onSaveHistory, handleDownload, TEMPLATE_WIDTH, TEMPLATE_HEIGHT]);
 
   useEffect(() => {
+    // Reset refs for each new preview
+    historySavedRef.current = false;
+    downloadTriggeredRef.current = false;
     drawCanvas();
   }, [drawCanvas]);
 
@@ -154,7 +165,7 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({ images, onRestart, onBack
           <BackIcon />
         </button>
       </div>
-      <h2 className="font-bebas text-4xl mb-4">Ini Foto Anda!</h2>
+      <h2 className="font-bebas text-4xl mb-4">Ini Foto Anda! (Pengambilan {currentTake}/{maxTakes})</h2>
       
       <div className="w-full max-w-6xl flex flex-col lg:flex-row justify-center items-center lg:items-start gap-8">
     
@@ -186,13 +197,23 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({ images, onRestart, onBack
         
         {/* Kolom Aksi & QR */}
         <div className="flex flex-col items-center gap-6 w-full max-w-sm">
-            <button
-              onClick={onRestart}
-              className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-8 rounded-full text-xl transition-transform transform hover:scale-105 flex items-center justify-center gap-3"
-            >
-              <CheckIcon />
-              Done
-            </button>
+            {isLastTake ? (
+                <button
+                    onClick={onRestart}
+                    className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-8 rounded-full text-xl transition-transform transform hover:scale-105 flex items-center justify-center gap-3"
+                    >
+                    <CheckIcon />
+                    Selesai
+                </button>
+            ) : (
+                <button
+                    onClick={onNextTake}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-full text-xl transition-transform transform hover:scale-105 flex items-center justify-center gap-3"
+                    >
+                    <RestartIcon />
+                    Mulai Pengambilan Berikutnya
+                </button>
+            )}
             
             <button
               onClick={() => handleDownload()}

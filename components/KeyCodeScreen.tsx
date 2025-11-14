@@ -1,0 +1,97 @@
+import React, { useState, useRef, ChangeEvent, KeyboardEvent } from 'react';
+import { BackIcon } from './icons/BackIcon';
+
+interface KeyCodeScreenProps {
+  onKeyCodeSubmit: (code: string) => void;
+  onBack: () => void;
+  error: string | null;
+  isLoading: boolean;
+}
+
+const KeyCodeScreen: React.FC<KeyCodeScreenProps> = ({ onKeyCodeSubmit, onBack, error, isLoading }) => {
+  const [code, setCode] = useState(['', '', '', '']);
+  const inputsRef = useRef<(HTMLInputElement | null)[]>([]);
+
+  const handleChange = (e: ChangeEvent<HTMLInputElement>, index: number) => {
+    const value = e.target.value.toUpperCase();
+    if (/^[A-Z0-9]?$/.test(value)) {
+      const newCode = [...code];
+      newCode[index] = value;
+      setCode(newCode);
+
+      // Fokus ke input berikutnya jika ada nilai
+      if (value && index < 3) {
+        inputsRef.current[index + 1]?.focus();
+      }
+    }
+  };
+
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>, index: number) => {
+    // Pindah fokus ke input sebelumnya saat menekan backspace pada input kosong
+    if (e.key === 'Backspace' && !code[index] && index > 0) {
+      inputsRef.current[index - 1]?.focus();
+    }
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const fullCode = code.join('');
+    if (fullCode.length === 4 && !isLoading) {
+      onKeyCodeSubmit(fullCode);
+    }
+  };
+
+  return (
+    <div className="relative flex flex-col items-center justify-center w-full h-full">
+      <div className="absolute top-4 left-4">
+        <button
+          onClick={onBack}
+          className="bg-gray-800/50 hover:bg-gray-700/70 text-white font-bold p-3 rounded-full transition-colors"
+          aria-label="Go Back"
+        >
+          <BackIcon />
+        </button>
+      </div>
+
+      <div className="w-full max-w-sm text-center">
+        <h2 className="text-4xl font-bebas tracking-wider text-white mb-2">Enter Session Code</h2>
+        <p className="text-gray-400 mb-8">Please enter the 4-character code provided to start.</p>
+
+        <form onSubmit={handleSubmit}>
+          <div className="flex justify-center gap-3 mb-4">
+            {code.map((digit, index) => (
+              <input
+                key={index}
+                ref={el => inputsRef.current[index] = el}
+                type="text"
+                maxLength={1}
+                value={digit}
+                onChange={(e) => handleChange(e, index)}
+                onKeyDown={(e) => handleKeyDown(e, index)}
+                className="w-16 h-20 bg-gray-800 border-2 border-gray-600 rounded-lg text-center text-4xl font-bold text-white focus:outline-none focus:border-purple-500 transition-colors"
+                autoFocus={index === 0}
+                disabled={isLoading}
+              />
+            ))}
+          </div>
+
+          {error && <p className="text-red-400 text-center mb-4">{error}</p>}
+
+          <button
+            type="submit"
+            disabled={isLoading || code.join('').length < 4}
+            className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-10 rounded-full text-xl transition-all transform hover:scale-105 disabled:bg-gray-500 disabled:cursor-not-allowed disabled:transform-none"
+          >
+            {isLoading ? (
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mx-auto"></div>
+            ) : (
+                'Start Session'
+            )}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+export default KeyCodeScreen;

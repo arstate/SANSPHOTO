@@ -1,9 +1,11 @@
 export enum AppState {
   WELCOME,
+  KEY_CODE_ENTRY,
   EVENT_SELECTION,
   TEMPLATE_SELECTION,
   SETTINGS,
   MANAGE_EVENTS,
+  MANAGE_SESSIONS,
   EDIT_TEMPLATE_METADATA,
   EDIT_TEMPLATE_LAYOUT,
   CAPTURE,
@@ -52,4 +54,15 @@ export interface HistoryEntry {
   eventName: string;
   imageDataUrl: string;
   timestamp: number;
+}
+
+export type SessionKeyStatus = 'available' | 'in_progress' | 'completed';
+
+export interface SessionKey {
+  id: string;
+  code: string;
+  maxTakes: number;
+  takesUsed: number;
+  status: SessionKeyStatus;
+  createdAt: number;
 }

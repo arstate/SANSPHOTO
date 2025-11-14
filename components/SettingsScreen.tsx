@@ -3,17 +3,19 @@ import React from 'react';
 import { Settings } from '../types';
 import { BackIcon } from './icons/BackIcon';
 import { KeyIcon } from './icons/KeyIcon';
+import { TicketIcon } from './icons/TicketIcon';
 
 interface SettingsScreenProps {
     settings: Settings;
     onSettingsChange: (newSettings: Settings) => void;
     onManageTemplates: () => void;
     onManageEvents: () => void;
+    onManageSessions: () => void;
     onViewHistory: () => void;
     onBack: () => void;
 }
 
-const SettingsScreen: React.FC<SettingsScreenProps> = ({ settings, onSettingsChange, onManageTemplates, onManageEvents, onViewHistory, onBack }) => {
+const SettingsScreen: React.FC<SettingsScreenProps> = ({ settings, onSettingsChange, onManageTemplates, onManageEvents, onManageSessions, onViewHistory, onBack }) => {
 
   const handleSettingsInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
@@ -55,6 +57,21 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ settings, onSettingsCha
       <h2 className="text-4xl font-bebas tracking-wider text-white mb-8 shrink-0">Admin Settings</h2>
 
       <div className="w-full max-w-md space-y-6 overflow-y-auto scrollbar-thin pr-2">
+        {/* Session Code Management */}
+        <div className="p-6 bg-gray-800 rounded-lg border border-gray-700 text-left">
+          <h3 className="text-xl font-bold mb-4 text-purple-400">Session Management</h3>
+          <p className="text-gray-400 mb-4">
+            Generate and manage single-use session codes for users to start the photobooth.
+          </p>
+          <button
+            onClick={onManageSessions}
+            className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-full text-lg transition-transform transform hover:scale-105 flex items-center justify-center gap-2"
+          >
+            <TicketIcon />
+            Manage Session Codes
+          </button>
+        </div>
+
         {/* Event Management */}
         <div className="p-6 bg-gray-800 rounded-lg border border-gray-700 text-left">
           <h3 className="text-xl font-bold mb-4 text-purple-400">Event Management</h3>
