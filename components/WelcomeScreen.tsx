@@ -2,7 +2,6 @@
 import React, { useMemo, useRef, useEffect, useState } from 'react';
 import { SettingsIcon } from './icons/SettingsIcon';
 import { HistoryIcon } from './icons/HistoryIcon';
-import { GlobeIcon } from './icons/GlobeIcon';
 import { AdminIcon } from './icons/AdminIcon';
 import { LogoutIcon } from './icons/LogoutIcon';
 import { Settings } from '../types';
@@ -12,7 +11,6 @@ interface WelcomeScreenProps {
   onStart: () => void;
   onSettingsClick: () => void;
   onViewHistory: () => void;
-  onViewOnlineHistory: () => void;
   isAdminLoggedIn: boolean;
   isCaching: boolean;
   cachingProgress: number;
@@ -42,7 +40,6 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
     onStart, 
     onSettingsClick, 
     onViewHistory, 
-    onViewOnlineHistory,
     isAdminLoggedIn, 
     isCaching, 
     cachingProgress,
@@ -199,56 +196,42 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
         >
           {welcomeSubtitle}
         </p>
-
-        <div className="flex flex-col sm:flex-row items-center gap-4">
-          {isAdminLoggedIn ? (
-              <>
-                <button
-                    onClick={onSettingsClick}
-                    className="bg-[var(--color-accent-secondary)] hover:bg-[var(--color-accent-secondary-hover)] text-[var(--color-accent-secondary-text)] font-bold py-3 px-10 rounded-full text-xl transition-transform transform hover:scale-105 shadow-lg shadow-black/50 flex items-center gap-2"
-                >
-                    <SettingsIcon />
-                    Settings
-                </button>
-                <button
-                    onClick={onViewHistory}
-                    className="bg-[var(--color-info)] hover:bg-[var(--color-info-hover)] text-[var(--color-info-text)] font-bold py-3 px-10 rounded-full text-xl transition-transform transform hover:scale-105 shadow-lg shadow-black/50 flex items-center gap-2"
-                >
-                    <HistoryIcon />
-                    View History
-                </button>
-              </>
-          ) : (
-            <>
+        {isAdminLoggedIn ? (
+            <div className="flex flex-col sm:flex-row gap-4">
               <button
-                onClick={onStart}
-                disabled={isLoading || isCaching}
-                className={`
-                    ${startButtonBgColor ? '' : 'bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)]'}
-                    ${startButtonTextColor ? '' : 'text-[var(--color-accent-primary-text)]'}
-                    ${isStartButtonShadowEnabled ? 'shadow-lg shadow-black/50' : ''}
-                    font-bold py-3 px-10 rounded-full text-xl transition-transform transform hover:scale-105
-                    disabled:bg-[var(--color-bg-tertiary)] disabled:transform-none disabled:cursor-wait
-                `}
-                style={{
-                    backgroundColor: startButtonBgColor || undefined,
-                    color: startButtonTextColor || undefined,
-                }}
+                  onClick={onSettingsClick}
+                  className="bg-[var(--color-accent-secondary)] hover:bg-[var(--color-accent-secondary-hover)] text-[var(--color-accent-secondary-text)] font-bold py-3 px-10 rounded-full text-xl transition-transform transform hover:scale-105 shadow-lg shadow-black/50 flex items-center gap-2"
               >
-                {isLoading ? 'Starting...' : startButtonText}
+                  <SettingsIcon />
+                  Settings
               </button>
-              {settings.isOnlineHistoryEnabled && (
-                <button
-                    onClick={onViewOnlineHistory}
-                    className="bg-[var(--color-info)] hover:bg-[var(--color-info-hover)] text-[var(--color-info-text)] font-bold py-3 px-10 rounded-full text-xl transition-transform transform hover:scale-105 shadow-lg shadow-black/50 flex items-center gap-2"
-                >
-                    <GlobeIcon />
-                    Online History
-                </button>
-              )}
-            </>
-          )}
-        </div>
+              <button
+                  onClick={onViewHistory}
+                  className="bg-[var(--color-info)] hover:bg-[var(--color-info-hover)] text-[var(--color-info-text)] font-bold py-3 px-10 rounded-full text-xl transition-transform transform hover:scale-105 shadow-lg shadow-black/50 flex items-center gap-2"
+              >
+                  <HistoryIcon />
+                  View History
+              </button>
+            </div>
+        ) : (
+          <button
+            onClick={onStart}
+            disabled={isLoading || isCaching}
+            className={`
+                ${startButtonBgColor ? '' : 'bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)]'}
+                ${startButtonTextColor ? '' : 'text-[var(--color-accent-primary-text)]'}
+                ${isStartButtonShadowEnabled ? 'shadow-lg shadow-black/50' : ''}
+                font-bold py-3 px-10 rounded-full text-xl transition-transform transform hover:scale-105
+                disabled:bg-[var(--color-bg-tertiary)] disabled:transform-none disabled:cursor-wait
+            `}
+            style={{
+                backgroundColor: startButtonBgColor || undefined,
+                color: startButtonTextColor || undefined,
+            }}
+          >
+            {isLoading ? 'Starting...' : startButtonText}
+          </button>
+        )}
       </div>
       
       {isCaching && <CachingStatus progress={cachingProgress} />}

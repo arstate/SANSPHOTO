@@ -9,7 +9,6 @@ import KioskGuide from './KioskGuide';
 import { SettingsIcon } from './icons/SettingsIcon';
 import { EyeIcon } from './icons/EyeIcon';
 import { FolderIcon } from './icons/FolderIcon';
-import { GlobeIcon } from './icons/GlobeIcon';
 
 interface SettingsScreenProps {
     settings: Settings;
@@ -18,7 +17,6 @@ interface SettingsScreenProps {
     onManageEvents: () => void;
     onManageSessions: () => void;
     onViewHistory: () => void;
-    onManageOnlineHistory: () => void;
     onBack: () => void;
 }
 
@@ -56,7 +54,7 @@ const CategoryButton: React.FC<{
 );
 
 
-const SettingsScreen: React.FC<SettingsScreenProps> = ({ settings, onSettingsChange, onManageTemplates, onManageEvents, onManageSessions, onViewHistory, onManageOnlineHistory, onBack }) => {
+const SettingsScreen: React.FC<SettingsScreenProps> = ({ settings, onSettingsChange, onManageTemplates, onManageEvents, onManageSessions, onViewHistory, onBack }) => {
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState<SettingsCategory>('general');
 
@@ -601,32 +599,6 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ settings, onSettingsCha
                   </button>
                 </div>
               </div>
-            
-            {/* Online History */}
-            <div className="p-6 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] text-left space-y-4">
-                <h3 className="text-xl font-bold text-[var(--color-text-accent)]">Online History</h3>
-                <div className="border-t border-[var(--color-border-primary)] pt-4">
-                  <label htmlFor="isOnlineHistoryEnabled" className="flex items-center justify-between cursor-pointer">
-                      <div>
-                          <span className="block text-sm font-medium text-[var(--color-text-secondary)]">Enable Online History</span>
-                          <p className="text-xs text-[var(--color-text-muted)]">Show a button on the welcome screen for users to view an online gallery.</p>
-                      </div>
-                      <div className="relative">
-                          <input type="checkbox" id="isOnlineHistoryEnabled" name="isOnlineHistoryEnabled" checked={settings.isOnlineHistoryEnabled ?? false} onChange={handleSettingsInputChange} className="sr-only peer" />
-                          <div className="w-11 h-6 bg-[var(--color-bg-tertiary)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--color-accent-primary)]"></div>
-                      </div>
-                  </label>
-                </div>
-                <div className="pt-4">
-                  <button
-                    onClick={onManageOnlineHistory}
-                    className="w-full bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-[var(--color-accent-primary-text)] font-bold py-3 px-6 rounded-full text-lg transition-transform transform hover:scale-105 flex items-center justify-center gap-2"
-                  >
-                    <GlobeIcon />
-                    Manage Online History
-                  </button>
-                </div>
-            </div>
 
              {/* Event Management */}
               <div className="p-6 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] text-left">
@@ -658,15 +630,15 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ settings, onSettingsCha
               
               {/* History */}
               <div className="p-6 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] text-left">
-                  <h3 className="text-xl font-bold mb-4 text-[var(--color-text-accent)]">Photobooth History (Local)</h3>
+                  <h3 className="text-xl font-bold mb-4 text-[var(--color-text-accent)]">Photobooth History</h3>
                   <p className="text-[var(--color-text-muted)] mb-4">
-                      View, filter, and manage all photos taken during events on this device.
+                      View, filter, and manage all photos taken during events.
                   </p>
                   <button
                       onClick={onViewHistory}
                       className="w-full bg-[var(--color-info)] hover:bg-[var(--color-info-hover)] text-[var(--color-info-text)] font-bold py-3 px-6 rounded-full text-lg transition-transform transform hover:scale-105"
                   >
-                      View Local History
+                      View Photobooth History
                   </button>
               </div>
           </div>
