@@ -1,7 +1,7 @@
 
 import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { DownloadIcon } from './icons/DownloadIcon';
-import { RestartIcon } from './icons/RestartIcon';
+import { CheckIcon } from './icons/CheckIcon';
 import { BackIcon } from './icons/BackIcon';
 import { Template, Event } from '../types';
 import { getCachedImage } from '../utils/db';
@@ -185,33 +185,30 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({ images, onRestart, onBack
         </div>
         
         {/* Kolom Aksi & QR */}
-        <div className="flex flex-col items-center gap-8 w-full max-w-sm">
+        <div className="flex flex-col items-center gap-6 w-full max-w-sm">
+            <button
+              onClick={onRestart}
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-8 rounded-full text-xl transition-transform transform hover:scale-105 flex items-center justify-center gap-3"
+            >
+              <CheckIcon />
+              Done
+            </button>
+            
+            <button
+              onClick={() => handleDownload()}
+              disabled={isLoading || !!errorMsg}
+              className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-8 rounded-full text-xl transition-transform transform hover:scale-105 flex items-center justify-center gap-3 disabled:bg-gray-500 disabled:cursor-not-allowed disabled:transform-none"
+            >
+              <DownloadIcon />
+              Unduh
+            </button>
+
             {event?.isQrCodeEnabled && event.qrCodeImageUrl && (
                 <div className="p-4 bg-gray-800 rounded-lg text-center">
-                    <p className="text-sm text-gray-300 mb-2">Pindai Kode QR untuk mengunduh</p>
-                    {/* QR CODE DIPERBESAR */}
-                    <img src={event.qrCodeImageUrl} alt="Kode QR" className="w-48 h-48 mx-auto rounded-md" />
+                    <p className="text-sm text-gray-300 mb-2">Pindai untuk mengunduh ke ponsel Anda</p>
+                    <img src={event.qrCodeImageUrl} alt="Kode QR" className="w-64 h-64 mx-auto rounded-md" />
                 </div>
             )}
-
-            {/* TOMBOL BERSEBELAHAN */}
-            <div className="flex flex-row gap-4 w-full">
-                <button
-                  onClick={() => handleDownload()}
-                  disabled={isLoading || !!errorMsg}
-                  className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-full text-lg transition-transform transform hover:scale-105 flex items-center justify-center gap-2 disabled:bg-gray-500 disabled:cursor-not-allowed disabled:transform-none"
-                >
-                  <DownloadIcon />
-                  Unduh
-                </button>
-                <button
-                  onClick={onRestart}
-                  className="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-full text-lg transition-transform transform hover:scale-105 flex items-center justify-center gap-2"
-                >
-                  <RestartIcon />
-                  Mulai Ulang
-                </button>
-            </div>
         </div>
       </div>
       
