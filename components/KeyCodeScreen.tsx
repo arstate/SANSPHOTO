@@ -55,7 +55,17 @@ const KeyCodeScreen: React.FC<KeyCodeScreenProps> = ({ onKeyCodeSubmit, onBack, 
 
       <div className="w-full max-w-sm text-center">
         <h2 className="text-4xl font-bebas tracking-wider text-white mb-2">Enter Session Code</h2>
-        <p className="text-gray-400 mb-8">Please enter the 4-character code provided to start.</p>
+        <p className="text-gray-400 mb-6">Please enter the 4-character code provided to start.</p>
+
+        <div className="bg-gray-800 p-4 rounded-lg text-left text-sm mb-8 border border-gray-700">
+            <h3 className="font-bold text-purple-300 mb-2">Cara Mendapatkan Kode:</h3>
+            <ol className="list-decimal list-inside space-y-1 text-gray-300">
+                <li>Lakukan pembayaran di kasir.</li>
+                <li>Admin akan memberikan kode sesi unik.</li>
+                <li>Masukan kode sesi yang diberikan di bawah ini.</li>
+            </ol>
+        </div>
+
 
         <form onSubmit={handleSubmit}>
           <div className="flex justify-center gap-3 mb-4">
