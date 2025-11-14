@@ -66,4 +66,6 @@ export interface SessionKey {
   takesUsed: number;
   status: SessionKeyStatus;
   createdAt: number;
+  progress?: string;
+  currentEventName?: string;
 }

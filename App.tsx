@@ -148,6 +148,29 @@ const App: React.FC = () => {
       off(sessionKeysRef, 'value', sessionKeysListener);
     };
   }, [cacheAllTemplates]);
+
+  // Real-time progress update
+  useEffect(() => {
+    if (!currentSessionKey) return;
+
+    let progress = '';
+    switch (appState) {
+        case AppState.EVENT_SELECTION:
+            progress = 'Memilih Event';
+            break;
+        case AppState.TEMPLATE_SELECTION:
+            progress = 'Memilih Template';
+            break;
+        case AppState.PREVIEW:
+            progress = 'Melihat Pratinjau Foto';
+            break;
+        // The CAPTURE state is handled by handleCaptureProgressUpdate
+    }
+
+    if (progress) {
+        update(ref(db, `sessionKeys/${currentSessionKey.id}`), { progress });
+    }
+  }, [appState, currentSessionKey]);
   
   // Fullscreen management
   useEffect(() => {
@@ -237,14 +260,28 @@ const App: React.FC = () => {
 
   const handleEventSelect = useCallback((eventId: string) => {
     setSelectedEventId(eventId);
+    const selectedEvent = events.find(e => e.id === eventId);
+    if (currentSessionKey && selectedEvent) {
+        update(ref(db, `sessionKeys/${currentSessionKey.id}`), {
+            currentEventName: selectedEvent.name,
+        });
+    }
     setAppState(AppState.TEMPLATE_SELECTION);
-  }, []);
+  }, [events, currentSessionKey]);
 
   const handleTemplateSelect = useCallback((template: Template) => {
     setSelectedTemplate(template);
     setCapturedImages([]);
+    
+    if (currentSessionKey) {
+        const totalPhotos = [...new Set(template.photoSlots.map(slot => slot.inputId))].length;
+        update(ref(db, `sessionKeys/${currentSessionKey.id}`), {
+            progress: `Sesi Foto (1/${totalPhotos})`,
+        });
+    }
+
     setAppState(AppState.CAPTURE);
-  }, []);
+  }, [currentSessionKey]);
   
   const handleManageTemplates = useCallback(() => {
     setAppState(AppState.SETTINGS); // Kembali ke settings dulu
@@ -488,7 +525,11 @@ const App: React.FC = () => {
   
   const handleSessionEnd = useCallback(() => {
     if (currentSessionKey && currentSessionKey.status !== 'completed') {
-        update(ref(db, `sessionKeys/${currentSessionKey.id}`), { status: 'completed' });
+        update(ref(db, `sessionKeys/${currentSessionKey.id}`), { 
+            status: 'completed',
+            progress: null,
+            currentEventName: null,
+        });
     }
     setCapturedImages([]);
     setSelectedTemplate(null);
@@ -515,12 +556,25 @@ const App: React.FC = () => {
   const handleCancelSession = useCallback(() => {
       if (currentSessionKey) {
           // Kembalikan status ke 'available' jika belum ada foto yang diambil
-          update(ref(db, `sessionKeys/${currentSessionKey.id}`), { status: 'available', takesUsed: 0 });
+          update(ref(db, `sessionKeys/${currentSessionKey.id}`), { 
+              status: 'available', 
+              takesUsed: 0,
+              progress: null,
+              currentEventName: null,
+          });
       }
       setCurrentSessionKey(null);
       setCurrentTakeCount(0);
       setSelectedEventId(null);
       setAppState(AppState.WELCOME);
+  }, [currentSessionKey]);
+
+  const handleCaptureProgressUpdate = useCallback((current: number, total: number) => {
+    if (currentSessionKey) {
+        update(ref(db, `sessionKeys/${currentSessionKey.id}`), {
+            progress: `Sesi Foto (${current}/${total})`,
+        });
+    }
   }, [currentSessionKey]);
 
   const renderContent = () => {
@@ -595,7 +649,13 @@ const App: React.FC = () => {
       
       case AppState.CAPTURE:
         if (!selectedTemplate) { setAppState(AppState.WELCOME); return null; }
-        return <CaptureScreen onComplete={handleCaptureComplete} template={selectedTemplate} countdownDuration={settings.countdownDuration} flashEffectEnabled={settings.flashEffectEnabled} />;
+        return <CaptureScreen 
+            onComplete={handleCaptureComplete} 
+            template={selectedTemplate} 
+            countdownDuration={settings.countdownDuration} 
+            flashEffectEnabled={settings.flashEffectEnabled}
+            onProgressUpdate={handleCaptureProgressUpdate}
+        />;
       
       case AppState.PREVIEW:
         if (!selectedTemplate || !currentSessionKey) { setAppState(AppState.WELCOME); return null; }

@@ -13,9 +13,9 @@ interface ManageSessionsScreenProps {
 
 const getStatusClass = (status: SessionKeyStatus) => {
     switch (status) {
-        case 'available': return 'bg-green-500/80 text-green-100';
-        case 'in_progress': return 'bg-yellow-500/80 text-yellow-100';
-        case 'completed': return 'bg-gray-600/80 text-gray-300';
+        case 'available': return 'bg-green-600/30 text-green-300 border-green-500';
+        case 'in_progress': return 'bg-yellow-600/30 text-yellow-300 border-yellow-500';
+        case 'completed': return 'bg-gray-600/30 text-gray-400 border-gray-500';
         default: return 'bg-gray-700';
     }
 }
@@ -31,7 +31,13 @@ const ManageSessionsScreen: React.FC<ManageSessionsScreenProps> = ({ sessionKeys
   };
   
   const sortedKeys = useMemo(() => {
-    return [...sessionKeys].sort((a, b) => b.createdAt - a.createdAt);
+    return [...sessionKeys].sort((a, b) => {
+        // Prioritaskan sesi 'in_progress' di atas
+        if (a.status === 'in_progress' && b.status !== 'in_progress') return -1;
+        if (a.status !== 'in_progress' && b.status === 'in_progress') return 1;
+        // Kemudian urutkan berdasarkan waktu pembuatan terbaru
+        return b.createdAt - a.createdAt;
+    });
   }, [sessionKeys]);
 
   return (
@@ -76,16 +82,25 @@ const ManageSessionsScreen: React.FC<ManageSessionsScreenProps> = ({ sessionKeys
           <div className="flex-grow overflow-y-auto scrollbar-thin pr-2">
               <div className="space-y-3">
                   {sortedKeys.length > 0 ? sortedKeys.map(key => (
-                      <div key={key.id} className="bg-gray-800 p-4 rounded-lg flex items-center justify-between border border-gray-700">
-                          <div className="flex items-center gap-4">
-                              <span className="font-mono text-3xl font-bold tracking-widest text-purple-300 bg-gray-900 px-4 py-2 rounded-md">{key.code}</span>
-                              <div>
-                                  <p className="font-bold text-white">Takes: {key.takesUsed} / {key.maxTakes}</p>
-                                  <p className="text-xs text-gray-400">Created: {new Date(key.createdAt).toLocaleString()}</p>
+                      <div key={key.id} className={`p-4 rounded-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border ${getStatusClass(key.status)}`}>
+                          <div className="flex-grow">
+                              <div className="flex items-center gap-4 mb-2 sm:mb-0">
+                                  <span className="font-mono text-3xl font-bold tracking-widest text-purple-300 bg-gray-900/50 px-4 py-2 rounded-md">{key.code}</span>
+                                  <div>
+                                      <p className="font-bold text-white">Takes: {key.takesUsed} / {key.maxTakes}</p>
+                                      <p className="text-xs text-gray-400">Created: {new Date(key.createdAt).toLocaleString()}</p>
+                                  </div>
                               </div>
+                              {key.status === 'in_progress' && (
+                                  <div className="mt-2 pt-2 border-t border-yellow-500/30">
+                                      <p className="text-sm font-semibold text-yellow-200">{key.currentEventName || '...'}</p>
+                                      <p className="text-sm text-yellow-100 animate-pulse">{key.progress || '...'}</p>
+                                  </div>
+                              )}
                           </div>
-                          <div className="flex items-center gap-4">
-                              <span className={`px-3 py-1 text-sm font-bold rounded-full ${getStatusClass(key.status)}`}>
+
+                          <div className="flex items-center gap-2 self-end sm:self-center">
+                              <span className={`px-3 py-1 text-sm font-bold rounded-full bg-opacity-80`}>
                                 {key.status.replace('_', ' ')}
                               </span>
                               <button onClick={() => onDeleteKey(key.id)} className="text-gray-400 hover:text-red-500 p-2" aria-label="Delete Key">

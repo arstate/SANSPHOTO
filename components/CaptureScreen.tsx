@@ -2,15 +2,15 @@ import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { CameraIcon } from './icons/CameraIcon';
 import { Template } from '../types';
 
-// Fix: Defined the CaptureScreenProps interface.
 interface CaptureScreenProps {
   onComplete: (images: string[]) => void;
   template: Template;
   countdownDuration: number;
   flashEffectEnabled: boolean;
+  onProgressUpdate?: (current: number, total: number) => void;
 }
 
-const CaptureScreen: React.FC<CaptureScreenProps> = ({ onComplete, template, countdownDuration, flashEffectEnabled }) => {
+const CaptureScreen: React.FC<CaptureScreenProps> = ({ onComplete, template, countdownDuration, flashEffectEnabled, onProgressUpdate }) => {
   const [photoIndex, setPhotoIndex] = useState(0);
   const [countdown, setCountdown] = useState<number | null>(null);
   const [images, setImages] = useState<string[]>([]);
@@ -24,6 +24,12 @@ const CaptureScreen: React.FC<CaptureScreenProps> = ({ onComplete, template, cou
   const TEMPLATE_HEIGHT = isLandscape ? 1200 : 1800;
 
   const totalPhotos = useMemo(() => [...new Set(template.photoSlots.map(slot => slot.inputId))].length, [template.photoSlots]);
+
+  // Update progress whenever photoIndex changes
+  useEffect(() => {
+    onProgressUpdate?.(photoIndex + 1, totalPhotos);
+  }, [photoIndex, totalPhotos, onProgressUpdate]);
+
 
   const aspectRatio = useMemo(() => {
     const currentInputId = photoIndex + 1;
