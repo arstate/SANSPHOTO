@@ -42,6 +42,10 @@ export interface Settings {
   welcomeBgImageUrl?: string;
   welcomeBgZoom?: number;
   isWelcomeTextShadowEnabled?: boolean;
+  welcomeTitleFont?: string;
+  welcomeSubtitleFont?: string;
+  isWelcomeTitleFontRandom?: boolean;
+  isWelcomeSubtitleFontRandom?: boolean;
 }
 
 export interface Template {

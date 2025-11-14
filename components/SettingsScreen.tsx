@@ -20,6 +20,18 @@ interface SettingsScreenProps {
     onBack: () => void;
 }
 
+export const GOOGLE_FONTS = [
+  { name: 'Bebas Neue (Default)', value: "'Bebas Neue', sans-serif" },
+  { name: 'Poppins (Default)', value: "'Poppins', sans-serif" },
+  { name: 'Roboto', value: "'Roboto', sans-serif" },
+  { name: 'Lora', value: "'Lora', serif" },
+  { name: 'Oswald', value: "'Oswald', sans-serif" },
+  { name: 'Lobster', value: "'Lobster', cursive" },
+  { name: 'Pacifico', value: "'Pacifico', cursive" },
+  { name: 'Caveat', value: "'Caveat', cursive" },
+  { name: 'Roboto Mono', value: "'Roboto Mono', monospace" },
+];
+
 type SettingsCategory = 'general' | 'appearance' | 'security' | 'content';
 
 const CategoryButton: React.FC<{
@@ -206,6 +218,32 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ settings, onSettingsCha
                       <input type="color" id="welcomeSubtitleColor" name="welcomeSubtitleColor" value={settings.welcomeSubtitleColor || '#D1D5DB'} onChange={handleSettingsInputChange} className="mt-1 w-full h-10 p-1 bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md cursor-pointer"/>
                   </div>
               </div>
+
+               <div className="border-t border-[var(--color-border-primary)] pt-4 space-y-4">
+                  <div>
+                    <label htmlFor="welcomeTitleFont" className="block text-sm font-medium text-[var(--color-text-secondary)]">Title Font</label>
+                    <select id="welcomeTitleFont" name="welcomeTitleFont" value={settings.welcomeTitleFont} onChange={handleSettingsInputChange} className="mt-1 block w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md shadow-sm py-2 px-3 text-[var(--color-text-primary)] focus:outline-none focus:ring-[var(--color-border-focus)] focus:border-[var(--color-border-focus)] sm:text-sm">
+                      {GOOGLE_FONTS.map(font => <option key={font.name} value={font.value}>{font.name}</option>)}
+                    </select>
+                  </div>
+                  <label htmlFor="isWelcomeTitleFontRandom" className="flex items-center justify-between cursor-pointer">
+                    <span className="text-sm font-medium text-[var(--color-text-secondary)]">Randomize Title Font</span>
+                    <div className="relative"><input type="checkbox" id="isWelcomeTitleFontRandom" name="isWelcomeTitleFontRandom" checked={settings.isWelcomeTitleFontRandom ?? false} onChange={handleSettingsInputChange} className="sr-only peer" /><div className="w-11 h-6 bg-[var(--color-bg-tertiary)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--color-accent-primary)]"></div></div>
+                  </label>
+                </div>
+                <div className="border-t border-[var(--color-border-primary)] pt-4 space-y-4">
+                  <div>
+                    <label htmlFor="welcomeSubtitleFont" className="block text-sm font-medium text-[var(--color-text-secondary)]">Subtitle Font</label>
+                    <select id="welcomeSubtitleFont" name="welcomeSubtitleFont" value={settings.welcomeSubtitleFont} onChange={handleSettingsInputChange} className="mt-1 block w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md shadow-sm py-2 px-3 text-[var(--color-text-primary)] focus:outline-none focus:ring-[var(--color-border-focus)] focus:border-[var(--color-border-focus)] sm:text-sm">
+                      {GOOGLE_FONTS.map(font => <option key={font.name} value={font.value}>{font.name}</option>)}
+                    </select>
+                  </div>
+                   <label htmlFor="isWelcomeSubtitleFontRandom" className="flex items-center justify-between cursor-pointer">
+                    <span className="text-sm font-medium text-[var(--color-text-secondary)]">Randomize Subtitle Font</span>
+                    <div className="relative"><input type="checkbox" id="isWelcomeSubtitleFontRandom" name="isWelcomeSubtitleFontRandom" checked={settings.isWelcomeSubtitleFontRandom ?? false} onChange={handleSettingsInputChange} className="sr-only peer" /><div className="w-11 h-6 bg-[var(--color-bg-tertiary)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--color-accent-primary)]"></div></div>
+                  </label>
+                </div>
+
               <div className="border-t border-[var(--color-border-primary)] pt-4">
                 <label htmlFor="isWelcomeTextShadowEnabled" className="flex items-center justify-between cursor-pointer">
                     <div>
@@ -267,7 +305,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ settings, onSettingsCha
                 </div>
               )}
               
-              {(settings.welcomeBgType === 'image' || settings.welcomeBgType === 'camera') && (
+              {(settings.welcomeBgType === 'color' || settings.welcomeBgType === 'image' || settings.welcomeBgType === 'camera') && (
                  <div className="border-t border-[var(--color-border-primary)] pt-4">
                   <label htmlFor="welcomeBgZoom" className="block text-sm font-medium text-[var(--color-text-secondary)]">Zoom ({settings.welcomeBgZoom || 100}%)</label>
                   <input

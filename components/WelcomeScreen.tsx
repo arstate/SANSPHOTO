@@ -1,10 +1,11 @@
 
-import React, { useMemo, useRef, useEffect } from 'react';
+import React, { useMemo, useRef, useEffect, useState } from 'react';
 import { SettingsIcon } from './icons/SettingsIcon';
 import { HistoryIcon } from './icons/HistoryIcon';
 import { AdminIcon } from './icons/AdminIcon';
 import { LogoutIcon } from './icons/LogoutIcon';
 import { Settings } from '../types';
+import { GOOGLE_FONTS } from './SettingsScreen'; 
 
 interface WelcomeScreenProps {
   onStart: () => void;
@@ -57,9 +58,39 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
     welcomeBgImageUrl,
     welcomeBgZoom = 100,
     isWelcomeTextShadowEnabled = true,
+    welcomeTitleFont = "'Bebas Neue', sans-serif",
+    welcomeSubtitleFont = "'Poppins', sans-serif",
+    isWelcomeTitleFontRandom = false,
+    isWelcomeSubtitleFontRandom = false,
   } = settings;
 
+  const [randomTitleFont, setRandomTitleFont] = useState(welcomeTitleFont);
+  const [randomSubtitleFont, setRandomSubtitleFont] = useState(welcomeSubtitleFont);
   const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    // FIX: Replaced NodeJS.Timeout with number for browser compatibility.
+    let titleInterval: number | undefined;
+    if (isWelcomeTitleFontRandom) {
+      titleInterval = window.setInterval(() => {
+        const randomIndex = Math.floor(Math.random() * GOOGLE_FONTS.length);
+        setRandomTitleFont(GOOGLE_FONTS[randomIndex].value);
+      }, 2000);
+    }
+    return () => clearInterval(titleInterval);
+  }, [isWelcomeTitleFontRandom]);
+  
+  useEffect(() => {
+    // FIX: Replaced NodeJS.Timeout with number for browser compatibility.
+    let subtitleInterval: number | undefined;
+    if (isWelcomeSubtitleFontRandom) {
+      subtitleInterval = window.setInterval(() => {
+        const randomIndex = Math.floor(Math.random() * GOOGLE_FONTS.length);
+        setRandomSubtitleFont(GOOGLE_FONTS[randomIndex].value);
+      }, 2000);
+    }
+    return () => clearInterval(subtitleInterval);
+  }, [isWelcomeSubtitleFontRandom]);
 
   useEffect(() => {
     let stream: MediaStream | null = null;
@@ -142,19 +173,21 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
         </div>
 
         <h1 
-          className="font-bebas text-8xl md:text-9xl tracking-widest text-white animate-pulse"
+          className="text-8xl md:text-9xl tracking-widest text-white transition-all duration-500"
           style={{
             color: welcomeTitleColor || undefined,
             textShadow: isWelcomeTextShadowEnabled ? '2px 2px 8px rgba(0,0,0,0.7)' : 'none',
+            fontFamily: isWelcomeTitleFontRandom ? randomTitleFont : welcomeTitleFont,
           }}
         >
           {welcomeTitle}
         </h1>
         <p 
-          className="text-gray-200 mb-8"
+          className="text-gray-200 mb-8 transition-all duration-500"
           style={{
             color: welcomeSubtitleColor || undefined,
             textShadow: isWelcomeTextShadowEnabled ? '1px 1px 4px rgba(0,0,0,0.7)' : 'none',
+            fontFamily: isWelcomeSubtitleFontRandom ? randomSubtitleFont : welcomeSubtitleFont,
           }}
         >
           {welcomeSubtitle}

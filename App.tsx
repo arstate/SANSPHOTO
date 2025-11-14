@@ -53,6 +53,10 @@ const DEFAULT_SETTINGS: Settings = {
   welcomeBgImageUrl: '',
   welcomeBgZoom: 100,
   isWelcomeTextShadowEnabled: true,
+  welcomeTitleFont: "'Bebas Neue', sans-serif",
+  welcomeSubtitleFont: "'Poppins', sans-serif",
+  isWelcomeTitleFontRandom: false,
+  isWelcomeSubtitleFontRandom: false,
 };
 
 const DEFAULT_TEMPLATE_DATA: Omit<Template, 'id'> = {
