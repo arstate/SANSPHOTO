@@ -17,8 +17,6 @@ import HistoryScreen from './components/HistoryScreen';
 import { AppState, PhotoSlot, Settings, Template, Event, HistoryEntry } from './types';
 import { db, ref, onValue, off, set, push, update, remove, firebaseObjectToArray } from './firebase';
 import { getAllHistoryEntries, addHistoryEntry, deleteHistoryEntry, cacheImage } from './utils/db';
-import { AdminIcon } from './components/icons/AdminIcon';
-import { LogoutIcon } from './components/icons/LogoutIcon';
 import { FullscreenIcon } from './components/icons/FullscreenIcon';
 
 
@@ -375,7 +373,16 @@ const App: React.FC = () => {
       
     switch (appState) {
       case AppState.WELCOME:
-        return <WelcomeScreen onStart={handleStartSession} onSettingsClick={handleGoToSettings} onViewHistory={handleViewHistory} isAdminLoggedIn={isAdminLoggedIn} isCaching={isCaching} cachingProgress={cachingProgress} />;
+        return <WelcomeScreen 
+            onStart={handleStartSession} 
+            onSettingsClick={handleGoToSettings} 
+            onViewHistory={handleViewHistory} 
+            isAdminLoggedIn={isAdminLoggedIn} 
+            isCaching={isCaching} 
+            cachingProgress={cachingProgress}
+            onAdminLoginClick={handleOpenLoginModal}
+            onAdminLogoutClick={handleAdminLogout}
+        />;
       
       case AppState.EVENT_SELECTION:
         return <EventSelectionScreen events={events.filter(e => !e.isArchived)} onSelect={handleEventSelect} onBack={handleBack} />;
@@ -428,20 +435,22 @@ const App: React.FC = () => {
         return <PreviewScreen images={capturedImages} onRestart={handleRestart} onBack={handleBack} template={selectedTemplate} onSaveHistory={handleSaveHistoryFromSession} event={selectedEvent} />;
       
       default:
-        return <WelcomeScreen onStart={handleStartSession} onSettingsClick={handleGoToSettings} onViewHistory={handleViewHistory} isAdminLoggedIn={isAdminLoggedIn} isCaching={isCaching} cachingProgress={cachingProgress} />;
+        return <WelcomeScreen 
+            onStart={handleStartSession} 
+            onSettingsClick={handleGoToSettings} 
+            onViewHistory={handleViewHistory} 
+            isAdminLoggedIn={isAdminLoggedIn} 
+            isCaching={isCaching} 
+            cachingProgress={cachingProgress}
+            onAdminLoginClick={handleOpenLoginModal}
+            onAdminLogoutClick={handleAdminLogout}
+        />;
     }
   };
 
   return (
     <div className="h-full bg-gray-900 flex flex-col items-center justify-center text-white relative">
       <div className="absolute top-4 right-4 z-50 flex gap-2">
-         <button 
-          onClick={isAdminLoggedIn ? handleAdminLogout : handleOpenLoginModal}
-          className="bg-gray-800/50 hover:bg-gray-700/70 text-white font-bold p-3 rounded-full transition-colors"
-          aria-label={isAdminLoggedIn ? 'Admin Logout' : 'Admin Login'}
-        >
-          {isAdminLoggedIn ? <LogoutIcon /> : <AdminIcon />}
-        </button>
         <button 
           onClick={toggleFullscreen}
           className="bg-gray-800/50 hover:bg-gray-700/70 text-white font-bold p-3 rounded-full transition-colors"
