@@ -156,10 +156,10 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({ images, onRestart, onBack
       </div>
       <h2 className="font-bebas text-4xl mb-4">Ini Foto Anda!</h2>
       
-      <div className="w-full max-w-5xl flex flex-col lg:flex-row justify-center items-center lg:items-start gap-8">
+      <div className="w-full max-w-6xl flex flex-col lg:flex-row justify-center items-center lg:items-start gap-8">
     
-        {/* Kolom Foto */}
-        <div className={`relative w-full max-w-sm ${isLandscape ? 'aspect-[3/2]' : 'aspect-[2/3]'}`}>
+        {/* Kolom Foto - DIBUAT LEBIH BESAR */}
+        <div className={`relative w-full max-w-lg ${isLandscape ? 'aspect-[3/2]' : 'aspect-[2/3]'}`}>
             {isLoading && (
                 <div className="absolute inset-0 bg-gray-800 rounded-lg flex flex-col items-center justify-center text-center p-4">
                     <svg className="animate-spin h-12 w-12 text-purple-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -185,15 +185,17 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({ images, onRestart, onBack
         </div>
         
         {/* Kolom Aksi & QR */}
-        <div className="flex flex-col items-center lg:items-start gap-6 w-full max-w-sm lg:max-w-xs">
+        <div className="flex flex-col items-center gap-8 w-full max-w-sm">
             {event?.isQrCodeEnabled && event.qrCodeImageUrl && (
-                <div className="p-4 bg-gray-800 rounded-lg text-center lg:text-left">
-                    <p className="text-sm text-gray-300 mb-2">Pindai Kode QR</p>
-                    <img src={event.qrCodeImageUrl} alt="Kode QR" className="w-32 h-32 mx-auto lg:mx-0 rounded-md" />
+                <div className="p-4 bg-gray-800 rounded-lg text-center">
+                    <p className="text-sm text-gray-300 mb-2">Pindai Kode QR untuk mengunduh</p>
+                    {/* QR CODE DIPERBESAR */}
+                    <img src={event.qrCodeImageUrl} alt="Kode QR" className="w-48 h-48 mx-auto rounded-md" />
                 </div>
             )}
 
-            <div className="flex flex-col sm:flex-row lg:flex-col gap-4 w-full">
+            {/* TOMBOL BERSEBELAHAN */}
+            <div className="flex flex-row gap-4 w-full">
                 <button
                   onClick={() => handleDownload()}
                   disabled={isLoading || !!errorMsg}
