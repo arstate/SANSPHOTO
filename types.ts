@@ -12,6 +12,8 @@ export enum AppState {
   CAPTURE,
   PREVIEW,
   HISTORY,
+  MANAGE_ONLINE_HISTORY,
+  ONLINE_HISTORY_VIEWER,
 }
 
 export interface PhotoSlot {
@@ -57,6 +59,8 @@ export interface Settings {
   printColorMode?: 'color' | 'grayscale';
   isPrintCopyInputEnabled?: boolean;
   printMaxCopies?: number;
+  // Online History
+  isOnlineHistoryEnabled?: boolean;
 }
 
 export interface Template {
@@ -97,4 +101,10 @@ export interface SessionKey {
   createdAt: number;
   progress?: string;
   currentEventName?: string;
+}
+
+export interface OnlineHistoryEntry {
+    id: string;
+    embedUrl: string;
+    timestamp: number;
 }
