@@ -575,12 +575,14 @@ const App: React.FC = () => {
   }, []);
 
   // Online History Handlers
-  const handleAddOnlineHistory = useCallback(async (embedUrl: string) => {
-    const newEntry: Omit<OnlineHistoryEntry, 'id'> = {
-        embedUrl: embedUrl, // Directly use the URL from og:image
-        timestamp: Date.now(),
-    };
-    await push(ref(db, 'onlineHistory'), newEntry);
+  const handleAddOnlineHistory = useCallback(async (embedUrls: string[]) => {
+    for (const embedUrl of embedUrls) {
+      const newEntry: Omit<OnlineHistoryEntry, 'id'> = {
+          embedUrl: embedUrl,
+          timestamp: Date.now(),
+      };
+      await push(ref(db, 'onlineHistory'), newEntry);
+    }
   }, []);
 
   const handleDeleteOnlineHistory = useCallback(async (entryId: string) => {

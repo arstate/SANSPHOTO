@@ -7,7 +7,7 @@ import { TrashIcon } from './icons/TrashIcon';
 interface ManageOnlineHistoryScreenProps {
   onlineHistory: OnlineHistoryEntry[];
   onBack: () => void;
-  onAdd: (embedUrl: string) => void;
+  onAdd: (embedUrls: string[]) => void;
   onDelete: (entryId: string) => void;
 }
 
@@ -16,6 +16,7 @@ const ManageOnlineHistoryScreen: React.FC<ManageOnlineHistoryScreenProps> = ({
 }) => {
   const [shareUrl, setShareUrl] = useState('');
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleAdd = async (e: React.FormEvent) => {
@@ -27,9 +28,9 @@ const ManageOnlineHistoryScreen: React.FC<ManageOnlineHistoryScreenProps> = ({
     
     setIsLoading(true);
     setError('');
+    setSuccessMessage('');
 
     try {
-      // Beralih ke proxy 'api.allorigins.win' untuk keandalan yang lebih baik
       const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(shareUrl)}`;
       const response = await fetch(proxyUrl);
       if (!response.ok) {
@@ -37,25 +38,40 @@ const ManageOnlineHistoryScreen: React.FC<ManageOnlineHistoryScreenProps> = ({
       }
       const htmlText = await response.text();
       
-      // Mencari URL gambar yang disematkan di dalam tag meta 'og:image'
-      const match = htmlText.match(/<meta\s+property="og:image"\s+content="([^"]+)"/);
-      const embedUrl = match ? match[1] : null;
+      const regex = /(https?:\/\/lh3\.googleusercontent\.com\/[a-zA-Z0-9\-_]+)/g;
+      let matches = htmlText.match(regex);
 
-      if (embedUrl) {
-        if (onlineHistory.some(entry => entry.embedUrl === embedUrl)) {
-            setError('This photo has already been added to the history.');
-            setIsLoading(false);
-            return;
+      if (!matches || matches.length === 0) {
+        const ogMatch = htmlText.match(/<meta\s+property="og:image"\s+content="([^"]+)"/);
+        const ogUrl = ogMatch ? ogMatch[1] : null;
+        if (ogUrl) {
+            matches = [ogUrl];
+        } else {
+            throw new Error('Could not find any embeddable image URLs in the provided link. Please ensure it is a valid Google Photos link.');
         }
-        onAdd(embedUrl);
-        setShareUrl('');
-      } else {
-        setError('Could not find an embeddable image URL in the provided link. Please ensure it is a valid Google Photos link.');
       }
+
+      const uniqueBaseUrls = [...new Set(matches.map(url => url.split('=')[0]))];
+      
+      const existingBaseUrls = new Set(onlineHistory.map(entry => entry.embedUrl.split('=')[0]));
+      const newBaseUrls = uniqueBaseUrls.filter(url => !existingBaseUrls.has(url));
+
+      if (newBaseUrls.length === 0) {
+        setError(uniqueBaseUrls.length > 0 ? 'All photos from this link are already in the history.' : 'No new photos found in this link.');
+        setIsLoading(false);
+        return;
+      }
+      
+      const highQualityUrls = newBaseUrls.map(baseUrl => `${baseUrl}=w2400`);
+
+      onAdd(highQualityUrls);
+      setSuccessMessage(`Successfully added ${highQualityUrls.length} new photo(s).`);
+      setShareUrl('');
 
     } catch (err) {
       console.error("Error generating embed link:", err);
-      setError('Failed to process the link. Please check the URL and your network connection.');
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred. Please check the URL and your network connection.';
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -79,15 +95,19 @@ const ManageOnlineHistoryScreen: React.FC<ManageOnlineHistoryScreenProps> = ({
       
       <main className="w-full max-w-4xl mx-auto flex flex-col min-h-0">
           <div className="shrink-0 p-4 bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)] rounded-lg mb-6">
-              <h3 className="text-2xl font-bebas tracking-wider text-[var(--color-text-accent)] mb-2">Add New Photo</h3>
+              <h3 className="text-2xl font-bebas tracking-wider text-[var(--color-text-accent)] mb-2">Add New Photo(s)</h3>
               <p className="text-xs text-[var(--color-text-muted)] mb-4">
-                Open Google Photos, select a photo, click the 'Share' icon, create a link, and paste that share link below. The app will automatically generate the embed code.
+                Open Google Photos, select a photo or album, click the 'Share' icon, create a link, and paste that share link below. The app will automatically find and add all new photos from the link.
               </p>
               <form onSubmit={handleAdd} className="flex flex-col sm:flex-row gap-2">
                   <input
                       type="url"
                       value={shareUrl}
-                      onChange={(e) => setShareUrl(e.target.value)}
+                      onChange={(e) => {
+                        setShareUrl(e.target.value);
+                        setError('');
+                        setSuccessMessage('');
+                      }}
                       placeholder="Paste Google Photos share link here (e.g., https://photos.app.goo.gl/...)"
                       className="flex-grow bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md py-2 px-3 text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-border-focus)]"
                       disabled={isLoading}
@@ -104,6 +124,7 @@ const ManageOnlineHistoryScreen: React.FC<ManageOnlineHistoryScreenProps> = ({
                       {isLoading ? 'Processing...' : 'Add'}
                   </button>
               </form>
+              {successMessage && <p className="text-green-400 text-sm mt-2">{successMessage}</p>}
               {error && <p className="text-red-400 text-sm mt-2">{error}</p>}
           </div>
           
