@@ -57,6 +57,9 @@ export interface Settings {
   printColorMode?: 'color' | 'grayscale';
   isPrintCopyInputEnabled?: boolean;
   printMaxCopies?: number;
+  // Closed Mode Settings
+  isClosedModeEnabled?: boolean;
+  reopenTimestamp?: number;
 }
 
 export interface Template {

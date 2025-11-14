@@ -1,4 +1,5 @@
 
+
 import React, { useState, useCallback, useEffect } from 'react';
 import WelcomeScreen from './components/WelcomeScreen';
 import TemplateSelection from './components/TemplateSelection';
@@ -17,6 +18,7 @@ import HistoryScreen from './components/HistoryScreen';
 import PinInputModal from './components/PinInputModal';
 import KeyCodeScreen from './components/KeyCodeScreen';
 import ManageSessionsScreen from './components/ManageSessionsScreen';
+import ClosedScreen from './components/ClosedScreen';
 import { AppState, PhotoSlot, Settings, Template, Event, HistoryEntry, SessionKey } from './types';
 import { db, ref, onValue, off, set, push, update, remove, firebaseObjectToArray, query, orderByChild, equalTo, get } from './firebase';
 import { getAllHistoryEntries, addHistoryEntry, deleteHistoryEntry, cacheImage } from './utils/db';
@@ -67,6 +69,9 @@ const DEFAULT_SETTINGS: Settings = {
   printColorMode: 'color',
   isPrintCopyInputEnabled: true,
   printMaxCopies: 5,
+  // Closed Mode Defaults
+  isClosedModeEnabled: false,
+  reopenTimestamp: 0,
 };
 
 const DEFAULT_TEMPLATE_DATA: Omit<Template, 'id'> = {
@@ -659,6 +664,18 @@ const App: React.FC = () => {
 
   const renderContent = () => {
     const selectedEvent = events.find(e => e.id === selectedEventId) || null;
+    
+    // Logika Mode Tutup
+    const isAppClosed = settings.isClosedModeEnabled && 
+                        settings.reopenTimestamp && 
+                        Date.now() < settings.reopenTimestamp;
+
+    if (isAppClosed && !isAdminLoggedIn) {
+        return <ClosedScreen 
+            reopenTimestamp={settings.reopenTimestamp || 0} 
+            onAdminLoginClick={handleOpenLoginModal}
+        />;
+    }
       
     switch (appState) {
       case AppState.WELCOME:
@@ -718,6 +735,7 @@ const App: React.FC = () => {
           />;
 
       case AppState.HISTORY:
+          // FIX: Changed WELCOME to AppState.WELCOME to correctly reference the enum member.
           if (!isAdminLoggedIn) { setAppState(AppState.WELCOME); return null; }
           return <HistoryScreen history={history} events={events} onDelete={handleDeleteHistoryEntry} onBack={handleBack} />;
 

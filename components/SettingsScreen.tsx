@@ -67,6 +67,8 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ settings, onSettingsCha
         finalValue = e.target.checked;
     } else if (type === 'number' || type === 'range') {
         finalValue = parseInt(value, 10) || 0;
+    } else if (type === 'datetime-local') {
+        finalValue = new Date(value).getTime();
     }
 
     onSettingsChange({
@@ -94,6 +96,29 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ settings, onSettingsCha
     if (window.confirm("Are you sure you want to reset the PIN to '1234'?")) {
         onSettingsChange({ ...settings, fullscreenPin: '1234' });
     }
+  };
+  
+  const handleToggleClosedMode = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const isEnabled = e.target.checked;
+    let newTimestamp = settings.reopenTimestamp;
+    // Jika mengaktifkan dan timestamp tidak ada atau sudah lewat, set default 1 jam dari sekarang
+    if (isEnabled && (!newTimestamp || newTimestamp < Date.now())) {
+      newTimestamp = Date.now() + 3600 * 1000; // 1 jam dari sekarang
+    }
+    onSettingsChange({
+      ...settings,
+      isClosedModeEnabled: isEnabled,
+      reopenTimestamp: newTimestamp,
+    });
+  };
+  
+  // Konversi timestamp ke format yang diterima oleh input datetime-local
+  const formatTimestampForInput = (timestamp: number | undefined): string => {
+    if (!timestamp) return '';
+    const date = new Date(timestamp);
+    const timezoneOffset = date.getTimezoneOffset() * 60000;
+    const localDate = new Date(date.getTime() - timezoneOffset);
+    return localDate.toISOString().slice(0, 16);
   };
 
   const renderContent = () => {
@@ -136,6 +161,37 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ settings, onSettingsCha
                       </div>
                   </label>
                 </div>
+            </div>
+
+            {/* Closed Mode Settings */}
+            <div className="p-6 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] text-left space-y-4">
+              <h3 className="text-xl font-bold text-[var(--color-text-accent)]">Closed Mode</h3>
+              <div className="border-t border-[var(--color-border-primary)] pt-4">
+                <label htmlFor="isClosedModeEnabled" className="flex items-center justify-between cursor-pointer">
+                    <div>
+                        <span className="block text-sm font-medium text-[var(--color-text-secondary)]">Enable Closed Mode</span>
+                        <p className="text-xs text-[var(--color-text-muted)]">Replaces the welcome screen with a countdown to reopening.</p>
+                    </div>
+                    <div className="relative">
+                        <input type="checkbox" id="isClosedModeEnabled" name="isClosedModeEnabled" checked={settings.isClosedModeEnabled ?? false} onChange={handleToggleClosedMode} className="sr-only peer" />
+                        <div className="w-11 h-6 bg-[var(--color-bg-tertiary)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--color-accent-primary)]"></div>
+                    </div>
+                </label>
+              </div>
+              {settings.isClosedModeEnabled && (
+                <div className="border-t border-[var(--color-border-primary)] pt-4">
+                  <label htmlFor="reopenTimestamp" className="block text-sm font-medium text-[var(--color-text-secondary)]">Reopen Date & Time</label>
+                  <p className="text-xs text-[var(--color-text-muted)] mb-2">Set when the photobooth will be available again for users.</p>
+                  <input
+                    type="datetime-local"
+                    id="reopenTimestamp"
+                    name="reopenTimestamp"
+                    value={formatTimestampForInput(settings.reopenTimestamp)}
+                    onChange={handleSettingsInputChange}
+                    className="mt-1 block w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md shadow-sm py-2 px-3 text-[var(--color-text-primary)] focus:outline-none focus:ring-[var(--color-border-focus)] focus:border-[var(--color-border-focus)] sm:text-sm"
+                  />
+                </div>
+              )}
             </div>
             
              {/* Download Settings */}
