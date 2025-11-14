@@ -1,8 +1,17 @@
 
 export enum AppState {
   WELCOME,
+  KEY_CODE_ENTRY,
+  EVENT_SELECTION,
+  TEMPLATE_SELECTION,
+  SETTINGS,
+  MANAGE_EVENTS,
+  MANAGE_SESSIONS,
+  EDIT_TEMPLATE_METADATA,
+  EDIT_TEMPLATE_LAYOUT,
   CAPTURE,
   PREVIEW,
+  HISTORY,
 }
 
 export interface PhotoSlot {
@@ -14,40 +23,40 @@ export interface PhotoSlot {
   height: number;
 }
 
-// FIX: Added all missing optional settings properties to satisfy type checks in SettingsScreen.
 export interface Settings {
   countdownDuration: number;
   flashEffectEnabled: boolean;
-  isAutoDownloadEnabled?: boolean;
-  isDownloadButtonEnabled?: boolean;
-  isPrintButtonEnabled?: boolean;
-  printPaperSize?: '4x6' | 'A4_portrait' | 'A4_landscape';
-  printColorMode?: 'color' | 'grayscale';
-  isPrintCopyInputEnabled?: boolean;
-  printMaxCopies?: number;
-  welcomeTitle?: string;
-  welcomeSubtitle?: string;
-  welcomeTitleColor?: string;
-  welcomeSubtitleColor?: string;
-  welcomeTitleFont?: string;
-  isWelcomeTitleFontRandom?: boolean;
-  welcomeSubtitleFont?: string;
-  isWelcomeSubtitleFontRandom?: boolean;
-  isWelcomeTextShadowEnabled?: boolean;
-  welcomeBgType?: 'default' | 'color' | 'image' | 'camera';
-  welcomeBgColor?: string;
-  welcomeBgImageUrl?: string;
-  welcomeBgZoom?: number;
-  startButtonText?: string;
-  startButtonBgColor?: string;
-  startButtonTextColor?: string;
-  isStartButtonShadowEnabled?: boolean;
-  theme?: 'light' | 'dark';
   isPinLockEnabled?: boolean;
   fullscreenPin?: string;
   isStrictKioskMode?: boolean;
   isSessionCodeEnabled?: boolean;
   freePlayMaxTakes?: number;
+  theme?: 'light' | 'dark';
+  welcomeTitle?: string;
+  welcomeSubtitle?: string;
+  isDownloadButtonEnabled?: boolean;
+  isAutoDownloadEnabled?: boolean;
+  welcomeTitleColor?: string;
+  welcomeSubtitleColor?: string;
+  welcomeBgType?: 'default' | 'color' | 'image' | 'camera';
+  welcomeBgColor?: string;
+  welcomeBgImageUrl?: string;
+  welcomeBgZoom?: number;
+  isWelcomeTextShadowEnabled?: boolean;
+  welcomeTitleFont?: string;
+  welcomeSubtitleFont?: string;
+  isWelcomeTitleFontRandom?: boolean;
+  isWelcomeSubtitleFontRandom?: boolean;
+  startButtonText?: string;
+  startButtonBgColor?: string;
+  startButtonTextColor?: string;
+  isStartButtonShadowEnabled?: boolean;
+  // Print Settings
+  isPrintButtonEnabled?: boolean;
+  printPaperSize?: '4x6' | 'A4_portrait' | 'A4_landscape';
+  printColorMode?: 'color' | 'grayscale';
+  isPrintCopyInputEnabled?: boolean;
+  printMaxCopies?: number;
 }
 
 export interface Template {
@@ -58,42 +67,34 @@ export interface Template {
   heightMM: number;
   photoSlots: PhotoSlot[];
   orientation: 'portrait' | 'landscape';
-  eventId?: string; // Tautan ke sebuah acara
+  eventId?: string; // Link to an event
 }
 
-// FIX: Added missing Event interface.
 export interface Event {
   id: string;
   name: string;
-  isArchived?: boolean;
+  isArchived: boolean;
   qrCodeImageUrl?: string;
   isQrCodeEnabled?: boolean;
 }
 
-// FIX: Added missing HistoryEntry interface.
 export interface HistoryEntry {
   id: string;
-  imageDataUrl: string; // base64 data URL
-  timestamp: number;
   eventId: string;
   eventName: string;
+  imageDataUrl: string;
+  timestamp: number;
 }
 
-// FIX: Added missing SessionKeyStatus enum.
-export enum SessionKeyStatus {
-  AVAILABLE = 'available',
-  IN_PROGRESS = 'in_progress',
-  COMPLETED = 'completed',
-}
+export type SessionKeyStatus = 'available' | 'in_progress' | 'completed';
 
-// FIX: Added missing SessionKey interface.
 export interface SessionKey {
   id: string;
   code: string;
-  status: SessionKeyStatus;
-  createdAt: number;
   maxTakes: number;
   takesUsed: number;
-  currentEventName?: string;
+  status: SessionKeyStatus;
+  createdAt: number;
   progress?: string;
+  currentEventName?: string;
 }
