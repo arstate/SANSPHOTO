@@ -98,42 +98,34 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
   }, [welcomeBgType]);
 
 
-  const backgroundStyles = useMemo(() => {
+  const backgroundContent = () => {
+    const proxiedImageUrl = welcomeBgImageUrl?.startsWith('http') 
+      ? `https://api.allorigins.win/raw?url=${encodeURIComponent(welcomeBgImageUrl)}` 
+      : welcomeBgImageUrl;
+
     switch (welcomeBgType) {
       case 'color':
-        return { backgroundColor: welcomeBgColor };
+        return <div className="absolute inset-0 w-full h-full" style={{ backgroundColor: welcomeBgColor }} />;
       case 'image':
-        const imageUrl = welcomeBgImageUrl?.startsWith('http') 
-          ? `https://api.allorigins.win/raw?url=${encodeURIComponent(welcomeBgImageUrl)}` 
-          : welcomeBgImageUrl;
-        return {
-          backgroundImage: `url('${imageUrl}')`,
-          backgroundSize: `${welcomeBgZoom}%`,
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat',
-        };
+        return <div className="absolute inset-0 w-full h-full bg-cover bg-center" style={{ backgroundImage: `url('${proxiedImageUrl}')` }} />;
       case 'camera':
+        return <video ref={videoRef} autoPlay playsInline muted className="absolute inset-0 w-full h-full object-cover transform -scale-x-100" />;
       case 'default':
       default:
-        return { backgroundColor: 'var(--color-bg-primary)'};
+        return <div className="absolute inset-0 w-full h-full" style={{ backgroundColor: 'var(--color-bg-primary)' }} />;
     }
-  }, [welcomeBgType, welcomeBgColor, welcomeBgImageUrl, welcomeBgZoom]);
+  };
 
   return (
-    <div 
-        className="relative text-center flex flex-col items-center justify-center h-full w-full transition-colors duration-300 overflow-hidden"
-        style={backgroundStyles}
-    >
-      {welcomeBgType === 'camera' && (
-        <video
-          ref={videoRef}
-          autoPlay
-          playsInline
-          muted
-          className="absolute inset-0 w-full h-full object-cover transform -scale-x-100 transition-transform duration-300"
-          style={{ transform: `-scaleX(1) scale(${welcomeBgZoom / 100})` }}
-        />
-      )}
+    <div className="fixed inset-0 text-center flex flex-col items-center justify-center transition-colors duration-300 overflow-hidden">
+      
+      <div 
+        className="absolute inset-0 w-full h-full transition-transform duration-300"
+        style={{ transform: `scale(${welcomeBgZoom / 100})` }}
+      >
+        {backgroundContent()}
+      </div>
+
       {(welcomeBgType === 'image' || welcomeBgType === 'camera') && (
         <div className="absolute inset-0 bg-black/30" />
       )}
