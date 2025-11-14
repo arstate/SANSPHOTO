@@ -5,6 +5,7 @@ import { AddIcon } from './icons/AddIcon';
 import { EditIcon } from './icons/EditIcon';
 import { TrashIcon } from './icons/TrashIcon';
 import { Template } from '../types';
+import { getCachedImage } from '../utils/db';
 
 interface TemplateSelectionProps {
   templates: Template[];
@@ -23,6 +24,63 @@ const getProxiedUrl = (url: string) => {
     }
     // Gunakan api.allorigins.win untuk melewati masalah CORS.
     return `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+};
+
+const ImageFromCache: React.FC<{ src: string; alt: string; className: string; }> = ({ src, alt, className }) => {
+  const [imageSrc, setImageSrc] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+    let objectUrl: string | null = null;
+
+    const loadImage = async () => {
+      setIsLoading(true);
+      setImageSrc(null);
+      if (!src) {
+        if (isMounted) setIsLoading(false);
+        return;
+      }
+      
+      try {
+        const cachedBlob = await getCachedImage(src);
+        if (isMounted) {
+            if (cachedBlob) {
+              objectUrl = URL.createObjectURL(cachedBlob);
+              setImageSrc(objectUrl);
+            } else {
+              // Fallback to network if not in cache
+              setImageSrc(getProxiedUrl(src));
+            }
+        }
+      } catch (error) {
+        console.error("Error loading image:", error);
+        // Fallback in case of DB error
+        if (isMounted) setImageSrc(getProxiedUrl(src));
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    };
+
+    loadImage();
+
+    return () => {
+      isMounted = false;
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+      }
+    };
+  }, [src]);
+
+  if (isLoading) {
+    return <div className={`bg-gray-700 animate-pulse ${className}`}></div>;
+  }
+  
+  if (!imageSrc) {
+    return <div className={`bg-gray-800 flex items-center justify-center text-xs text-gray-500 ${className}`}>Image not available</div>;
+  }
+
+  return <img src={imageSrc} alt={alt} className={className} loading="lazy" />;
 };
 
 
@@ -61,8 +119,8 @@ const TemplateSelection: React.FC<TemplateSelectionProps> = ({
         {previewedTemplate ? (
             <div className={`group relative w-full ${previewedTemplate.orientation === 'landscape' ? 'max-w-2xl' : 'max-w-xs'} border-4 border-gray-700 rounded-lg p-2 bg-gray-800 flex flex-col text-center`}>
                 <div className="relative">
-                    <img 
-                        src={getProxiedUrl(previewedTemplate.imageUrl)} 
+                    <ImageFromCache 
+                        src={previewedTemplate.imageUrl} 
                         alt={previewedTemplate.name}
                         className={`rounded-md shadow-lg w-full ${previewedTemplate.orientation === 'landscape' ? 'aspect-[3/2]' : 'aspect-[2/3]'} object-cover`}
                     />
@@ -115,8 +173,8 @@ const TemplateSelection: React.FC<TemplateSelectionProps> = ({
                     className={`relative shrink-0 ${template.orientation === 'landscape' ? 'w-[13.5rem] h-36' : 'w-24 h-36'} rounded-md overflow-hidden border-4 transition-colors ${previewedTemplate?.id === template.id ? 'border-purple-500' : 'border-gray-700 hover:border-gray-500'}`}
                     aria-label={`Select ${template.name}`}
                 >
-                    <img 
-                        src={getProxiedUrl(template.imageUrl)} 
+                    <ImageFromCache 
+                        src={template.imageUrl} 
                         alt={template.name}
                         className="w-full h-full object-cover"
                     />
