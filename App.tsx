@@ -21,6 +21,7 @@ import { AppState, PhotoSlot, Settings, Template, Event, HistoryEntry, SessionKe
 import { db, ref, onValue, off, set, push, update, remove, firebaseObjectToArray, query, orderByChild, equalTo, get } from './firebase';
 import { getAllHistoryEntries, addHistoryEntry, deleteHistoryEntry, cacheImage } from './utils/db';
 import { FullscreenIcon } from './components/icons/FullscreenIcon';
+import useFullscreenLock from './hooks/useFullscreenLock';
 
 
 const INITIAL_PHOTO_SLOTS: PhotoSlot[] = [
@@ -37,6 +38,7 @@ const DEFAULT_SETTINGS: Settings = {
   flashEffectEnabled: true,
   isPinLockEnabled: false,
   fullscreenPin: '1234',
+  isStrictKioskMode: false,
 };
 
 const DEFAULT_TEMPLATE_DATA: Omit<Template, 'id'> = {
@@ -76,6 +78,8 @@ const App: React.FC = () => {
   const [keyCodeError, setKeyCodeError] = useState<string | null>(null);
   const [isKeyCodeLoading, setIsKeyCodeLoading] = useState(false);
 
+  // Activate strict kiosk mode based on settings
+  useFullscreenLock(!!settings.isStrictKioskMode);
 
   // Fungsi untuk meng-cache semua gambar templat di latar belakang
   const cacheAllTemplates = useCallback(async (templatesToCache: Template[]) => {
@@ -164,21 +168,21 @@ const App: React.FC = () => {
       appContainer.requestFullscreen().catch((err) => {
         alert(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
       });
-    } else {
+    } else if (!settings.isStrictKioskMode) {
       if (settings.isPinLockEnabled) {
           setIsPinModalOpen(true);
       } else if (document.exitFullscreen) {
         document.exitFullscreen();
       }
     }
-  }, [settings.isPinLockEnabled]);
+  }, [settings.isPinLockEnabled, settings.isStrictKioskMode]);
 
   const handleCorrectPin = useCallback(() => {
     setIsPinModalOpen(false);
-    if (document.exitFullscreen) {
+    if (document.exitFullscreen && !settings.isStrictKioskMode) {
         document.exitFullscreen();
     }
-  }, []);
+  }, [settings.isStrictKioskMode]);
 
   const handleStartSession = useCallback(() => {
     setKeyCodeError(null);

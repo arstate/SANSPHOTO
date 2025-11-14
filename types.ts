@@ -27,6 +27,7 @@ export interface Settings {
   flashEffectEnabled: boolean;
   isPinLockEnabled?: boolean;
   fullscreenPin?: string;
+  isStrictKioskMode?: boolean;
 }
 
 export interface Template {
