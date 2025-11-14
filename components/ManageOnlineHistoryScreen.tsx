@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { OnlineHistoryEntry } from '../types';
 import { BackIcon } from './icons/BackIcon';
@@ -30,8 +29,8 @@ const ManageOnlineHistoryScreen: React.FC<ManageOnlineHistoryScreenProps> = ({
     setError('');
 
     try {
-      // Menggunakan proxy yang lebih andal untuk menghindari masalah CORS
-      const proxyUrl = `https://thingproxy.freeboard.io/fetch/${shareUrl}`;
+      // Beralih ke proxy 'api.allorigins.win' untuk keandalan yang lebih baik
+      const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(shareUrl)}`;
       const response = await fetch(proxyUrl);
       if (!response.ok) {
         throw new Error(`Failed to fetch the provided URL. Status: ${response.status}`);
