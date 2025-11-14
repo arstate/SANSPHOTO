@@ -23,13 +23,10 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ settings, onSettingsCha
   const handleSettingsInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
     
-    if (type === 'checkbox') {
-        onSettingsChange({ ...settings, [name]: checked });
-    } else {
-        const numericValue = parseInt(value, 10);
-        if (isNaN(numericValue) || numericValue < 0) return;
-        onSettingsChange({ ...settings, [name]: numericValue });
-    }
+    onSettingsChange({
+      ...settings,
+      [name]: type === 'checkbox' ? checked : parseInt(value, 10) || 0
+    });
   };
 
   const handlePinInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -63,18 +60,59 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ settings, onSettingsCha
 
         <div className="w-full max-w-md space-y-6 overflow-y-auto scrollbar-thin pr-2">
           {/* Session Code Management */}
-          <div className="p-6 bg-gray-800 rounded-lg border border-gray-700 text-left">
-            <h3 className="text-xl font-bold mb-4 text-purple-400">Session Management</h3>
-            <p className="text-gray-400 mb-4">
-              Generate and manage single-use session codes for users to start the photobooth.
-            </p>
-            <button
-              onClick={onManageSessions}
-              className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-full text-lg transition-transform transform hover:scale-105 flex items-center justify-center gap-2"
-            >
-              <TicketIcon />
-              Manage Session Codes
-            </button>
+          <div className="p-6 bg-gray-800 rounded-lg border border-gray-700 text-left space-y-4">
+            <h3 className="text-xl font-bold text-purple-400">Session Management</h3>
+            
+            {/* Enable/Disable Session Code */}
+            <div className="border-t border-gray-700 pt-4">
+              <label htmlFor="isSessionCodeEnabled" className="flex items-center justify-between cursor-pointer">
+                  <div>
+                      <span className="block text-sm font-medium text-gray-300">Enable Session Code</span>
+                      <p className="text-xs text-gray-500">If disabled, users can start sessions without a code (free play mode).</p>
+                  </div>
+                  <div className="relative">
+                      <input
+                          type="checkbox"
+                          id="isSessionCodeEnabled"
+                          name="isSessionCodeEnabled"
+                          checked={settings.isSessionCodeEnabled ?? true}
+                          onChange={handleSettingsInputChange}
+                          className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-600 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                  </div>
+              </label>
+            </div>
+            
+            {/* Takes per Free Session */}
+            {!(settings.isSessionCodeEnabled ?? true) && (
+              <div className="border-t border-gray-700 pt-4">
+                <label htmlFor="freePlayMaxTakes" className="block text-sm font-medium text-gray-300">Takes per Free Session</label>
+                <p className="text-xs text-gray-500 mb-2">Number of photo takes a user gets in free play mode.</p>
+                <input
+                    type="number"
+                    id="freePlayMaxTakes"
+                    name="freePlayMaxTakes"
+                    value={settings.freePlayMaxTakes || 1}
+                    onChange={handleSettingsInputChange}
+                    min="1"
+                    className="mt-1 block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
+                />
+              </div>
+            )}
+
+            <div className="pt-4">
+              <p className="text-gray-400 mb-4 text-sm">
+                Generate and manage single-use session codes for users to start the photobooth.
+              </p>
+              <button
+                onClick={onManageSessions}
+                className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-full text-lg transition-transform transform hover:scale-105 flex items-center justify-center gap-2"
+              >
+                <TicketIcon />
+                Manage Session Codes
+              </button>
+            </div>
           </div>
 
           {/* Event Management */}
@@ -121,7 +159,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ settings, onSettingsCha
 
           {/* Session Settings */}
           <div className="p-6 bg-gray-800 rounded-lg border border-gray-700 text-left space-y-4">
-            <h3 className="text-xl font-bold text-purple-400">Session Settings</h3>
+            <h3 className="text-xl font-bold text-purple-400">General Settings</h3>
             <div>
               <label htmlFor="countdownDuration" className="block text-sm font-medium text-gray-300">Countdown Duration (seconds)</label>
               <p className="text-xs text-gray-500 mb-2">How long the countdown lasts before each photo is taken.</p>

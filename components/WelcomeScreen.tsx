@@ -14,6 +14,7 @@ interface WelcomeScreenProps {
   cachingProgress: number;
   onAdminLoginClick: () => void;
   onAdminLogoutClick: () => void;
+  isLoading: boolean;
 }
 
 const CachingStatus: React.FC<{ progress: number }> = ({ progress }) => (
@@ -40,7 +41,8 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
     isCaching, 
     cachingProgress,
     onAdminLoginClick,
-    onAdminLogoutClick 
+    onAdminLogoutClick,
+    isLoading
 }) => {
   return (
     <div className="relative text-center flex flex-col items-center justify-center h-full w-full">
@@ -76,9 +78,10 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
       ) : (
         <button
           onClick={onStart}
-          className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-10 rounded-full text-xl transition-transform transform hover:scale-105 shadow-lg shadow-purple-500/50"
+          disabled={isLoading || isCaching}
+          className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-10 rounded-full text-xl transition-transform transform hover:scale-105 shadow-lg shadow-purple-500/50 disabled:bg-gray-500 disabled:transform-none disabled:cursor-wait"
         >
-          START SESSION
+          {isLoading ? 'Starting...' : 'START SESSION'}
         </button>
       )}
       

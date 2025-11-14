@@ -101,7 +101,7 @@ const ManageSessionsScreen: React.FC<ManageSessionsScreenProps> = ({ sessionKeys
 
                           <div className="flex items-center gap-2 self-end sm:self-center">
                               <span className={`px-3 py-1 text-sm font-bold rounded-full bg-opacity-80`}>
-                                {key.status.replace('_', ' ')}
+                                {(key.status || 'unknown').replace('_', ' ')}
                               </span>
                               <button onClick={() => onDeleteKey(key.id)} className="text-gray-400 hover:text-red-500 p-2" aria-label="Delete Key">
                                   <TrashIcon />

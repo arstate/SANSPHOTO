@@ -28,6 +28,8 @@ export interface Settings {
   isPinLockEnabled?: boolean;
   fullscreenPin?: string;
   isStrictKioskMode?: boolean;
+  isSessionCodeEnabled?: boolean;
+  freePlayMaxTakes?: number;
 }
 
 export interface Template {

@@ -39,6 +39,8 @@ const DEFAULT_SETTINGS: Settings = {
   isPinLockEnabled: false,
   fullscreenPin: '1234',
   isStrictKioskMode: false,
+  isSessionCodeEnabled: true,
+  freePlayMaxTakes: 1,
 };
 
 const DEFAULT_TEMPLATE_DATA: Omit<Template, 'id'> = {
@@ -76,7 +78,7 @@ const App: React.FC = () => {
   const [cachingProgress, setCachingProgress] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(!!document.fullscreenElement);
   const [keyCodeError, setKeyCodeError] = useState<string | null>(null);
-  const [isKeyCodeLoading, setIsKeyCodeLoading] = useState(false);
+  const [isSessionLoading, setIsSessionLoading] = useState(false);
 
   // Activate strict kiosk mode based on settings
   useFullscreenLock(!!settings.isStrictKioskMode);
@@ -207,13 +209,44 @@ const App: React.FC = () => {
     }
   }, [settings.isStrictKioskMode]);
 
-  const handleStartSession = useCallback(() => {
+  const handleStartSession = useCallback(async () => {
     setKeyCodeError(null);
-    setAppState(AppState.KEY_CODE_ENTRY);
-  }, []);
+    if (settings.isSessionCodeEnabled) {
+      setAppState(AppState.KEY_CODE_ENTRY);
+    } else {
+      // Mode "Free Play": Buat kunci sesi sementara dan mulai
+      setIsSessionLoading(true);
+      try {
+        const newKeyData: Omit<SessionKey, 'id'> = {
+          code: 'FREEPLAY',
+          maxTakes: settings.freePlayMaxTakes || 1,
+          takesUsed: 1,
+          status: 'in_progress',
+          createdAt: Date.now(),
+          progress: 'Memilih Event', // Langsung set progress awal
+        };
+        const newKeyRef = await push(ref(db, 'sessionKeys'), newKeyData);
+        if (!newKeyRef.key) {
+          throw new Error("Could not get new session key from Firebase.");
+        }
+        
+        const newKey: SessionKey = { id: newKeyRef.key, ...newKeyData };
+        setCurrentSessionKey(newKey);
+        setCurrentTakeCount(1);
+        setAppState(AppState.EVENT_SELECTION);
+
+      } catch (error) {
+        console.error("Error starting free play session:", error);
+        setKeyCodeError("Could not start a free session. Please check connection and try again.");
+        setAppState(AppState.WELCOME); // Kembali ke welcome screen jika gagal
+      } finally {
+        setIsSessionLoading(false);
+      }
+    }
+  }, [settings.isSessionCodeEnabled, settings.freePlayMaxTakes]);
 
   const handleKeyCodeSubmit = useCallback(async (code: string) => {
-    setIsKeyCodeLoading(true);
+    setIsSessionLoading(true);
     setKeyCodeError(null);
     const codeUpper = code.toUpperCase();
 
@@ -224,7 +257,7 @@ const App: React.FC = () => {
 
         if (!snapshot.exists()) {
             setKeyCodeError("Kode sesi tidak valid.");
-            setIsKeyCodeLoading(false);
+            setIsSessionLoading(false);
             return;
         }
 
@@ -234,7 +267,7 @@ const App: React.FC = () => {
 
         if (sessionKey.status !== 'available') {
             setKeyCodeError(`Kode ini telah ${sessionKey.status === 'completed' ? 'digunakan' : 'sedang berjalan'}.`);
-            setIsKeyCodeLoading(false);
+            setIsSessionLoading(false);
             return;
         }
 
@@ -254,7 +287,7 @@ const App: React.FC = () => {
         console.error("Error validating session key:", error);
         setKeyCodeError("Terjadi kesalahan. Coba lagi.");
     } finally {
-        setIsKeyCodeLoading(false);
+        setIsSessionLoading(false);
     }
   }, []);
 
@@ -525,11 +558,17 @@ const App: React.FC = () => {
   
   const handleSessionEnd = useCallback(() => {
     if (currentSessionKey && currentSessionKey.status !== 'completed') {
-        update(ref(db, `sessionKeys/${currentSessionKey.id}`), { 
+        const updates: any = { 
             status: 'completed',
             progress: null,
             currentEventName: null,
-        });
+        };
+        // Hapus sesi "free play" setelah selesai untuk menjaga kebersihan database
+        if (currentSessionKey.code === 'FREEPLAY') {
+            remove(ref(db, `sessionKeys/${currentSessionKey.id}`));
+        } else {
+            update(ref(db, `sessionKeys/${currentSessionKey.id}`), updates);
+        }
     }
     setCapturedImages([]);
     setSelectedTemplate(null);
@@ -555,13 +594,18 @@ const App: React.FC = () => {
 
   const handleCancelSession = useCallback(() => {
       if (currentSessionKey) {
-          // Kembalikan status ke 'available' jika belum ada foto yang diambil
-          update(ref(db, `sessionKeys/${currentSessionKey.id}`), { 
-              status: 'available', 
-              takesUsed: 0,
-              progress: null,
-              currentEventName: null,
-          });
+          if (currentSessionKey.code === 'FREEPLAY') {
+              // Hapus sesi "free play" jika dibatalkan
+              remove(ref(db, `sessionKeys/${currentSessionKey.id}`));
+          } else {
+              // Kembalikan status ke 'available' jika belum ada foto yang diambil
+              update(ref(db, `sessionKeys/${currentSessionKey.id}`), { 
+                  status: 'available', 
+                  takesUsed: 0,
+                  progress: null,
+                  currentEventName: null,
+              });
+          }
       }
       setCurrentSessionKey(null);
       setCurrentTakeCount(0);
@@ -591,10 +635,11 @@ const App: React.FC = () => {
             cachingProgress={cachingProgress}
             onAdminLoginClick={handleOpenLoginModal}
             onAdminLogoutClick={handleAdminLogout}
+            isLoading={isSessionLoading}
         />;
       
       case AppState.KEY_CODE_ENTRY:
-        return <KeyCodeScreen onKeyCodeSubmit={handleKeyCodeSubmit} onBack={handleBack} error={keyCodeError} isLoading={isKeyCodeLoading} />;
+        return <KeyCodeScreen onKeyCodeSubmit={handleKeyCodeSubmit} onBack={handleBack} error={keyCodeError} isLoading={isSessionLoading} />;
 
       case AppState.EVENT_SELECTION:
         return <EventSelectionScreen events={events.filter(e => !e.isArchived)} onSelect={handleEventSelect} onBack={handleBack} />;
@@ -681,6 +726,7 @@ const App: React.FC = () => {
             cachingProgress={cachingProgress}
             onAdminLoginClick={handleOpenLoginModal}
             onAdminLogoutClick={handleAdminLogout}
+            isLoading={isSessionLoading}
         />;
     }
   };
@@ -713,6 +759,13 @@ const App: React.FC = () => {
       )}
       
       <main className="w-full h-full p-4 flex flex-col items-center justify-center">
+        {keyCodeError && appState === AppState.WELCOME && (
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-red-800/90 p-4 rounded-lg z-50 text-center border border-red-600">
+            <p className="font-bold">Error</p>
+            <p>{keyCodeError}</p>
+            <button onClick={() => setKeyCodeError(null)} className="mt-2 text-sm text-gray-200 underline">Dismiss</button>
+          </div>
+        )}
         {renderContent()}
       </main>
     </div>
