@@ -16,6 +16,19 @@ const useFullscreenLock = (isEnabled: boolean) => {
 
   useEffect(() => {
     if (!isEnabled) return;
+    
+    // Dorong status awal ke riwayat saat mode kios diaktifkan.
+    // Ini memberi kita status untuk "kembali" jika pengguna mencoba kembali.
+    window.history.pushState({ kiosk: 'on' }, '');
+
+    const handlePopState = () => {
+        // Saat pengguna mencoba navigasi kembali (memicu event popstate),
+        // kita segera mendorong status kita kembali ke tumpukan riwayat,
+        // secara efektif membatalkan navigasi kembali.
+        if (isEnabled) {
+            window.history.pushState({ kiosk: 'on' }, '');
+        }
+    };
 
     const handleFullscreenChange = () => {
       // Penundaan kecil membantu mencegah kondisi balapan dan loop tak terbatas pada beberapa browser
@@ -42,17 +55,26 @@ const useFullscreenLock = (isEnabled: boolean) => {
         return '';
     };
 
+    const handleContextMenu = (e: MouseEvent) => {
+        // Mencegah menu klik kanan / tahan lama
+        e.preventDefault();
+    };
+
     // Coba masuk kembali saat jendela kehilangan fokus (misalnya, Alt+Tab)
     window.addEventListener('blur', reEnterFullscreen);
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     document.addEventListener('keydown', handleKeyDown);
     window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('popstate', handlePopState);
+    document.addEventListener('contextmenu', handleContextMenu);
 
     return () => {
       window.removeEventListener('blur', reEnterFullscreen);
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
       document.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('popstate', handlePopState);
+      document.removeEventListener('contextmenu', handleContextMenu);
     };
   }, [isEnabled, reEnterFullscreen]);
 };
