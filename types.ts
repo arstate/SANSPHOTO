@@ -23,6 +23,8 @@ export interface PhotoSlot {
 export interface Settings {
   countdownDuration: number;
   flashEffectEnabled: boolean;
+  isPinLockEnabled?: boolean;
+  fullscreenPin?: string;
 }
 
 export interface Template {

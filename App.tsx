@@ -14,6 +14,7 @@ import RenameEventModal from './components/RenameEventModal';
 import AssignTemplatesModal from './components/AssignTemplatesModal';
 import EventQrCodeModal from './components/EventQrCodeModal';
 import HistoryScreen from './components/HistoryScreen';
+import PinInputModal from './components/PinInputModal';
 import { AppState, PhotoSlot, Settings, Template, Event, HistoryEntry } from './types';
 import { db, ref, onValue, off, set, push, update, remove, firebaseObjectToArray } from './firebase';
 import { getAllHistoryEntries, addHistoryEntry, deleteHistoryEntry, cacheImage } from './utils/db';
@@ -32,6 +33,8 @@ const INITIAL_PHOTO_SLOTS: PhotoSlot[] = [
 const DEFAULT_SETTINGS: Settings = {
   countdownDuration: 5,
   flashEffectEnabled: true,
+  isPinLockEnabled: false,
+  fullscreenPin: '1234',
 };
 
 const DEFAULT_TEMPLATE_DATA: Omit<Template, 'id'> = {
@@ -48,6 +51,7 @@ const App: React.FC = () => {
   const [capturedImages, setCapturedImages] = useState<string[]>([]);
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isPinModalOpen, setIsPinModalOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
@@ -137,7 +141,6 @@ const App: React.FC = () => {
   }, []);
 
   const toggleFullscreen = useCallback(() => {
-    // We now target the #app-container for fullscreen
     const appContainer = document.getElementById('app-container');
     if (!appContainer) return;
 
@@ -145,8 +148,19 @@ const App: React.FC = () => {
       appContainer.requestFullscreen().catch((err) => {
         alert(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
       });
-    } else if (document.exitFullscreen) {
-      document.exitFullscreen();
+    } else {
+      if (settings.isPinLockEnabled) {
+          setIsPinModalOpen(true);
+      } else if (document.exitFullscreen) {
+        document.exitFullscreen();
+      }
+    }
+  }, [settings.isPinLockEnabled]);
+
+  const handleCorrectPin = useCallback(() => {
+    setIsPinModalOpen(false);
+    if (document.exitFullscreen) {
+        document.exitFullscreen();
     }
   }, []);
 
@@ -461,6 +475,13 @@ const App: React.FC = () => {
       </div>
       
       {isLoginModalOpen && <LoginModal onLogin={handleAdminLogin} onClose={handleCloseLoginModal} />}
+      {isPinModalOpen && (
+        <PinInputModal 
+            correctPin={settings.fullscreenPin || '1234'}
+            onCorrectPin={handleCorrectPin}
+            onClose={() => setIsPinModalOpen(false)}
+        />
+      )}
       {editingEvent && <RenameEventModal event={editingEvent} onSave={handleSaveRenameEvent} onClose={handleCancelRenameEvent} />}
       {assigningTemplatesEvent && <AssignTemplatesModal event={assigningTemplatesEvent} allTemplates={templates} onSave={handleSaveTemplateAssignments} onClose={handleCancelAssigningTemplates} />}
       {editingEventQr && <EventQrCodeModal event={editingEventQr} onSave={handleSaveQrCodeSettings} onClose={handleCancelEditQrCode} />}

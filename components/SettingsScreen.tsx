@@ -2,6 +2,7 @@
 import React from 'react';
 import { Settings } from '../types';
 import { BackIcon } from './icons/BackIcon';
+import { KeyIcon } from './icons/KeyIcon';
 
 interface SettingsScreenProps {
     settings: Settings;
@@ -23,6 +24,19 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ settings, onSettingsCha
         const numericValue = parseInt(value, 10);
         if (isNaN(numericValue) || numericValue < 0) return;
         onSettingsChange({ ...settings, [name]: numericValue });
+    }
+  };
+
+  const handlePinInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { value } = e.target;
+    if (/^\d{0,4}$/.test(value)) {
+        onSettingsChange({ ...settings, fullscreenPin: value });
+    }
+  };
+
+  const handleResetPin = () => {
+    if (window.confirm("Are you sure you want to reset the PIN to '1234'?")) {
+        onSettingsChange({ ...settings, fullscreenPin: '1234' });
     }
   };
 
@@ -119,6 +133,54 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ settings, onSettingsCha
                 </div>
             </label>
           </div>
+        </div>
+
+        {/* Fullscreen PIN Lock Settings */}
+        <div className="p-6 bg-gray-800 rounded-lg border border-gray-700 text-left space-y-4">
+            <h3 className="text-xl font-bold text-purple-400 flex items-center gap-2"><KeyIcon /> Fullscreen PIN Lock</h3>
+            <div className="border-t border-gray-700 pt-4">
+                <label htmlFor="isPinLockEnabled" className="flex items-center justify-between cursor-pointer">
+                    <div>
+                        <span className="block text-sm font-medium text-gray-300">Enable PIN to Exit Fullscreen</span>
+                        <p className="text-xs text-gray-500">Requires a 4-digit PIN to exit fullscreen mode. Useful for kiosk mode.</p>
+                    </div>
+                    <div className="relative">
+                        <input
+                            type="checkbox"
+                            id="isPinLockEnabled"
+                            name="isPinLockEnabled"
+                            checked={settings.isPinLockEnabled || false}
+                            onChange={handleSettingsInputChange}
+                            className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-gray-600 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                    </div>
+                </label>
+            </div>
+            {settings.isPinLockEnabled && (
+                <div className="border-t border-gray-700 pt-4 space-y-2">
+                    <label htmlFor="fullscreenPin" className="block text-sm font-medium text-gray-300">Set 4-Digit PIN</label>
+                    <div className="flex items-center gap-2">
+                        <input
+                            type="password"
+                            id="fullscreenPin"
+                            name="fullscreenPin"
+                            value={settings.fullscreenPin || ''}
+                            onChange={handlePinInputChange}
+                            maxLength={4}
+                            pattern="\d{4}"
+                            title="PIN must be 4 digits"
+                            className="flex-grow block w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm tracking-[1em] text-center"
+                        />
+                        <button
+                            onClick={handleResetPin}
+                            className="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded-md text-sm"
+                        >
+                            Reset
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
       </div>
     </div>
