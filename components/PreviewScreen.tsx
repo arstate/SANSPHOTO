@@ -17,11 +17,13 @@ interface PreviewScreenProps {
   currentTake: number;
   maxTakes: number;
   onNextTake: () => void;
+  isDownloadButtonEnabled: boolean;
+  isAutoDownloadEnabled: boolean;
 }
 
 const PreviewScreen: React.FC<PreviewScreenProps> = ({ 
     images, onRestart, onBack, template, onSaveHistory, event,
-    currentTake, maxTakes, onNextTake
+    currentTake, maxTakes, onNextTake, isDownloadButtonEnabled, isAutoDownloadEnabled
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const finalImageRef = useRef<HTMLImageElement>(null);
@@ -134,7 +136,7 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
           historySavedRef.current = true;
       }
 
-      if (!downloadTriggeredRef.current) {
+      if (isAutoDownloadEnabled && !downloadTriggeredRef.current) {
           handleDownload(finalImageDataUrl);
           downloadTriggeredRef.current = true;
       }
@@ -145,7 +147,7 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
       setErrorMsg("Tidak dapat menghasilkan gambar akhir. Templat mungkin tidak tersedia atau ada masalah jaringan.");
       setIsLoading(false);
     }
-  }, [images, template, onSaveHistory, handleDownload, TEMPLATE_WIDTH, TEMPLATE_HEIGHT]);
+  }, [images, template, onSaveHistory, handleDownload, TEMPLATE_WIDTH, TEMPLATE_HEIGHT, isAutoDownloadEnabled]);
 
   useEffect(() => {
     // Reset refs for each new preview
@@ -215,14 +217,16 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
                 </button>
             )}
             
-            <button
-              onClick={() => handleDownload()}
-              disabled={isLoading || !!errorMsg}
-              className="w-full bg-[var(--color-positive)] hover:bg-[var(--color-positive-hover)] text-[var(--color-positive-text)] font-bold py-4 px-8 rounded-full text-xl transition-transform transform hover:scale-105 flex items-center justify-center gap-3 disabled:bg-[var(--color-bg-tertiary)] disabled:cursor-not-allowed disabled:transform-none"
-            >
-              <DownloadIcon />
-              Unduh
-            </button>
+            {isDownloadButtonEnabled && (
+              <button
+                onClick={() => handleDownload()}
+                disabled={isLoading || !!errorMsg}
+                className="w-full bg-[var(--color-positive)] hover:bg-[var(--color-positive-hover)] text-[var(--color-positive-text)] font-bold py-4 px-8 rounded-full text-xl transition-transform transform hover:scale-105 flex items-center justify-center gap-3 disabled:bg-[var(--color-bg-tertiary)] disabled:cursor-not-allowed disabled:transform-none"
+              >
+                <DownloadIcon />
+                Unduh
+              </button>
+            )}
 
             {event?.isQrCodeEnabled && event.qrCodeImageUrl && (
                 <div className="p-4 bg-[var(--color-bg-secondary)] rounded-lg text-center">

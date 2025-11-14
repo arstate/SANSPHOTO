@@ -23,9 +23,16 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ settings, onSettingsCha
   const handleSettingsInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
     
+    let finalValue: string | number | boolean = value;
+    if (type === 'checkbox') {
+        finalValue = checked;
+    } else if (type === 'number') {
+        finalValue = parseInt(value, 10) || 0;
+    }
+
     onSettingsChange({
       ...settings,
-      [name]: type === 'checkbox' ? checked : parseInt(value, 10) || 0
+      [name]: finalValue,
     });
   };
   
@@ -63,6 +70,35 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ settings, onSettingsCha
         <h2 className="text-4xl font-bebas tracking-wider text-[var(--color-text-primary)] mb-8 shrink-0">Admin Settings</h2>
 
         <div className="w-full max-w-md space-y-6 overflow-y-auto scrollbar-thin pr-2">
+          {/* Welcome Screen Customization */}
+          <div className="p-6 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] text-left space-y-4">
+            <h3 className="text-xl font-bold text-[var(--color-text-accent)]">Welcome Screen Customization</h3>
+            <div>
+              <label htmlFor="welcomeTitle" className="block text-sm font-medium text-[var(--color-text-secondary)]">Main Title</label>
+              <input
+                  type="text"
+                  id="welcomeTitle"
+                  name="welcomeTitle"
+                  value={settings.welcomeTitle || ''}
+                  onChange={handleSettingsInputChange}
+                  placeholder="e.g., SANS PHOTO"
+                  className="mt-1 block w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md shadow-sm py-2 px-3 text-[var(--color-text-primary)] focus:outline-none focus:ring-[var(--color-border-focus)] focus:border-[var(--color-border-focus)] sm:text-sm"
+              />
+            </div>
+            <div>
+              <label htmlFor="welcomeSubtitle" className="block text-sm font-medium text-[var(--color-text-secondary)]">Subtitle</label>
+              <input
+                  type="text"
+                  id="welcomeSubtitle"
+                  name="welcomeSubtitle"
+                  value={settings.welcomeSubtitle || ''}
+                  onChange={handleSettingsInputChange}
+                  placeholder="e.g., Your personal web photobooth"
+                  className="mt-1 block w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md shadow-sm py-2 px-3 text-[var(--color-text-primary)] focus:outline-none focus:ring-[var(--color-border-focus)] focus:border-[var(--color-border-focus)] sm:text-sm"
+              />
+            </div>
+          </div>
+          
           {/* Theme Settings */}
           <div className="p-6 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] text-left space-y-4">
             <h3 className="text-xl font-bold text-[var(--color-text-accent)]">Theme</h3>
@@ -177,6 +213,49 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ settings, onSettingsCha
               >
                   View Photobooth History
               </button>
+          </div>
+          
+          {/* Download Settings */}
+          <div className="p-6 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] text-left space-y-4">
+            <h3 className="text-xl font-bold text-[var(--color-text-accent)]">Download Settings</h3>
+            <div className="border-t border-[var(--color-border-primary)] pt-4">
+              <label htmlFor="isAutoDownloadEnabled" className="flex items-center justify-between cursor-pointer">
+                  <div>
+                      <span className="block text-sm font-medium text-[var(--color-text-secondary)]">Automatic Download</span>
+                      <p className="text-xs text-[var(--color-text-muted)]">Automatically start download on preview screen.</p>
+                  </div>
+                  <div className="relative">
+                      <input
+                          type="checkbox"
+                          id="isAutoDownloadEnabled"
+                          name="isAutoDownloadEnabled"
+                          checked={settings.isAutoDownloadEnabled ?? true}
+                          onChange={handleSettingsInputChange}
+                          className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-[var(--color-bg-tertiary)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--color-accent-primary)]"></div>
+                  </div>
+              </label>
+            </div>
+             <div className="border-t border-[var(--color-border-primary)] pt-4">
+              <label htmlFor="isDownloadButtonEnabled" className="flex items-center justify-between cursor-pointer">
+                  <div>
+                      <span className="block text-sm font-medium text-[var(--color-text-secondary)]">Show Manual Download Button</span>
+                      <p className="text-xs text-[var(--color-text-muted)]">Display a button for users to download manually.</p>
+                  </div>
+                  <div className="relative">
+                      <input
+                          type="checkbox"
+                          id="isDownloadButtonEnabled"
+                          name="isDownloadButtonEnabled"
+                          checked={settings.isDownloadButtonEnabled ?? true}
+                          onChange={handleSettingsInputChange}
+                          className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-[var(--color-bg-tertiary)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--color-accent-primary)]"></div>
+                  </div>
+              </label>
+            </div>
           </div>
 
           {/* Session Settings */}

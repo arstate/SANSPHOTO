@@ -15,6 +15,8 @@ interface WelcomeScreenProps {
   onAdminLoginClick: () => void;
   onAdminLogoutClick: () => void;
   isLoading: boolean;
+  welcomeTitle?: string;
+  welcomeSubtitle?: string;
 }
 
 const CachingStatus: React.FC<{ progress: number }> = ({ progress }) => (
@@ -42,7 +44,9 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
     cachingProgress,
     onAdminLoginClick,
     onAdminLogoutClick,
-    isLoading
+    isLoading,
+    welcomeTitle = 'SANS PHOTO',
+    welcomeSubtitle = 'Your personal web photobooth'
 }) => {
   return (
     <div className="relative text-center flex flex-col items-center justify-center h-full w-full">
@@ -56,8 +60,8 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
         </button>
       </div>
 
-      <h1 className="font-bebas text-8xl md:text-9xl tracking-widest text-[var(--color-text-primary)] animate-pulse">SANS PHOTO</h1>
-      <p className="text-[var(--color-text-muted)] mb-8">Your personal web photobooth</p>
+      <h1 className="font-bebas text-8xl md:text-9xl tracking-widest text-[var(--color-text-primary)] animate-pulse">{welcomeTitle}</h1>
+      <p className="text-[var(--color-text-muted)] mb-8">{welcomeSubtitle}</p>
       {isAdminLoggedIn ? (
           <div className="flex flex-col sm:flex-row gap-4">
             <button

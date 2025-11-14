@@ -31,6 +31,10 @@ export interface Settings {
   isSessionCodeEnabled?: boolean;
   freePlayMaxTakes?: number;
   theme?: 'light' | 'dark';
+  welcomeTitle?: string;
+  welcomeSubtitle?: string;
+  isDownloadButtonEnabled?: boolean;
+  isAutoDownloadEnabled?: boolean;
 }
 
 export interface Template {

@@ -42,6 +42,10 @@ const DEFAULT_SETTINGS: Settings = {
   isSessionCodeEnabled: true,
   freePlayMaxTakes: 1,
   theme: 'dark',
+  welcomeTitle: 'SANS PHOTO',
+  welcomeSubtitle: 'Your personal web photobooth',
+  isDownloadButtonEnabled: true,
+  isAutoDownloadEnabled: true,
 };
 
 const DEFAULT_TEMPLATE_DATA: Omit<Template, 'id'> = {
@@ -647,6 +651,8 @@ const App: React.FC = () => {
             onAdminLoginClick={handleOpenLoginModal}
             onAdminLogoutClick={handleAdminLogout}
             isLoading={isSessionLoading}
+            welcomeTitle={settings.welcomeTitle}
+            welcomeSubtitle={settings.welcomeSubtitle}
         />;
       
       case AppState.KEY_CODE_ENTRY:
@@ -725,6 +731,8 @@ const App: React.FC = () => {
             currentTake={currentTakeCount}
             maxTakes={currentSessionKey.maxTakes}
             onNextTake={handleStartNextTake}
+            isDownloadButtonEnabled={settings.isDownloadButtonEnabled ?? true}
+            isAutoDownloadEnabled={settings.isAutoDownloadEnabled ?? true}
         />;
       
       default:
@@ -738,6 +746,8 @@ const App: React.FC = () => {
             onAdminLoginClick={handleOpenLoginModal}
             onAdminLogoutClick={handleAdminLogout}
             isLoading={isSessionLoading}
+            welcomeTitle={settings.welcomeTitle}
+            welcomeSubtitle={settings.welcomeSubtitle}
         />;
     }
   };
