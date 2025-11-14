@@ -59,7 +59,7 @@ const TemplateSelection: React.FC<TemplateSelectionProps> = ({
 
       <main className="flex-grow flex flex-col items-center justify-center w-full min-h-0 px-4">
         {previewedTemplate ? (
-            <div className={`group relative w-full ${previewedTemplate.orientation === 'landscape' ? 'max-w-3xl' : 'max-w-xs'} border-4 border-gray-700 rounded-lg p-2 bg-gray-800 flex flex-col text-center`}>
+            <div className={`group relative w-full ${previewedTemplate.orientation === 'landscape' ? 'max-w-2xl' : 'max-w-xs'} border-4 border-gray-700 rounded-lg p-2 bg-gray-800 flex flex-col text-center`}>
                 <div className="relative">
                     <img 
                         src={getProxiedUrl(previewedTemplate.imageUrl)} 
