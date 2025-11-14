@@ -52,6 +52,7 @@ const DEFAULT_SETTINGS: Settings = {
   welcomeBgColor: '#111827',
   welcomeBgImageUrl: '',
   welcomeBgZoom: 100,
+  isWelcomeTextShadowEnabled: true,
 };
 
 const DEFAULT_TEMPLATE_DATA: Omit<Template, 'id'> = {

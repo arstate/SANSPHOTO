@@ -56,6 +56,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
     welcomeBgColor,
     welcomeBgImageUrl,
     welcomeBgZoom = 100,
+    isWelcomeTextShadowEnabled = true,
   } = settings;
 
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -150,13 +151,19 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
 
         <h1 
           className="font-bebas text-8xl md:text-9xl tracking-widest text-white animate-pulse"
-          style={{ color: welcomeTitleColor || undefined, textShadow: '2px 2px 8px rgba(0,0,0,0.7)' }}
+          style={{
+            color: welcomeTitleColor || undefined,
+            textShadow: isWelcomeTextShadowEnabled ? '2px 2px 8px rgba(0,0,0,0.7)' : 'none',
+          }}
         >
           {welcomeTitle}
         </h1>
         <p 
           className="text-gray-200 mb-8"
-          style={{ color: welcomeSubtitleColor || undefined, textShadow: '1px 1px 4px rgba(0,0,0,0.7)' }}
+          style={{
+            color: welcomeSubtitleColor || undefined,
+            textShadow: isWelcomeTextShadowEnabled ? '1px 1px 4px rgba(0,0,0,0.7)' : 'none',
+          }}
         >
           {welcomeSubtitle}
         </p>

@@ -41,6 +41,7 @@ export interface Settings {
   welcomeBgColor?: string;
   welcomeBgImageUrl?: string;
   welcomeBgZoom?: number;
+  isWelcomeTextShadowEnabled?: boolean;
 }
 
 export interface Template {

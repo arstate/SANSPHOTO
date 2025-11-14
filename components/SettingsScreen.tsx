@@ -206,6 +206,25 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ settings, onSettingsCha
                       <input type="color" id="welcomeSubtitleColor" name="welcomeSubtitleColor" value={settings.welcomeSubtitleColor || '#D1D5DB'} onChange={handleSettingsInputChange} className="mt-1 w-full h-10 p-1 bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md cursor-pointer"/>
                   </div>
               </div>
+              <div className="border-t border-[var(--color-border-primary)] pt-4">
+                <label htmlFor="isWelcomeTextShadowEnabled" className="flex items-center justify-between cursor-pointer">
+                    <div>
+                        <span className="block text-sm font-medium text-[var(--color-text-secondary)]">Enable Text Shadow</span>
+                        <p className="text-xs text-[var(--color-text-muted)]">Adds a drop shadow for better readability.</p>
+                    </div>
+                    <div className="relative">
+                        <input
+                            type="checkbox"
+                            id="isWelcomeTextShadowEnabled"
+                            name="isWelcomeTextShadowEnabled"
+                            checked={settings.isWelcomeTextShadowEnabled ?? true}
+                            onChange={handleSettingsInputChange}
+                            className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-[var(--color-bg-tertiary)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--color-accent-primary)]"></div>
+                    </div>
+                </label>
+              </div>
             </div>
 
             {/* Welcome Screen Background Customization */}
