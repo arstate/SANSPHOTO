@@ -59,12 +59,12 @@ const TemplateSelection: React.FC<TemplateSelectionProps> = ({
 
       <main className="flex-grow flex flex-col items-center justify-center w-full min-h-0 px-4">
         {previewedTemplate ? (
-            <div className="group relative w-full max-w-xs border-4 border-gray-700 rounded-lg p-2 bg-gray-800 flex flex-col text-center">
+            <div className={`group relative w-full ${previewedTemplate.orientation === 'landscape' ? 'max-w-3xl' : 'max-w-xs'} border-4 border-gray-700 rounded-lg p-2 bg-gray-800 flex flex-col text-center`}>
                 <div className="relative">
                     <img 
                         src={getProxiedUrl(previewedTemplate.imageUrl)} 
                         alt={previewedTemplate.name}
-                        className="rounded-md shadow-lg w-full aspect-[2/3] object-cover"
+                        className={`rounded-md shadow-lg w-full ${previewedTemplate.orientation === 'landscape' ? 'aspect-[3/2]' : 'aspect-[2/3]'} object-cover`}
                     />
                     {isAdminLoggedIn && (
                         <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -112,7 +112,7 @@ const TemplateSelection: React.FC<TemplateSelectionProps> = ({
                 <button
                     key={template.id}
                     onClick={() => setPreviewedTemplate(template)}
-                    className={`relative shrink-0 w-24 h-36 rounded-md overflow-hidden border-4 transition-colors ${previewedTemplate?.id === template.id ? 'border-purple-500' : 'border-gray-700 hover:border-gray-500'}`}
+                    className={`relative shrink-0 ${template.orientation === 'landscape' ? 'w-[13.5rem] h-36' : 'w-24 h-36'} rounded-md overflow-hidden border-4 transition-colors ${previewedTemplate?.id === template.id ? 'border-purple-500' : 'border-gray-700 hover:border-gray-500'}`}
                     aria-label={`Select ${template.name}`}
                 >
                     <img 

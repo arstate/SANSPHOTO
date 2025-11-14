@@ -2,15 +2,13 @@ import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { CameraIcon } from './icons/CameraIcon';
 import { Template } from '../types';
 
+// Fix: Defined the CaptureScreenProps interface.
 interface CaptureScreenProps {
   onComplete: (images: string[]) => void;
   template: Template;
   countdownDuration: number;
   flashEffectEnabled: boolean;
 }
-
-const TEMPLATE_WIDTH = 1200;
-const TEMPLATE_HEIGHT = 1800;
 
 const CaptureScreen: React.FC<CaptureScreenProps> = ({ onComplete, template, countdownDuration, flashEffectEnabled }) => {
   const [photoIndex, setPhotoIndex] = useState(0);
@@ -20,6 +18,10 @@ const CaptureScreen: React.FC<CaptureScreenProps> = ({ onComplete, template, cou
   const [showFlash, setShowFlash] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  const isLandscape = template.orientation === 'landscape';
+  const TEMPLATE_WIDTH = isLandscape ? 1800 : 1200;
+  const TEMPLATE_HEIGHT = isLandscape ? 1200 : 1800;
 
   const totalPhotos = useMemo(() => [...new Set(template.photoSlots.map(slot => slot.inputId))].length, [template.photoSlots]);
 
@@ -164,7 +166,7 @@ const CaptureScreen: React.FC<CaptureScreenProps> = ({ onComplete, template, cou
         <div className="w-full md:w-2/5 flex flex-col items-center p-4 md:p-2">
           <h2 className="font-bebas text-4xl mb-4 shrink-0">PHOTO {Math.min(photoIndex + 1, totalPhotos)} / {totalPhotos}</h2>
           <div className="w-full flex-grow flex items-center justify-center min-h-0">
-            <div className="relative w-auto h-full max-h-full aspect-[2/3] bg-white rounded-lg overflow-hidden shadow-lg">
+            <div className={`relative w-full h-auto ${isLandscape ? 'aspect-[3/2]' : 'aspect-[2/3]'} bg-white rounded-lg overflow-hidden shadow-lg`}>
                 {images.map((imgSrc, index) => {
                     const inputId = index + 1;
                     return template.photoSlots.filter(slot => slot.inputId === inputId).map(slot => (

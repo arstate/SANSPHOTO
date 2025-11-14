@@ -32,6 +32,7 @@ export interface Template {
   widthMM: number;
   heightMM: number;
   photoSlots: PhotoSlot[];
+  orientation: 'portrait' | 'landscape';
   eventId?: string; // Link to an event
 }
 

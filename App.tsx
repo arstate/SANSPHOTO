@@ -41,6 +41,7 @@ const DEFAULT_TEMPLATE_DATA: Omit<Template, 'id'> = {
   imageUrl: 'https://lh3.googleusercontent.com/pw/AP1GczMwGZ8j7Lessgx9F6qavNTLnoC1UodPtOLNCDQf7vMM_sFZdxkg-ADr8yLGa0aaFtaS_TAut_FQTfmgt3rwzaWL5cCEawjyp64oQMkJC3aZrd7fRXQ=w2400',
   widthMM: 102,
   heightMM: 152,
+  orientation: 'portrait',
   photoSlots: INITIAL_PHOTO_SLOTS,
 };
 
@@ -195,6 +196,7 @@ const App: React.FC = () => {
       imageUrl: '',
       widthMM: 102,
       heightMM: 152,
+      orientation: 'portrait',
       photoSlots: [...INITIAL_PHOTO_SLOTS]
     });
     setAppState(AppState.EDIT_TEMPLATE_METADATA);

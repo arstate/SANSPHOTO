@@ -1,19 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { PhotoSlot, Template } from '../types';
 
-const TEMPLATE_WIDTH = 1200;
-const TEMPLATE_HEIGHT = 1800;
-
-const DEFAULT_SLOTS: PhotoSlot[] = [
-  { id: 1, inputId: 1, x: 90,  y: 70,   width: 480, height: 480 },
-  { id: 2, inputId: 1, x: 630, y: 70,   width: 480, height: 480 },
-  { id: 3, inputId: 2, x: 90,  y: 610,  width: 480, height: 480 },
-  { id: 4, inputId: 2, x: 630, y: 610,  width: 480, height: 480 },
-  { id: 5, inputId: 3, x: 90,  y: 1150, width: 480, height: 480 },
-  { id: 6, inputId: 3, x: 630, y: 1150, width: 480, height: 480 },
-];
-
-
 interface EditTemplateScreenProps {
   template: Template;
   onSave: (newSlots: PhotoSlot[]) => void;
@@ -38,20 +25,23 @@ const EditTemplateScreen: React.FC<EditTemplateScreenProps> = ({ template, onSav
   const [editingState, setEditingState] = useState<EditingState | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const scaleRef = useRef<number>(1);
+  
+  const isLandscape = template.orientation === 'landscape';
+  const TEMPLATE_WIDTH = isLandscape ? 1800 : 1200;
+  const TEMPLATE_HEIGHT = isLandscape ? 1200 : 1800;
 
   const selectedSlot = selectedSlotId !== null ? slots.find(s => s.id === selectedSlotId) : null;
 
   useEffect(() => {
     const updateScale = () => {
       if (containerRef.current) {
-        const aspectRatio = template.widthMM / template.heightMM;
         scaleRef.current = containerRef.current.offsetWidth / TEMPLATE_WIDTH;
       }
     };
     updateScale();
     window.addEventListener('resize', updateScale);
     return () => window.removeEventListener('resize', updateScale);
-  }, [template.widthMM, template.heightMM]);
+  }, [TEMPLATE_WIDTH]);
 
   const getPointerPosition = (e: React.MouseEvent | React.TouchEvent | MouseEvent | TouchEvent) => {
     if ('touches' in e) {
@@ -103,7 +93,7 @@ const EditTemplateScreen: React.FC<EditTemplateScreenProps> = ({ template, onSav
       }
       return slot;
     }));
-  }, [editingState]);
+  }, [editingState, TEMPLATE_WIDTH, TEMPLATE_HEIGHT]);
   
   const handlePointerUp = useCallback(() => {
     setEditingState(null);
@@ -130,8 +120,8 @@ const EditTemplateScreen: React.FC<EditTemplateScreenProps> = ({ template, onSav
     const newSlot: PhotoSlot = {
       id: newId,
       inputId: highestInputId + 1,
-      x: 400,
-      y: 700,
+      x: TEMPLATE_WIDTH / 2 - 200,
+      y: TEMPLATE_HEIGHT / 2 - 200,
       width: 400,
       height: 400,
     };
@@ -158,11 +148,6 @@ const EditTemplateScreen: React.FC<EditTemplateScreenProps> = ({ template, onSav
     };
     setSlots([...slots, newSlot]);
     setSelectedSlotId(newId);
-  };
-  
-  const handleReset = () => {
-    setSlots(DEFAULT_SLOTS);
-    setSelectedSlotId(null);
   };
   
   const handlePropertyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -194,10 +179,10 @@ const EditTemplateScreen: React.FC<EditTemplateScreenProps> = ({ template, onSav
         <div className="w-full md:w-1/2 flex justify-center md:justify-start">
             <div 
             ref={containerRef} 
-            className="relative w-full max-w-sm bg-gray-800 touch-none shadow-2xl shadow-purple-500/20"
+            className="relative w-full bg-gray-800 touch-none shadow-2xl shadow-purple-500/20"
             style={{ 
                 userSelect: 'none',
-                aspectRatio: `${template.widthMM} / ${template.heightMM}`
+                aspectRatio: `${TEMPLATE_WIDTH} / ${TEMPLATE_HEIGHT}`
             }}
             onClick={() => setSelectedSlotId(null)}
           >
@@ -236,9 +221,8 @@ const EditTemplateScreen: React.FC<EditTemplateScreenProps> = ({ template, onSav
 
           <div className="grid grid-cols-2 gap-2 w-full">
               <button onClick={handleAddSlot} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Add New Slot</button>
-              <button onClick={handleReset} className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">Reset to Default</button>
               <button onClick={handleDuplicateSlot} disabled={selectedSlotId === null} className="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded disabled:bg-gray-500 disabled:cursor-not-allowed">Duplicate Selected</button>
-              <button onClick={handleDeleteSlot} disabled={selectedSlotId === null} className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded disabled:bg-gray-500 disabled:cursor-not-allowed">Delete Selected</button>
+              <button onClick={handleDeleteSlot} disabled={selectedSlotId === null} className="col-span-2 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded disabled:bg-gray-500 disabled:cursor-not-allowed">Delete Selected</button>
           </div>
 
           {selectedSlot ? (

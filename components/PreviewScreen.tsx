@@ -15,62 +15,6 @@ interface PreviewScreenProps {
   event: Event | null;
 }
 
-const TEMPLATE_WIDTH = 1200;
-const TEMPLATE_HEIGHT = 1800;
-
-const loadImage = (src: string): Promise<HTMLImageElement> => {
-  return new Promise(async (resolve, reject) => {
-    // Untuk URL data (dari kamera), gunakan secara langsung karena sudah lokal.
-    if (src.startsWith('data:')) {
-      const img = new Image();
-      img.onload = () => resolve(img);
-      img.onerror = () => reject(new Error('Gagal memuat gambar dari URL data.'));
-      img.src = src;
-      return;
-    }
-
-    // Untuk URL templat eksternal, coba dapatkan dari cache IndexedDB terlebih dahulu.
-    try {
-      const cachedBlob = await getCachedImage(src);
-      let blobToLoad: Blob | null = cachedBlob;
-
-      // Jika tidak ada di cache, ambil sekarang melalui proxy sebagai fallback.
-      if (!blobToLoad) {
-        console.warn(`Gambar templat tidak ditemukan di cache. Mengambil melalui proxy: ${src}`);
-        
-        let fetchUrl = src;
-        if (src.startsWith('http')) {
-          // Gunakan api.allorigins.win untuk melewati masalah CORS.
-          fetchUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(src)}`;
-        }
-        
-        const response = await fetch(fetchUrl);
-        if (!response.ok) {
-          throw new Error(`Gagal mengambil gambar. Status: ${response.status}`);
-        }
-        blobToLoad = await response.blob();
-      }
-      
-      const objectURL = URL.createObjectURL(blobToLoad);
-      const img = new Image();
-      img.onload = () => {
-        URL.revokeObjectURL(objectURL); // Bersihkan memori
-        resolve(img);
-      };
-      img.onerror = () => {
-        URL.revokeObjectURL(objectURL);
-        reject(new Error(`Gagal memuat gambar dari URL objek untuk: ${src}`));
-      };
-      img.src = objectURL;
-
-    } catch (error) {
-      console.error(`Kesalahan kritis saat memuat gambar templat dari ${src}:`, error);
-      reject(error);
-    }
-  });
-};
-
-
 const PreviewScreen: React.FC<PreviewScreenProps> = ({ images, onRestart, onBack, template, onSaveHistory, event }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const finalImageRef = useRef<HTMLImageElement>(null);
@@ -78,6 +22,10 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({ images, onRestart, onBack
   const downloadTriggeredRef = useRef(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const isLandscape = template.orientation === 'landscape';
+  const TEMPLATE_WIDTH = isLandscape ? 1800 : 1200;
+  const TEMPLATE_HEIGHT = isLandscape ? 1200 : 1800;
 
   const handleDownload = useCallback((imageDataUrl?: string) => {
     const url = imageDataUrl || canvasRef.current?.toDataURL('image/png');
@@ -107,9 +55,8 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({ images, onRestart, onBack
         return;
     }
       
-    const templateAspectRatio = template.widthMM / template.heightMM;
     const canvasWidth = TEMPLATE_WIDTH;
-    const canvasHeight = canvasWidth / templateAspectRatio;
+    const canvasHeight = TEMPLATE_HEIGHT;
     
     canvas.width = canvasWidth;
     canvas.height = canvasHeight;
@@ -156,11 +103,10 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({ images, onRestart, onBack
             sx = 0;
             sy = (img.height - sHeight) / 2;
         }
-        const destX = (slot.x / TEMPLATE_WIDTH) * canvasWidth;
-        const destY = (slot.y / TEMPLATE_HEIGHT) * canvasHeight;
-        const destWidth = (slot.width / TEMPLATE_WIDTH) * canvasWidth;
-        const destHeight = (slot.height / TEMPLATE_HEIGHT) * canvasHeight;
-
+        const destX = slot.x;
+        const destY = slot.y;
+        const destWidth = slot.width;
+        const destHeight = slot.height;
 
         ctx.drawImage(img, sx, sy, sWidth, sHeight, canvasWidth - destX - destWidth, destY, destWidth, destHeight);
         ctx.restore();
@@ -191,7 +137,7 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({ images, onRestart, onBack
       setErrorMsg("Tidak dapat menghasilkan gambar akhir. Templat mungkin tidak tersedia atau ada masalah jaringan.");
       setIsLoading(false);
     }
-  }, [images, template, onSaveHistory, handleDownload]);
+  }, [images, template, onSaveHistory, handleDownload, TEMPLATE_WIDTH, TEMPLATE_HEIGHT]);
 
   useEffect(() => {
     drawCanvas();
@@ -213,9 +159,9 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({ images, onRestart, onBack
       <div className="w-full max-w-5xl flex flex-col lg:flex-row justify-center items-center lg:items-start gap-8">
     
         {/* Kolom Foto */}
-        <div className="relative w-full max-w-sm">
+        <div className={`relative w-full max-w-sm ${isLandscape ? 'aspect-[3/2]' : 'aspect-[2/3]'}`}>
             {isLoading && (
-                <div className="w-full aspect-[2/3] bg-gray-800 rounded-lg flex flex-col items-center justify-center text-center p-4">
+                <div className="absolute inset-0 bg-gray-800 rounded-lg flex flex-col items-center justify-center text-center p-4">
                     <svg className="animate-spin h-12 w-12 text-purple-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -224,7 +170,7 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({ images, onRestart, onBack
                 </div>
             )}
             {errorMsg && (
-                <div className="w-full aspect-[2/3] bg-red-900/30 border-2 border-red-500 rounded-lg flex flex-col items-center justify-center text-center p-4">
+                <div className="absolute inset-0 bg-red-900/30 border-2 border-red-500 rounded-lg flex flex-col items-center justify-center text-center p-4">
                     <p className="font-bold text-red-300">Oops! Terjadi kesalahan.</p>
                     <p className="text-sm text-red-200 mt-2">{errorMsg}</p>
                     <button
@@ -235,7 +181,7 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({ images, onRestart, onBack
                     </button>
                 </div>
             )}
-            <img ref={finalImageRef} alt="Gambar photobooth akhir Anda" className={`w-full rounded-lg shadow-2xl shadow-purple-500/30 ${isLoading || errorMsg ? 'hidden' : 'block'}`} />
+            <img ref={finalImageRef} alt="Gambar photobooth akhir Anda" className={`w-full h-full object-contain rounded-lg shadow-2xl shadow-purple-500/30 ${isLoading || errorMsg ? 'hidden' : 'block'}`} />
         </div>
         
         {/* Kolom Aksi & QR */}
@@ -270,6 +216,55 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({ images, onRestart, onBack
       <canvas ref={canvasRef} className="hidden"></canvas>
     </div>
   );
+};
+
+// Helper function that was moved here to avoid being redefined on every render
+const loadImage = (src: string): Promise<HTMLImageElement> => {
+  return new Promise(async (resolve, reject) => {
+    if (src.startsWith('data:')) {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error('Gagal memuat gambar dari URL data.'));
+      img.src = src;
+      return;
+    }
+
+    try {
+      const cachedBlob = await getCachedImage(src);
+      let blobToLoad: Blob | null = cachedBlob;
+
+      if (!blobToLoad) {
+        console.warn(`Gambar templat tidak ditemukan di cache. Mengambil melalui proxy: ${src}`);
+        
+        let fetchUrl = src;
+        if (src.startsWith('http')) {
+          fetchUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(src)}`;
+        }
+        
+        const response = await fetch(fetchUrl);
+        if (!response.ok) {
+          throw new Error(`Gagal mengambil gambar. Status: ${response.status}`);
+        }
+        blobToLoad = await response.blob();
+      }
+      
+      const objectURL = URL.createObjectURL(blobToLoad);
+      const img = new Image();
+      img.onload = () => {
+        URL.revokeObjectURL(objectURL);
+        resolve(img);
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(objectURL);
+        reject(new Error(`Gagal memuat gambar dari URL objek untuk: ${src}`));
+      };
+      img.src = objectURL;
+
+    } catch (error) {
+      console.error(`Kesalahan kritis saat memuat gambar templat dari ${src}:`, error);
+      reject(error);
+    }
+  });
 };
 
 export default PreviewScreen;

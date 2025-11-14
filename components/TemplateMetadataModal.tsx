@@ -96,6 +96,34 @@ const TemplateMetadataModal: React.FC<TemplateMetadataModalProps> = ({ template,
             </div>
           </div>
           
+          <div>
+            <label className="block text-sm font-bold mb-2 text-gray-300">Orientation</label>
+            <div className="flex gap-4 p-2 bg-gray-700 rounded-md">
+                <label className="flex-1 text-center items-center gap-2 cursor-pointer p-2 rounded-md transition-colors" style={{backgroundColor: currentTemplate.orientation === 'portrait' ? '#581c87' : 'transparent'}}>
+                    <input
+                        type="radio"
+                        name="orientation"
+                        value="portrait"
+                        checked={currentTemplate.orientation === 'portrait'}
+                        onChange={handleChange}
+                        className="sr-only"
+                    />
+                    <span>Portrait</span>
+                </label>
+                <label className="flex-1 text-center items-center gap-2 cursor-pointer p-2 rounded-md transition-colors" style={{backgroundColor: currentTemplate.orientation === 'landscape' ? '#581c87' : 'transparent'}}>
+                    <input
+                        type="radio"
+                        name="orientation"
+                        value="landscape"
+                        checked={currentTemplate.orientation === 'landscape'}
+                        onChange={handleChange}
+                        className="sr-only"
+                    />
+                    <span>Landscape</span>
+                </label>
+            </div>
+          </div>
+          
           <div className="flex flex-col gap-3 pt-4">
             <button type="submit" className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-full text-lg">
               Save Template
