@@ -15,22 +15,45 @@ interface ManageOnlineHistoryScreenProps {
 const ManageOnlineHistoryScreen: React.FC<ManageOnlineHistoryScreenProps> = ({
   onlineHistory, onBack, onAdd, onDelete
 }) => {
-  const [newImageUrl, setNewImageUrl] = useState('');
+  const [shareUrl, setShareUrl] = useState('');
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleAdd = (e: React.FormEvent) => {
+  const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newImageUrl.trim()) {
-        setError('URL cannot be empty.');
-        return;
+    if (!shareUrl.trim()) {
+      setError('Google Photos share link cannot be empty.');
+      return;
     }
+    
+    setIsLoading(true);
+    setError('');
+
     try {
-        new URL(newImageUrl);
-        onAdd(newImageUrl.trim());
-        setNewImageUrl('');
-        setError('');
-    } catch (_) {
-        setError('Please enter a valid URL.');
+      // Menggunakan proxy untuk menghindari masalah CORS saat mengambil halaman Google Photos
+      const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(shareUrl)}`;
+      const response = await fetch(proxyUrl);
+      if (!response.ok) {
+        throw new Error('Failed to fetch the provided URL.');
+      }
+      const htmlText = await response.text();
+      
+      // Mencari URL gambar yang disematkan di dalam tag meta 'og:image'
+      const match = htmlText.match(/<meta\s+property="og:image"\s+content="([^"]+)"/);
+      const embedUrl = match ? match[1] : null;
+
+      if (embedUrl) {
+        onAdd(embedUrl);
+        setShareUrl('');
+      } else {
+        setError('Could not find an embeddable image URL in the provided link. Please ensure it is a valid Google Photos link.');
+      }
+
+    } catch (err) {
+      console.error("Error generating embed link:", err);
+      setError('Failed to process the link. Please check the URL and your network connection.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -54,18 +77,27 @@ const ManageOnlineHistoryScreen: React.FC<ManageOnlineHistoryScreenProps> = ({
           <div className="shrink-0 p-4 bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)] rounded-lg mb-6">
               <h3 className="text-2xl font-bebas tracking-wider text-[var(--color-text-accent)] mb-2">Add New Photo</h3>
               <p className="text-xs text-[var(--color-text-muted)] mb-4">
-                Open Google Photos, click a photo, right-click on it, and select "Copy Image Address". Paste that direct URL below.
+                Open Google Photos, select a photo, click the 'Share' icon, create a link, and paste that share link below. The app will automatically generate the embed code.
               </p>
               <form onSubmit={handleAdd} className="flex flex-col sm:flex-row gap-2">
                   <input
                       type="url"
-                      value={newImageUrl}
-                      onChange={(e) => setNewImageUrl(e.target.value)}
-                      placeholder="Paste direct image URL here (e.g., from Google Photos)"
+                      value={shareUrl}
+                      onChange={(e) => setShareUrl(e.target.value)}
+                      placeholder="Paste Google Photos share link here (e.g., https://photos.app.goo.gl/...)"
                       className="flex-grow bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md py-2 px-3 text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-border-focus)]"
+                      disabled={isLoading}
                   />
-                  <button type="submit" className="bg-[var(--color-positive)] hover:bg-[var(--color-positive-hover)] text-[var(--color-positive-text)] font-bold py-2 px-6 rounded-md flex items-center justify-center gap-2">
-                      <AddIcon /> Add
+                  <button type="submit" className="bg-[var(--color-positive)] hover:bg-[var(--color-positive-hover)] text-[var(--color-positive-text)] font-bold py-2 px-6 rounded-md flex items-center justify-center gap-2 w-full sm:w-auto disabled:bg-[var(--color-bg-tertiary)] disabled:cursor-wait" disabled={isLoading}>
+                      {isLoading ? (
+                        <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                      ) : (
+                        <AddIcon />
+                      )}
+                      {isLoading ? 'Processing...' : 'Add'}
                   </button>
               </form>
               {error && <p className="text-red-400 text-sm mt-2">{error}</p>}
