@@ -37,10 +37,10 @@ export interface Settings {
   isAutoDownloadEnabled?: boolean;
   welcomeTitleColor?: string;
   welcomeSubtitleColor?: string;
-  welcomeBgType?: 'default' | 'color' | 'image';
+  welcomeBgType?: 'default' | 'color' | 'image' | 'camera';
   welcomeBgColor?: string;
   welcomeBgImageUrl?: string;
-  welcomeBgImageSize?: number;
+  welcomeBgZoom?: number;
 }
 
 export interface Template {

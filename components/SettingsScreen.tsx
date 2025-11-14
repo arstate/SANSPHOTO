@@ -213,8 +213,8 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ settings, onSettingsCha
               <h3 className="text-xl font-bold text-[var(--color-text-accent)]">Welcome Screen Background</h3>
               <div>
                 <label className="block text-sm font-medium text-[var(--color-text-secondary)]">Background Type</label>
-                <div className="mt-2 grid grid-cols-3 gap-2 rounded-lg bg-[var(--color-bg-tertiary)] p-1">
-                  {(['default', 'color', 'image'] as const).map(type => (
+                <div className="mt-2 grid grid-cols-2 lg:grid-cols-4 gap-2 rounded-lg bg-[var(--color-bg-tertiary)] p-1">
+                  {(['default', 'color', 'image', 'camera'] as const).map(type => (
                     <label key={type} className={`block text-center cursor-pointer rounded-md py-2 px-3 text-sm font-semibold transition-colors ${settings.welcomeBgType === type ? 'bg-[var(--color-accent-primary)] text-[var(--color-accent-primary-text)]' : 'hover:bg-[var(--color-bg-primary)]'}`}>
                       <input type="radio" name="welcomeBgType" value={type} checked={settings.welcomeBgType === type} onChange={handleSettingsInputChange} className="sr-only"/>
                       {type.charAt(0).toUpperCase() + type.slice(1)}
@@ -245,19 +245,22 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ settings, onSettingsCha
                         className="mt-1 block w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md shadow-sm py-2 px-3 text-[var(--color-text-primary)] focus:outline-none focus:ring-[var(--color-border-focus)] focus:border-[var(--color-border-focus)] sm:text-sm"
                     />
                   </div>
-                   <div>
-                    <label htmlFor="welcomeBgImageSize" className="block text-sm font-medium text-[var(--color-text-secondary)]">Image Zoom ({settings.welcomeBgImageSize || 100}%)</label>
-                    <input
-                      id="welcomeBgImageSize"
-                      name="welcomeBgImageSize"
-                      type="range"
-                      min="50"
-                      max="200"
-                      value={settings.welcomeBgImageSize || 100}
-                      onChange={handleSettingsInputChange}
-                      className="w-full h-2 bg-[var(--color-bg-tertiary)] rounded-lg appearance-none cursor-pointer"
-                    />
-                  </div>
+                </div>
+              )}
+              
+              {(settings.welcomeBgType === 'image' || settings.welcomeBgType === 'camera') && (
+                 <div className="border-t border-[var(--color-border-primary)] pt-4">
+                  <label htmlFor="welcomeBgZoom" className="block text-sm font-medium text-[var(--color-text-secondary)]">Zoom ({settings.welcomeBgZoom || 100}%)</label>
+                  <input
+                    id="welcomeBgZoom"
+                    name="welcomeBgZoom"
+                    type="range"
+                    min="100"
+                    max="300"
+                    value={settings.welcomeBgZoom || 100}
+                    onChange={handleSettingsInputChange}
+                    className="w-full h-2 bg-[var(--color-bg-tertiary)] rounded-lg appearance-none cursor-pointer"
+                  />
                 </div>
               )}
             </div>

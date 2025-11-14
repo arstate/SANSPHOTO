@@ -51,7 +51,7 @@ const DEFAULT_SETTINGS: Settings = {
   welcomeBgType: 'default',
   welcomeBgColor: '#111827',
   welcomeBgImageUrl: '',
-  welcomeBgImageSize: 100,
+  welcomeBgZoom: 100,
 };
 
 const DEFAULT_TEMPLATE_DATA: Omit<Template, 'id'> = {
