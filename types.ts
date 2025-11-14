@@ -51,6 +51,12 @@ export interface Settings {
   startButtonBgColor?: string;
   startButtonTextColor?: string;
   isStartButtonShadowEnabled?: boolean;
+  // Print Settings
+  isPrintButtonEnabled?: boolean;
+  printPaperSize?: '4x6' | 'A4_portrait' | 'A4_landscape';
+  printColorMode?: 'color' | 'grayscale';
+  isPrintCopyInputEnabled?: boolean;
+  printMaxCopies?: number;
 }
 
 export interface Template {

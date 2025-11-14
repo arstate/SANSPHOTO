@@ -180,6 +180,64 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ settings, onSettingsCha
                 </label>
               </div>
             </div>
+
+            {/* Print Settings */}
+            <div className="p-6 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] text-left space-y-4">
+              <h3 className="text-xl font-bold text-[var(--color-text-accent)]">Print Settings</h3>
+              <div className="border-t border-[var(--color-border-primary)] pt-4">
+                <label htmlFor="isPrintButtonEnabled" className="flex items-center justify-between cursor-pointer">
+                    <div>
+                        <span className="block text-sm font-medium text-[var(--color-text-secondary)]">Enable Print Button</span>
+                        <p className="text-xs text-[var(--color-text-muted)]">Show a 'Print' button on the final preview screen.</p>
+                    </div>
+                    <div className="relative">
+                        <input type="checkbox" id="isPrintButtonEnabled" name="isPrintButtonEnabled" checked={settings.isPrintButtonEnabled ?? true} onChange={handleSettingsInputChange} className="sr-only peer" />
+                        <div className="w-11 h-6 bg-[var(--color-bg-tertiary)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--color-accent-primary)]"></div>
+                    </div>
+                </label>
+              </div>
+
+              {(settings.isPrintButtonEnabled ?? true) && (
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-[var(--color-border-primary)] pt-4">
+                      <div>
+                        <label htmlFor="printPaperSize" className="block text-sm font-medium text-[var(--color-text-secondary)]">Paper Size</label>
+                        <select id="printPaperSize" name="printPaperSize" value={settings.printPaperSize ?? '4x6'} onChange={handleSettingsInputChange} className="mt-1 block w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md shadow-sm py-2 px-3 text-[var(--color-text-primary)] focus:outline-none focus:ring-[var(--color-border-focus)] focus:border-[var(--color-border-focus)] sm:text-sm">
+                          <option value="4x6">4x6 inch</option>
+                          <option value="A4_portrait">A4 Portrait</option>
+                          <option value="A4_landscape">A4 Landscape</option>
+                        </select>
+                      </div>
+                       <div>
+                        <label htmlFor="printColorMode" className="block text-sm font-medium text-[var(--color-text-secondary)]">Color Mode</label>
+                        <select id="printColorMode" name="printColorMode" value={settings.printColorMode ?? 'color'} onChange={handleSettingsInputChange} className="mt-1 block w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md shadow-sm py-2 px-3 text-[var(--color-text-primary)] focus:outline-none focus:ring-[var(--color-border-focus)] focus:border-[var(--color-border-focus)] sm:text-sm">
+                          <option value="color">Color</option>
+                          <option value="grayscale">Grayscale</option>
+                        </select>
+                      </div>
+                  </div>
+                   <div className="border-t border-[var(--color-border-primary)] pt-4">
+                      <label htmlFor="isPrintCopyInputEnabled" className="flex items-center justify-between cursor-pointer">
+                          <div>
+                              <span className="block text-sm font-medium text-[var(--color-text-secondary)]">Show 'Number of Copies' Option</span>
+                              <p className="text-xs text-[var(--color-text-muted)]">Allow users to choose how many copies to print.</p>
+                          </div>
+                          <div className="relative">
+                              <input type="checkbox" id="isPrintCopyInputEnabled" name="isPrintCopyInputEnabled" checked={settings.isPrintCopyInputEnabled ?? true} onChange={handleSettingsInputChange} className="sr-only peer" />
+                              <div className="w-11 h-6 bg-[var(--color-bg-tertiary)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--color-accent-primary)]"></div>
+                          </div>
+                      </label>
+                  </div>
+                  {(settings.isPrintCopyInputEnabled ?? true) && (
+                     <div className="border-t border-[var(--color-border-primary)] pt-4">
+                        <label htmlFor="printMaxCopies" className="block text-sm font-medium text-[var(--color-text-secondary)]">Maximum Copies per Print</label>
+                        <p className="text-xs text-[var(--color-text-muted)] mb-2">Set the maximum number of copies a user can select.</p>
+                        <input type="number" id="printMaxCopies" name="printMaxCopies" value={settings.printMaxCopies ?? 5} onChange={handleSettingsInputChange} min="1" className="mt-1 block w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md shadow-sm py-2 px-3 text-[var(--color-text-primary)] focus:outline-none focus:ring-[var(--color-border-focus)] focus:border-[var(--color-border-focus)] sm:text-sm" />
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
           </div>
         );
       case 'appearance':

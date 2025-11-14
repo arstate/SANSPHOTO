@@ -61,6 +61,12 @@ const DEFAULT_SETTINGS: Settings = {
   startButtonBgColor: '',
   startButtonTextColor: '',
   isStartButtonShadowEnabled: true,
+  // New Print Settings Defaults
+  isPrintButtonEnabled: true,
+  printPaperSize: '4x6',
+  printColorMode: 'color',
+  isPrintCopyInputEnabled: true,
+  printMaxCopies: 5,
 };
 
 const DEFAULT_TEMPLATE_DATA: Omit<Template, 'id'> = {
@@ -747,6 +753,13 @@ const App: React.FC = () => {
             onNextTake={handleStartNextTake}
             isDownloadButtonEnabled={settings.isDownloadButtonEnabled ?? true}
             isAutoDownloadEnabled={settings.isAutoDownloadEnabled ?? true}
+            printSettings={{
+              isEnabled: settings.isPrintButtonEnabled ?? true,
+              paperSize: settings.printPaperSize ?? '4x6',
+              colorMode: settings.printColorMode ?? 'color',
+              isCopyInputEnabled: settings.isPrintCopyInputEnabled ?? true,
+              maxCopies: settings.printMaxCopies ?? 5,
+            }}
         />;
       
       default:

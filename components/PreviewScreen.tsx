@@ -1,12 +1,20 @@
 
 import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { DownloadIcon } from './icons/DownloadIcon';
+import { PrintIcon } from './icons/PrintIcon';
 import { CheckIcon } from './icons/CheckIcon';
 import { BackIcon } from './icons/BackIcon';
 import { RestartIcon } from './icons/RestartIcon';
-import { Template, Event } from '../types';
+import { Template, Event, Settings } from '../types';
 import { getCachedImage } from '../utils/db';
 
+type PrintSettings = {
+  isEnabled: boolean;
+  paperSize: NonNullable<Settings['printPaperSize']>;
+  colorMode: NonNullable<Settings['printColorMode']>;
+  isCopyInputEnabled: boolean;
+  maxCopies: number;
+}
 interface PreviewScreenProps {
   images: string[];
   onRestart: () => void; // This is now "Finish Session"
@@ -19,11 +27,67 @@ interface PreviewScreenProps {
   onNextTake: () => void;
   isDownloadButtonEnabled: boolean;
   isAutoDownloadEnabled: boolean;
+  printSettings: PrintSettings;
 }
+
+interface PrintModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: (copies: number) => void;
+  imageSrc: string | null;
+  settings: PrintSettings;
+}
+
+const PrintModal: React.FC<PrintModalProps> = ({ isOpen, onClose, onConfirm, imageSrc, settings }) => {
+  const [copies, setCopies] = useState(1);
+
+  useEffect(() => {
+    // Reset copies when modal opens
+    if (isOpen) {
+      setCopies(1);
+    }
+  }, [isOpen]);
+  
+  if (!isOpen) return null;
+
+  const increment = () => setCopies(c => Math.min(settings.maxCopies, c + 1));
+  const decrement = () => setCopies(c => Math.max(1, c - 1));
+
+  return (
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={onClose}>
+      <div className="bg-[var(--color-bg-secondary)] rounded-lg shadow-xl p-6 w-full max-w-md border border-[var(--color-border-primary)]" onClick={e => e.stopPropagation()}>
+        <h2 className="font-bebas text-3xl text-center mb-4">Konfirmasi Cetak</h2>
+        <img src={imageSrc ?? ''} alt="Pratinjau Cetak" className="w-full max-w-xs mx-auto aspect-[2/3] object-contain rounded-md bg-white/10" />
+        
+        {settings.isCopyInputEnabled && (
+          <div className="my-6">
+            <label className="block text-center font-bold text-lg text-[var(--color-text-secondary)] mb-2">Jumlah Salinan</label>
+            <div className="flex items-center justify-center gap-4">
+              <button onClick={decrement} className="w-12 h-12 bg-[var(--color-bg-tertiary)] rounded-full text-3xl font-bold hover:bg-[var(--color-border-secondary)]">-</button>
+              <span className="text-4xl font-bold w-20 text-center">{copies}</span>
+              <button onClick={increment} className="w-12 h-12 bg-[var(--color-bg-tertiary)] rounded-full text-3xl font-bold hover:bg-[var(--color-border-secondary)]">+</button>
+            </div>
+            <p className="text-xs text-center text-[var(--color-text-muted)] mt-2">Maksimum: {settings.maxCopies} salinan. Harap sesuaikan jumlah ini di dialog cetak printer Anda.</p>
+          </div>
+        )}
+
+        <div className="flex flex-col sm:flex-row gap-3 pt-4 mt-4 border-t border-[var(--color-border-primary)]">
+          <button onClick={() => onConfirm(copies)} className="flex-1 w-full bg-[var(--color-info)] hover:bg-[var(--color-info-hover)] text-[var(--color-info-text)] font-bold py-3 px-4 rounded-full text-lg">
+            Konfirmasi Cetak
+          </button>
+          <button onClick={onClose} className="flex-1 w-full bg-[var(--color-bg-tertiary)] hover:bg-[var(--color-border-secondary)] text-[var(--color-text-primary)] font-bold py-3 px-4 rounded-full text-lg">
+            Batal
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 
 const PreviewScreen: React.FC<PreviewScreenProps> = ({ 
     images, onRestart, onBack, template, onSaveHistory, event,
-    currentTake, maxTakes, onNextTake, isDownloadButtonEnabled, isAutoDownloadEnabled
+    currentTake, maxTakes, onNextTake, isDownloadButtonEnabled, isAutoDownloadEnabled, printSettings
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const finalImageRef = useRef<HTMLImageElement>(null);
@@ -31,6 +95,7 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
   const downloadTriggeredRef = useRef(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
 
   const isLastTake = currentTake >= maxTakes;
   const isLandscape = template.orientation === 'landscape';
@@ -46,6 +111,81 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
       link.click();
     }
   }, []);
+
+  const handlePrint = useCallback(() => {
+    const imageDataUrl = finalImageRef.current?.src;
+    if (!imageDataUrl) {
+      setErrorMsg("Gambar pratinjau tidak tersedia untuk dicetak.");
+      return;
+    }
+
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+        alert('Harap izinkan pop-up untuk situs ini agar dapat mencetak.');
+        return;
+    }
+    
+    let pageSizeCss = '';
+    switch (printSettings.paperSize) {
+        case 'A4_portrait':
+            pageSizeCss = 'size: A4 portrait;';
+            break;
+        case 'A4_landscape':
+            pageSizeCss = 'size: A4 landscape;';
+            break;
+        case '4x6':
+        default:
+            pageSizeCss = 'size: 4in 6in;';
+            break;
+    }
+
+    const grayscaleCss = printSettings.colorMode === 'grayscale' ? 'filter: grayscale(100%);' : '';
+
+    printWindow.document.write(`
+        <html>
+            <head>
+                <title>Print SANS PHOTO</title>
+                <style>
+                    @page { 
+                        ${pageSizeCss}
+                        margin: 0; 
+                    }
+                    body { 
+                        margin: 0; 
+                        padding: 0;
+                        -webkit-print-color-adjust: exact;
+                        print-color-adjust: exact;
+                    }
+                    img { 
+                        width: 100%; 
+                        height: 100%; 
+                        object-fit: contain;
+                        ${grayscaleCss}
+                    }
+                </style>
+            </head>
+            <body>
+                <img src="${imageDataUrl}" />
+                <script>
+                    window.onload = function() {
+                        window.print();
+                        window.onafterprint = function() {
+                            window.close();
+                        };
+                    };
+                    // Fallback for browsers that don't support onafterprint well
+                    setTimeout(() => {
+                         if (!window.closed) {
+                            // window.close(); 
+                         }
+                    }, 2000);
+                </script>
+            </body>
+        </html>
+    `);
+    printWindow.document.close();
+    setIsPrintModalOpen(false);
+  }, [printSettings]);
 
   const drawCanvas = useCallback(async () => {
     setIsLoading(true);
@@ -157,6 +297,14 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
   }, [drawCanvas]);
 
   return (
+    <>
+    <PrintModal 
+      isOpen={isPrintModalOpen}
+      onClose={() => setIsPrintModalOpen(false)}
+      onConfirm={handlePrint}
+      imageSrc={finalImageRef.current?.src ?? null}
+      settings={printSettings}
+    />
     <div className="relative flex flex-col items-center justify-center h-full w-full">
        <div className="absolute top-4 left-4">
         <button 
@@ -198,7 +346,7 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
         </div>
         
         {/* Kolom Aksi & QR */}
-        <div className="flex flex-col items-center gap-6 w-full max-w-sm">
+        <div className="flex flex-col items-center gap-4 w-full max-w-sm">
             {isLastTake ? (
                 <button
                     onClick={onRestart}
@@ -217,16 +365,29 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
                 </button>
             )}
             
-            {isDownloadButtonEnabled && (
-              <button
-                onClick={() => handleDownload()}
-                disabled={isLoading || !!errorMsg}
-                className="w-full bg-[var(--color-positive)] hover:bg-[var(--color-positive-hover)] text-[var(--color-positive-text)] font-bold py-4 px-8 rounded-full text-xl transition-transform transform hover:scale-105 flex items-center justify-center gap-3 disabled:bg-[var(--color-bg-tertiary)] disabled:cursor-not-allowed disabled:transform-none"
-              >
-                <DownloadIcon />
-                Unduh
-              </button>
-            )}
+            <div className="w-full flex gap-4">
+              {isDownloadButtonEnabled && (
+                <button
+                  onClick={() => handleDownload()}
+                  disabled={isLoading || !!errorMsg}
+                  className="w-full flex-1 bg-[var(--color-positive)] hover:bg-[var(--color-positive-hover)] text-[var(--color-positive-text)] font-bold py-4 px-8 rounded-full text-xl transition-transform transform hover:scale-105 flex items-center justify-center gap-3 disabled:bg-[var(--color-bg-tertiary)] disabled:cursor-not-allowed disabled:transform-none"
+                >
+                  <DownloadIcon />
+                  Unduh
+                </button>
+              )}
+
+              {printSettings.isEnabled && (
+                 <button
+                  onClick={() => setIsPrintModalOpen(true)}
+                  disabled={isLoading || !!errorMsg}
+                  className="w-full flex-1 bg-[var(--color-info)] hover:bg-[var(--color-info-hover)] text-[var(--color-info-text)] font-bold py-4 px-8 rounded-full text-xl transition-transform transform hover:scale-105 flex items-center justify-center gap-3 disabled:bg-[var(--color-bg-tertiary)] disabled:cursor-not-allowed disabled:transform-none"
+                >
+                  <PrintIcon />
+                  Cetak
+                </button>
+              )}
+            </div>
 
             {event?.isQrCodeEnabled && event.qrCodeImageUrl && (
                 <div className="p-4 bg-[var(--color-bg-secondary)] rounded-lg text-center">
@@ -239,6 +400,7 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
       
       <canvas ref={canvasRef} className="hidden"></canvas>
     </div>
+    </>
   );
 };
 
