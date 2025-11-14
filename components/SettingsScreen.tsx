@@ -78,6 +78,10 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ settings, onSettingsCha
   const handleThemeChange = (theme: 'light' | 'dark') => {
     onSettingsChange({ ...settings, theme });
   };
+  
+  const handleResetSetting = (name: keyof Settings) => {
+    onSettingsChange({ ...settings, [name]: '' });
+  };
 
   const handlePinInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { value } = e.target;
@@ -210,11 +214,17 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ settings, onSettingsCha
               </div>
               <div className="grid grid-cols-2 gap-4 border-t border-[var(--color-border-primary)] pt-4">
                   <div>
-                      <label htmlFor="welcomeTitleColor" className="block text-sm font-medium text-[var(--color-text-secondary)]">Title Color</label>
+                      <div className="flex justify-between items-center mb-1">
+                        <label htmlFor="welcomeTitleColor" className="block text-sm font-medium text-[var(--color-text-secondary)]">Title Color</label>
+                        <button onClick={() => handleResetSetting('welcomeTitleColor')} className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] underline">Reset</button>
+                      </div>
                       <input type="color" id="welcomeTitleColor" name="welcomeTitleColor" value={settings.welcomeTitleColor || '#F9FAFB'} onChange={handleSettingsInputChange} className="mt-1 w-full h-10 p-1 bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md cursor-pointer"/>
                   </div>
                   <div>
-                      <label htmlFor="welcomeSubtitleColor" className="block text-sm font-medium text-[var(--color-text-secondary)]">Subtitle Color</label>
+                       <div className="flex justify-between items-center mb-1">
+                        <label htmlFor="welcomeSubtitleColor" className="block text-sm font-medium text-[var(--color-text-secondary)]">Subtitle Color</label>
+                        <button onClick={() => handleResetSetting('welcomeSubtitleColor')} className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] underline">Reset</button>
+                      </div>
                       <input type="color" id="welcomeSubtitleColor" name="welcomeSubtitleColor" value={settings.welcomeSubtitleColor || '#D1D5DB'} onChange={handleSettingsInputChange} className="mt-1 w-full h-10 p-1 bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md cursor-pointer"/>
                   </div>
               </div>
@@ -322,6 +332,60 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ settings, onSettingsCha
               )}
             </div>
             
+             {/* Start Button Customization */}
+            <div className="p-6 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] text-left space-y-4">
+                <h3 className="text-xl font-bold text-[var(--color-text-accent)]">Start Button</h3>
+                <div>
+                    <label htmlFor="startButtonText" className="block text-sm font-medium text-[var(--color-text-secondary)]">Button Text</label>
+                    <input
+                        type="text"
+                        id="startButtonText"
+                        name="startButtonText"
+                        value={settings.startButtonText || ''}
+                        onChange={handleSettingsInputChange}
+                        placeholder="e.g., START SESSION"
+                        className="mt-1 block w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md shadow-sm py-2 px-3 text-[var(--color-text-primary)] focus:outline-none focus:ring-[var(--color-border-focus)] focus:border-[var(--color-border-focus)] sm:text-sm"
+                    />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 border-t border-[var(--color-border-primary)] pt-4">
+                    <div>
+                        <div className="flex justify-between items-center mb-1">
+                            <label htmlFor="startButtonBgColor" className="block text-sm font-medium text-[var(--color-text-secondary)]">Background Color</label>
+                            <button onClick={() => handleResetSetting('startButtonBgColor')} className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] underline">Reset</button>
+                        </div>
+                        <input type="color" id="startButtonBgColor" name="startButtonBgColor" value={settings.startButtonBgColor || '#8B5CF6'} onChange={handleSettingsInputChange} className="w-full h-10 p-1 bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md cursor-pointer"/>
+                    </div>
+                    <div>
+                        <div className="flex justify-between items-center mb-1">
+                            <label htmlFor="startButtonTextColor" className="block text-sm font-medium text-[var(--color-text-secondary)]">Text Color</label>
+                            <button onClick={() => handleResetSetting('startButtonTextColor')} className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] underline">Reset</button>
+                        </div>
+                        <input type="color" id="startButtonTextColor" name="startButtonTextColor" value={settings.startButtonTextColor || '#FFFFFF'} onChange={handleSettingsInputChange} className="w-full h-10 p-1 bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md cursor-pointer"/>
+                    </div>
+                </div>
+                
+                <div className="border-t border-[var(--color-border-primary)] pt-4">
+                    <label htmlFor="isStartButtonShadowEnabled" className="flex items-center justify-between cursor-pointer">
+                        <div>
+                            <span className="block text-sm font-medium text-[var(--color-text-secondary)]">Enable Button Shadow</span>
+                            <p className="text-xs text-[var(--color-text-muted)]">Adds a drop shadow to the start button.</p>
+                        </div>
+                        <div className="relative">
+                            <input
+                                type="checkbox"
+                                id="isStartButtonShadowEnabled"
+                                name="isStartButtonShadowEnabled"
+                                checked={settings.isStartButtonShadowEnabled ?? true}
+                                onChange={handleSettingsInputChange}
+                                className="sr-only peer"
+                            />
+                            <div className="w-11 h-6 bg-[var(--color-bg-tertiary)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--color-accent-primary)]"></div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
             {/* Theme Settings */}
             <div className="p-6 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] text-left space-y-4">
               <h3 className="text-xl font-bold text-[var(--color-text-accent)]">App Theme</h3>

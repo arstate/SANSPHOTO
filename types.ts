@@ -1,3 +1,4 @@
+
 export enum AppState {
   WELCOME,
   KEY_CODE_ENTRY,
@@ -46,6 +47,10 @@ export interface Settings {
   welcomeSubtitleFont?: string;
   isWelcomeTitleFontRandom?: boolean;
   isWelcomeSubtitleFontRandom?: boolean;
+  startButtonText?: string;
+  startButtonBgColor?: string;
+  startButtonTextColor?: string;
+  isStartButtonShadowEnabled?: boolean;
 }
 
 export interface Template {

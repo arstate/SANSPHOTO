@@ -62,6 +62,10 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
     welcomeSubtitleFont = "'Poppins', sans-serif",
     isWelcomeTitleFontRandom = false,
     isWelcomeSubtitleFontRandom = false,
+    startButtonText = 'START SESSION',
+    startButtonBgColor,
+    startButtonTextColor,
+    isStartButtonShadowEnabled = true,
   } = settings;
 
   const [randomTitleFont, setRandomTitleFont] = useState(welcomeTitleFont);
@@ -213,9 +217,19 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
           <button
             onClick={onStart}
             disabled={isLoading || isCaching}
-            className="bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-[var(--color-accent-primary-text)] font-bold py-3 px-10 rounded-full text-xl transition-transform transform hover:scale-105 shadow-lg shadow-black/50 disabled:bg-[var(--color-bg-tertiary)] disabled:transform-none disabled:cursor-wait"
+            className={`
+                ${startButtonBgColor ? '' : 'bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)]'}
+                ${startButtonTextColor ? '' : 'text-[var(--color-accent-primary-text)]'}
+                ${isStartButtonShadowEnabled ? 'shadow-lg shadow-black/50' : ''}
+                font-bold py-3 px-10 rounded-full text-xl transition-transform transform hover:scale-105
+                disabled:bg-[var(--color-bg-tertiary)] disabled:transform-none disabled:cursor-wait
+            `}
+            style={{
+                backgroundColor: startButtonBgColor || undefined,
+                color: startButtonTextColor || undefined,
+            }}
           >
-            {isLoading ? 'Starting...' : 'START SESSION'}
+            {isLoading ? 'Starting...' : startButtonText}
           </button>
         )}
       </div>

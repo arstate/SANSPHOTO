@@ -57,6 +57,10 @@ const DEFAULT_SETTINGS: Settings = {
   welcomeSubtitleFont: "'Poppins', sans-serif",
   isWelcomeTitleFontRandom: false,
   isWelcomeSubtitleFontRandom: false,
+  startButtonText: 'START SESSION',
+  startButtonBgColor: '',
+  startButtonTextColor: '',
+  isStartButtonShadowEnabled: true,
 };
 
 const DEFAULT_TEMPLATE_DATA: Omit<Template, 'id'> = {
