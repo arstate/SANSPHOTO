@@ -43,6 +43,12 @@ const ManageOnlineHistoryScreen: React.FC<ManageOnlineHistoryScreenProps> = ({
       const embedUrl = match ? match[1] : null;
 
       if (embedUrl) {
+        // [FIX] Periksa duplikat sebelum menambahkan
+        if (onlineHistory.some(entry => entry.embedUrl === embedUrl)) {
+            setError('This photo has already been added to the history.');
+            setIsLoading(false);
+            return;
+        }
         onAdd(embedUrl);
         setShareUrl('');
       } else {
@@ -108,7 +114,7 @@ const ManageOnlineHistoryScreen: React.FC<ManageOnlineHistoryScreenProps> = ({
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                   {onlineHistory.map(entry => (
                     <div key={entry.id} className="group relative bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)] rounded-lg p-2 flex flex-col">
-                      <img src={entry.embedUrl} alt={`Online history item`} className="w-full aspect-[2/3] object-cover rounded-md" />
+                      <img src={entry.embedUrl} alt={`Online history item`} className="w-full aspect-[2/3] object-contain rounded-md" />
                       <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                           <button
                               onClick={() => onDelete(entry.id)}
