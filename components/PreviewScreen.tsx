@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { DownloadIcon } from './icons/DownloadIcon';
 import { PrintIcon } from './icons/PrintIcon';
@@ -140,6 +139,46 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
     }
 
     const grayscaleCss = printSettings.colorMode === 'grayscale' ? 'filter: grayscale(100%);' : '';
+    const isLandscapeTemplate = template.orientation === 'landscape';
+    
+    // Logika untuk rotasi
+    const bodyStyles = `
+        margin: 0; 
+        padding: 0;
+        width: 100vw;
+        height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-sizing: border-box;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    `;
+    let imageStyles = `
+        ${grayscaleCss}
+        box-sizing: border-box;
+    `;
+
+    // Jika template lanskap, rotasi gambar dan sesuaikan ukuran agar tidak gepeng
+    if (isLandscapeTemplate) {
+        imageStyles += `
+            transform: rotate(90deg);
+            /* Setelah rotasi, lebar asli menjadi tinggi, dan sebaliknya. */
+            /* Jadi kita batasi lebar gambar dengan tinggi viewport (vh), dan tinggi gambar dengan lebar viewport (vw). */
+            /* Ini memastikan gambar mempertahankan rasio aspeknya saat mengisi halaman potret. */
+            max-width: 100vh;
+            max-height: 100vw;
+            width: auto;
+            height: auto;
+        `;
+    } else {
+        // Untuk potret, gunakan object-fit untuk memastikan pas
+        imageStyles += `
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        `;
+    }
 
     printWindow.document.write(`
         <html>
@@ -151,16 +190,10 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
                         margin: 0; 
                     }
                     body { 
-                        margin: 0; 
-                        padding: 0;
-                        -webkit-print-color-adjust: exact;
-                        print-color-adjust: exact;
+                        ${bodyStyles}
                     }
                     img { 
-                        width: 100%; 
-                        height: 100%; 
-                        object-fit: contain;
-                        ${grayscaleCss}
+                        ${imageStyles}
                     }
                 </style>
             </head>
@@ -173,7 +206,7 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
                             window.close();
                         };
                     };
-                    // Fallback for browsers that don't support onafterprint well
+                    // Fallback untuk browser yang tidak mendukung onafterprint dengan baik
                     setTimeout(() => {
                          if (!window.closed) {
                             // window.close(); 
@@ -185,7 +218,7 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
     `);
     printWindow.document.close();
     setIsPrintModalOpen(false);
-  }, [printSettings]);
+  }, [printSettings, template]);
 
   const drawCanvas = useCallback(async () => {
     setIsLoading(true);
