@@ -881,6 +881,7 @@ const App: React.FC = () => {
             onRetakeComplete={handleRetakeComplete}
             retakeForIndex={retakingPhotoIndex}
             onProgressUpdate={handleCaptureProgressUpdate}
+            existingImages={capturedImages}
         />;
       
       case AppState.RETAKE_PREVIEW:

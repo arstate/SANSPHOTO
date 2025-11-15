@@ -10,10 +10,11 @@ interface CaptureScreenProps {
   countdownDuration: number;
   flashEffectEnabled: boolean;
   onProgressUpdate?: (current: number, total: number) => void;
+  existingImages?: string[];
 }
 
 const CaptureScreen: React.FC<CaptureScreenProps> = ({ 
-  onCaptureComplete, onRetakeComplete, retakeForIndex, template, countdownDuration, flashEffectEnabled, onProgressUpdate 
+  onCaptureComplete, onRetakeComplete, retakeForIndex, template, countdownDuration, flashEffectEnabled, onProgressUpdate, existingImages
 }) => {
   const [photoIndex, setPhotoIndex] = useState(0);
   const [countdown, setCountdown] = useState<number | null>(null);
@@ -188,23 +189,49 @@ const CaptureScreen: React.FC<CaptureScreenProps> = ({
           </h2>
           <div className="w-full flex-grow flex items-center justify-center min-h-0">
             <div className={`relative w-full h-auto ${isLandscape ? 'aspect-[3/2]' : 'aspect-[2/3]'} bg-white rounded-lg overflow-hidden shadow-lg`}>
-                {!isRetakeMode && images.map((imgSrc, index) => {
-                    const inputId = index + 1;
-                    return template.photoSlots.filter(slot => slot.inputId === inputId).map(slot => (
-                        <img
-                            key={`captured-${slot.id}`}
-                            src={imgSrc}
-                            alt={`Captured photo ${inputId}`}
-                            className="absolute object-cover transform -scale-x-100"
-                            style={{
-                                left: `${(slot.x / TEMPLATE_WIDTH) * 100}%`,
-                                top: `${(slot.y / TEMPLATE_HEIGHT) * 100}%`,
-                                width: `${(slot.width / TEMPLATE_WIDTH) * 100}%`,
-                                height: `${(slot.height / TEMPLATE_HEIGHT) * 100}%`,
-                            }}
-                        />
-                    ));
-                })}
+                
+                {isRetakeMode && existingImages ? (
+                    existingImages.map((imgSrc, index) => {
+                        // In retake mode, skip the one being retaken to leave its slot "empty"
+                        if (index === retakeForIndex) {
+                            return null;
+                        }
+                        const inputId = index + 1;
+                        return template.photoSlots.filter(slot => slot.inputId === inputId).map(slot => (
+                            <img
+                                key={`existing-${slot.id}`}
+                                src={imgSrc}
+                                alt={`Previously captured photo ${inputId}`}
+                                className="absolute object-cover transform -scale-x-100"
+                                style={{
+                                    left: `${(slot.x / TEMPLATE_WIDTH) * 100}%`,
+                                    top: `${(slot.y / TEMPLATE_HEIGHT) * 100}%`,
+                                    width: `${(slot.width / TEMPLATE_WIDTH) * 100}%`,
+                                    height: `${(slot.height / TEMPLATE_HEIGHT) * 100}%`,
+                                }}
+                            />
+                        ));
+                    })
+                ) : (
+                    images.map((imgSrc, index) => {
+                        const inputId = index + 1;
+                        return template.photoSlots.filter(slot => slot.inputId === inputId).map(slot => (
+                            <img
+                                key={`captured-${slot.id}`}
+                                src={imgSrc}
+                                alt={`Captured photo ${inputId}`}
+                                className="absolute object-cover transform -scale-x-100"
+                                style={{
+                                    left: `${(slot.x / TEMPLATE_WIDTH) * 100}%`,
+                                    top: `${(slot.y / TEMPLATE_HEIGHT) * 100}%`,
+                                    width: `${(slot.width / TEMPLATE_WIDTH) * 100}%`,
+                                    height: `${(slot.height / TEMPLATE_HEIGHT) * 100}%`,
+                                }}
+                            />
+                        ));
+                    })
+                )}
+                
                 <img src={template.imageUrl} alt="Template" className="absolute inset-0 w-full h-full pointer-events-none" />
             </div>
           </div>

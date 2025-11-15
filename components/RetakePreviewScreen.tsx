@@ -137,7 +137,7 @@ const RetakePreviewScreen: React.FC<RetakePreviewScreenProps> = ({
     <div className="relative flex flex-col items-center justify-center h-full w-full p-4">
       <h2 className="font-bebas text-4xl mb-2 shrink-0">Review Your Photos</h2>
       <p className="text-md text-[var(--color-text-muted)] mb-4 shrink-0">
-          Happy with your photos? Click 'Done'. Want to change one? Hover and click 'Retake'.
+          Happy with your photos? Click 'Done'. Want to change one? Click the retake icon.
       </p>
 
       <main className="w-full max-w-6xl flex flex-col lg:flex-row justify-center items-center lg:items-start gap-8 flex-grow min-h-0">
@@ -163,7 +163,7 @@ const RetakePreviewScreen: React.FC<RetakePreviewScreenProps> = ({
                     return (
                         <div 
                             key={`retake-overlay-${inputId}`} 
-                            className="absolute group"
+                            className="absolute"
                             style={{
                                 left: `${(primarySlot.x / TEMPLATE_WIDTH) * 100}%`,
                                 top: `${(primarySlot.y / TEMPLATE_HEIGHT) * 100}%`,
@@ -173,12 +173,11 @@ const RetakePreviewScreen: React.FC<RetakePreviewScreenProps> = ({
                         >
                             {canRetake && (
                                 <button
-                                    onClick={() => onStartRetake(inputId - 1)} // Pass 0-based index
-                                    className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white font-bold rounded-md cursor-pointer"
+                                    onClick={() => onStartRetake(inputId - 1)}
+                                    className="absolute top-2 right-2 w-12 h-12 bg-black/60 backdrop-blur-sm hover:bg-black/80 text-white rounded-full transition-all transform hover:scale-110 focus:outline-none focus:ring-2 ring-offset-2 ring-offset-black/50 ring-white flex items-center justify-center border-2 border-white/50"
                                     aria-label={`Retake photo ${inputId}`}
                                 >
                                     <RestartIcon />
-                                    <span className="mt-1">Retake</span>
                                 </button>
                             )}
                         </div>
