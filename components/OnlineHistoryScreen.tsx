@@ -1,7 +1,9 @@
+
 import React from 'react';
 import { OnlineHistoryEntry } from '../types';
 import { BackIcon } from './icons/BackIcon';
 import { DownloadIcon } from './icons/DownloadIcon';
+import { getProxiedUrl } from '../utils/db';
 
 interface OnlineHistoryScreenProps {
   onlineHistory: OnlineHistoryEntry[];
@@ -12,8 +14,8 @@ const OnlineHistoryScreen: React.FC<OnlineHistoryScreenProps> = ({ onlineHistory
 
   const handleDownload = async (entry: OnlineHistoryEntry) => {
     try {
-        // Gunakan proksi yang lebih andal untuk menghindari masalah CORS
-        const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(entry.embedUrl)}`;
+        // Gunakan fungsi proksi terpusat
+        const proxyUrl = getProxiedUrl(entry.embedUrl);
         const response = await fetch(proxyUrl);
         if (!response.ok) {
             throw new Error('Network response was not ok');

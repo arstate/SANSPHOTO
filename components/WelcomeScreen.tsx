@@ -1,6 +1,4 @@
 
-
-
 import React, { useMemo, useRef, useEffect, useState } from 'react';
 import { SettingsIcon } from './icons/SettingsIcon';
 import { HistoryIcon } from './icons/HistoryIcon';
@@ -9,6 +7,7 @@ import { LogoutIcon } from './icons/LogoutIcon';
 import { GalleryIcon } from './icons/GalleryIcon';
 import { Settings } from '../types';
 import { GOOGLE_FONTS } from './SettingsScreen'; 
+import { getProxiedUrl } from '../utils/db';
 
 interface WelcomeScreenProps {
   onStart: () => void;
@@ -139,9 +138,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
 
 
   const backgroundContent = () => {
-    const proxiedImageUrl = welcomeBgImageUrl?.startsWith('http') 
-      ? `https://api.allorigins.win/raw?url=${encodeURIComponent(welcomeBgImageUrl)}` 
-      : welcomeBgImageUrl;
+    const proxiedImageUrl = getProxiedUrl(welcomeBgImageUrl || '');
 
     switch (welcomeBgType) {
       case 'color':

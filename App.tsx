@@ -1,3 +1,5 @@
+
+
 import React, { useState, useCallback, useEffect } from 'react';
 import WelcomeScreen from './components/WelcomeScreen';
 import TemplateSelection from './components/TemplateSelection';
@@ -21,7 +23,7 @@ import OnlineHistoryScreen from './components/OnlineHistoryScreen';
 import ClosedScreen from './components/ClosedScreen';
 import { AppState, PhotoSlot, Settings, Template, Event, HistoryEntry, SessionKey, OnlineHistoryEntry } from './types';
 import { db, ref, onValue, off, set, push, update, remove, firebaseObjectToArray, query, orderByChild, equalTo, get } from './firebase';
-import { getAllHistoryEntries, addHistoryEntry, deleteHistoryEntry, cacheImage } from './utils/db';
+import { getAllHistoryEntries, addHistoryEntry, deleteHistoryEntry, cacheImage, getProxiedUrl } from './utils/db';
 import { FullscreenIcon } from './components/icons/FullscreenIcon';
 import useFullscreenLock from './hooks/useFullscreenLock';
 
@@ -563,7 +565,7 @@ const App: React.FC = () => {
         throw new Error('Please provide a valid Google Photos share link (must contain "photos.app.goo.gl").');
     }
 
-    const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(originalUrl)}`;
+    const proxyUrl = getProxiedUrl(originalUrl);
     
     let response;
     try {
@@ -580,37 +582,58 @@ const App: React.FC = () => {
     const html = await response.text();
     let imageUrl: string | null = null;
 
-    // --- New Primary Method: Direct URL Scraping ---
-    // This regex looks for the full URL pattern used by Google's CDN for user content.
-    const directUrlRegex = /(https:\/\/lh3\.googleusercontent\.com\/[a-zA-Z0-9\-_=]+)/;
-    const directMatch = html.match(directUrlRegex);
+    // --- Strategy: Find ALL potential URLs and pick the best one ---
+    const urlRegex = /(https?:\/\/lh3\.googleusercontent\.com\/[a-zA-Z0-9\-_=]+)/g;
+    const allMatches = html.match(urlRegex) || [];
+    
+    console.log(`Found ${allMatches.length} potential Google User Content URLs.`);
 
-    if (directMatch && directMatch[1]) {
-        console.log("Primary method success: Found direct URL.");
-        imageUrl = directMatch[1];
-    } else {
-        // --- Fallback Method: Meta Tag Scraping ---
-        console.log("Primary method failed. Falling back to meta tag scraping.");
-        const metaTagRegex = /<meta[^>]*property\s*=\s*["']og:image["'][^>]*>/;
+    if (allMatches.length > 0) {
+        const uniqueUrls = [...new Set(allMatches)];
+        
+        // Heuristic for finding the best URL: Prioritize '/pw/' links and high-res parameters
+        // FIX: Explicitly type 'a' and 'b' as strings to resolve TypeScript errors where they were inferred as 'unknown'.
+        const sortedUrls = uniqueUrls.sort((a: string, b: string) => {
+            let scoreA = 0;
+            let scoreB = 0;
+
+            if (a.includes('/pw/')) scoreA += 100;
+            if (b.includes('/pw/')) scoreB += 100;
+
+            if (a.match(/=w\d{3,}/)) scoreA += 50;
+            if (b.match(/=w\d{3,}/)) scoreB += 50;
+            
+            if (a.match(/=s\d{2}/)) scoreA -= 20; // Deprioritize avatar sizes
+            if (b.match(/=s\d{2}/)) scoreB -= 20;
+
+            if (scoreA === scoreB) return b.length - a.length; // Tie-break with length
+            return scoreB - scoreA;
+        });
+        
+        if (sortedUrls.length > 0) {
+            imageUrl = sortedUrls[0];
+            console.log("Selected best URL based on heuristics:", imageUrl);
+        }
+    }
+
+    // --- Fallback: If no URLs are found, try the og:image meta tag ---
+    if (!imageUrl) {
+        console.log("No content URLs found. Falling back to meta tag scraping.");
+        const metaTagRegex = /<meta[^>]*property\s*=\s*["']og:image["'][^>]*content\s*=\s*["']([^"']+)["']/;
         const metaTagMatch = html.match(metaTagRegex);
-        if (metaTagMatch) {
-            const contentRegex = /content\s*=\s*["']([^"']+)["']/;
-            const contentMatch = metaTagMatch[0].match(contentRegex);
-            if (contentMatch && contentMatch[1]) {
-                console.log("Fallback method success: Found URL in og:image tag.");
-                imageUrl = contentMatch[1];
-            }
+        if (metaTagMatch && metaTagMatch[1]) {
+            console.log("Fallback method success: Found URL in og:image tag.");
+            imageUrl = metaTagMatch[1];
         }
     }
 
     if (!imageUrl) {
-        console.error("Both scraping methods failed. The link might be invalid, private, or Google's page structure may have changed. HTML received:", html.substring(0, 1500));
+        console.error("All scraping methods failed. The link might be invalid, private, or Google's page structure may have changed.");
         throw new Error('Could not find a valid image URL in the provided link. Please ensure it is a public share link.');
     }
 
     // --- URL Manipulation for High Resolution ---
-    // Remove any existing size parameters and append a high-res parameter.
-    const highResUrl = imageUrl.replace(/=[w|h|s|p|k].*$/, '') + '=w2400';
+    const highResUrl = imageUrl.replace(/=[w|h|s|p|k][^/]*$/, '') + '=w2400';
 
     const newEntry: Omit<OnlineHistoryEntry, 'id'> = {
         embedUrl: highResUrl,

@@ -5,7 +5,7 @@ import { AddIcon } from './icons/AddIcon';
 import { EditIcon } from './icons/EditIcon';
 import { TrashIcon } from './icons/TrashIcon';
 import { Template } from '../types';
-import { getCachedImage } from '../utils/db';
+import { getCachedImage, getProxiedUrl } from '../utils/db';
 
 interface TemplateSelectionProps {
   templates: Template[];
@@ -17,14 +17,6 @@ interface TemplateSelectionProps {
   onEditLayout: (template: Template) => void;
   onDelete: (templateId: string) => void;
 }
-
-const getProxiedUrl = (url: string) => {
-    if (!url || !url.startsWith('http')) {
-        return url;
-    }
-    // Gunakan api.allorigins.win untuk melewati masalah CORS.
-    return `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
-};
 
 const ImageFromCache: React.FC<{ src: string; alt: string; className: string; }> = ({ src, alt, className }) => {
   const [imageSrc, setImageSrc] = useState<string | null>(null);
