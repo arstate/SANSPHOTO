@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { Settings } from '../types';
 import { BackIcon } from './icons/BackIcon';
@@ -497,6 +498,74 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ settings, onSettingsCha
                             <div className="w-11 h-6 bg-[var(--color-bg-tertiary)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--color-accent-primary)]"></div>
                         </div>
                     </label>
+                </div>
+            </div>
+
+            {/* Online History Button Customization */}
+            <div className="p-6 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] text-left space-y-4">
+                <h3 className="text-xl font-bold text-[var(--color-text-accent)]">Online History Button (User)</h3>
+                
+                <div>
+                    <label htmlFor="onlineHistoryButtonText" className="block text-sm font-medium text-[var(--color-text-secondary)]">Button Text</label>
+                    <input
+                        type="text"
+                        id="onlineHistoryButtonText"
+                        name="onlineHistoryButtonText"
+                        value={settings.onlineHistoryButtonText || ''}
+                        onChange={handleSettingsInputChange}
+                        placeholder="e.g., History"
+                        className="mt-1 block w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md shadow-sm py-2 px-3 text-[var(--color-text-primary)] focus:outline-none focus:ring-[var(--color-border-focus)] focus:border-[var(--color-border-focus)] sm:text-sm"
+                    />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 border-t border-[var(--color-border-primary)] pt-4">
+                    <label htmlFor="isOnlineHistoryButtonIconEnabled" className="flex items-center justify-between cursor-pointer">
+                        <span className="text-sm font-medium text-[var(--color-text-secondary)]">Show Icon</span>
+                        <div className="relative"><input type="checkbox" id="isOnlineHistoryButtonIconEnabled" name="isOnlineHistoryButtonIconEnabled" checked={settings.isOnlineHistoryButtonIconEnabled ?? true} onChange={handleSettingsInputChange} className="sr-only peer" /><div className="w-11 h-6 bg-[var(--color-bg-tertiary)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--color-accent-primary)]"></div></div>
+                    </label>
+                    <label htmlFor="isOnlineHistoryButtonShadowEnabled" className="flex items-center justify-between cursor-pointer">
+                        <span className="text-sm font-medium text-[var(--color-text-secondary)]">Enable Shadow</span>
+                        <div className="relative"><input type="checkbox" id="isOnlineHistoryButtonShadowEnabled" name="isOnlineHistoryButtonShadowEnabled" checked={settings.isOnlineHistoryButtonShadowEnabled ?? true} onChange={handleSettingsInputChange} className="sr-only peer" /><div className="w-11 h-6 bg-[var(--color-bg-tertiary)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--color-accent-primary)]"></div></div>
+                    </label>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 border-t border-[var(--color-border-primary)] pt-4">
+                    <label htmlFor="isOnlineHistoryButtonFillEnabled" className="flex items-center justify-between cursor-pointer">
+                        <span className="text-sm font-medium text-[var(--color-text-secondary)]">Enable Fill</span>
+                        <div className="relative"><input type="checkbox" id="isOnlineHistoryButtonFillEnabled" name="isOnlineHistoryButtonFillEnabled" checked={settings.isOnlineHistoryButtonFillEnabled ?? false} onChange={handleSettingsInputChange} className="sr-only peer" /><div className="w-11 h-6 bg-[var(--color-bg-tertiary)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--color-accent-primary)]"></div></div>
+                    </label>
+                    <label htmlFor="isOnlineHistoryButtonStrokeEnabled" className="flex items-center justify-between cursor-pointer">
+                        <span className="text-sm font-medium text-[var(--color-text-secondary)]">Enable Stroke</span>
+                        <div className="relative"><input type="checkbox" id="isOnlineHistoryButtonStrokeEnabled" name="isOnlineHistoryButtonStrokeEnabled" checked={settings.isOnlineHistoryButtonStrokeEnabled ?? true} onChange={handleSettingsInputChange} className="sr-only peer" /><div className="w-11 h-6 bg-[var(--color-bg-tertiary)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--color-accent-primary)]"></div></div>
+                    </label>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 border-t border-[var(--color-border-primary)] pt-4">
+                    {(settings.isOnlineHistoryButtonFillEnabled) && (
+                        <div>
+                            <div className="flex justify-between items-center mb-1">
+                                <label htmlFor="onlineHistoryButtonFillColor" className="block text-sm font-medium text-[var(--color-text-secondary)]">Fill Color</label>
+                                <button onClick={() => handleResetSetting('onlineHistoryButtonFillColor')} className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] underline">Reset</button>
+                            </div>
+                            <input type="color" id="onlineHistoryButtonFillColor" name="onlineHistoryButtonFillColor" value={settings.onlineHistoryButtonFillColor || '#1F2937'} onChange={handleSettingsInputChange} className="w-full h-10 p-1 bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md cursor-pointer"/>
+                        </div>
+                    )}
+                    <div>
+                        <div className="flex justify-between items-center mb-1">
+                            <label htmlFor="onlineHistoryButtonTextColor" className="block text-sm font-medium text-[var(--color-text-secondary)]">Text Color</label>
+                            <button onClick={() => handleResetSetting('onlineHistoryButtonTextColor')} className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] underline">Reset</button>
+                        </div>
+                        <input type="color" id="onlineHistoryButtonTextColor" name="onlineHistoryButtonTextColor" value={settings.onlineHistoryButtonTextColor || '#D1D5DB'} onChange={handleSettingsInputChange} className="w-full h-10 p-1 bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md cursor-pointer"/>
+                    </div>
+                    {(settings.isOnlineHistoryButtonStrokeEnabled) && (
+                        <div>
+                            <div className="flex justify-between items-center mb-1">
+                                <label htmlFor="onlineHistoryButtonStrokeColor" className="block text-sm font-medium text-[var(--color-text-secondary)]">Stroke Color</label>
+                                <button onClick={() => handleResetSetting('onlineHistoryButtonStrokeColor')} className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] underline">Reset</button>
+                            </div>
+                            <input type="color" id="onlineHistoryButtonStrokeColor" name="onlineHistoryButtonStrokeColor" value={settings.onlineHistoryButtonStrokeColor || '#9CA3AF'} onChange={handleSettingsInputChange} className="w-full h-10 p-1 bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md cursor-pointer"/>
+                        </div>
+                    )}
                 </div>
             </div>
 

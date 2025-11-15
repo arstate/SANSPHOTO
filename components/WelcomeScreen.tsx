@@ -1,4 +1,5 @@
 
+
 import React, { useMemo, useRef, useEffect, useState } from 'react';
 import { SettingsIcon } from './icons/SettingsIcon';
 import { HistoryIcon } from './icons/HistoryIcon';
@@ -69,6 +70,14 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
     startButtonBgColor,
     startButtonTextColor,
     isStartButtonShadowEnabled = true,
+    isOnlineHistoryButtonIconEnabled = true,
+    onlineHistoryButtonText = 'History',
+    isOnlineHistoryButtonFillEnabled = false,
+    onlineHistoryButtonFillColor,
+    onlineHistoryButtonTextColor,
+    isOnlineHistoryButtonStrokeEnabled = true,
+    onlineHistoryButtonStrokeColor,
+    isOnlineHistoryButtonShadowEnabled = true,
   } = settings;
 
   const [randomTitleFont, setRandomTitleFont] = useState(welcomeTitleFont);
@@ -228,10 +237,21 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
             {settings.isOnlineHistoryEnabled && (
                 <button
                     onClick={onViewOnlineHistory}
-                    className="bg-transparent hover:bg-[var(--color-bg-secondary)] border-2 border-[var(--color-text-secondary)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-text-primary)] font-bold py-3 px-10 rounded-full text-xl transition-all transform hover:scale-105 shadow-lg shadow-black/20 flex items-center gap-2"
+                    className={`
+                        font-bold py-3 px-10 rounded-full text-xl transition-all transform hover:scale-105 flex items-center gap-2
+                        ${isOnlineHistoryButtonShadowEnabled ? 'shadow-lg shadow-black/20' : ''}
+                        ${isOnlineHistoryButtonStrokeEnabled ? 'border-2' : 'border-0'}
+                        ${!isOnlineHistoryButtonFillEnabled && !onlineHistoryButtonFillColor ? 'hover:bg-[var(--color-bg-secondary)]/50' : ''}
+                        ${isOnlineHistoryButtonFillEnabled && !onlineHistoryButtonFillColor ? 'bg-[var(--color-bg-secondary)] hover:brightness-110' : ''}
+                    `}
+                    style={{
+                        backgroundColor: isOnlineHistoryButtonFillEnabled ? (onlineHistoryButtonFillColor || undefined) : 'transparent',
+                        color: onlineHistoryButtonTextColor || undefined,
+                        borderColor: isOnlineHistoryButtonStrokeEnabled ? (onlineHistoryButtonStrokeColor || 'var(--color-text-secondary)') : 'transparent',
+                    }}
                 >
-                    <GlobeIcon />
-                    History
+                    {isOnlineHistoryButtonIconEnabled && <GlobeIcon />}
+                    <span>{onlineHistoryButtonText}</span>
                 </button>
             )}
             <button

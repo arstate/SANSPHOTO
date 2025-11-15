@@ -76,6 +76,15 @@ const DEFAULT_SETTINGS: Settings = {
   reopenTimestamp: 0,
   // Online History
   isOnlineHistoryEnabled: false,
+  // New Online History Button Defaults
+  isOnlineHistoryButtonIconEnabled: true,
+  onlineHistoryButtonText: 'History',
+  isOnlineHistoryButtonFillEnabled: false, // Default to outline button
+  onlineHistoryButtonFillColor: '', // Use CSS variables by default
+  onlineHistoryButtonTextColor: '', // Use CSS variables by default
+  isOnlineHistoryButtonStrokeEnabled: true,
+  onlineHistoryButtonStrokeColor: '', // Use CSS variables by default
+  isOnlineHistoryButtonShadowEnabled: true,
 };
 
 const DEFAULT_TEMPLATE_DATA: Omit<Template, 'id'> = {

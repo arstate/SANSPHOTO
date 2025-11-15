@@ -63,6 +63,15 @@ export interface Settings {
   reopenTimestamp?: number;
   // Online History Settings
   isOnlineHistoryEnabled?: boolean;
+  // New Online History Button Settings
+  isOnlineHistoryButtonIconEnabled?: boolean;
+  onlineHistoryButtonText?: string;
+  isOnlineHistoryButtonFillEnabled?: boolean;
+  onlineHistoryButtonFillColor?: string;
+  onlineHistoryButtonTextColor?: string;
+  isOnlineHistoryButtonStrokeEnabled?: boolean;
+  onlineHistoryButtonStrokeColor?: string;
+  isOnlineHistoryButtonShadowEnabled?: boolean;
 }
 
 export interface Template {
