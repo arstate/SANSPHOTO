@@ -8,16 +8,6 @@ const IMAGE_CACHE_STORE_NAME = 'imageCache';
 
 let db: IDBDatabase;
 
-// Fungsi terpusat untuk mendapatkan URL melalui proksi
-export const getProxiedUrl = (url: string): string => {
-  if (!url || !url.startsWith('http')) {
-    return url;
-  }
-  // Mengganti corsproxy.io karena galat 403. Mencoba layanan proksi alternatif.
-  return `https://thingproxy.freeboard.io/fetch/${url}`;
-};
-
-
 function openDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     if (db) {
@@ -114,7 +104,11 @@ export async function cacheImage(url: string): Promise<void> {
       return;
     }
     
-    const fetchUrl = getProxiedUrl(url);
+    let fetchUrl = url;
+    if (url.startsWith('http')) {
+        // Gunakan api.allorigins.win untuk melewati masalah CORS.
+        fetchUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+    }
 
     console.log(`Menyimpan gambar dari ${url} ke cache...`);
     const response = await fetch(fetchUrl);

@@ -4,10 +4,9 @@ import { SettingsIcon } from './icons/SettingsIcon';
 import { HistoryIcon } from './icons/HistoryIcon';
 import { AdminIcon } from './icons/AdminIcon';
 import { LogoutIcon } from './icons/LogoutIcon';
-import { GalleryIcon } from './icons/GalleryIcon';
+import { GlobeIcon } from './icons/GlobeIcon';
 import { Settings } from '../types';
 import { GOOGLE_FONTS } from './SettingsScreen'; 
-import { getProxiedUrl } from '../utils/db';
 
 interface WelcomeScreenProps {
   onStart: () => void;
@@ -138,7 +137,9 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
 
 
   const backgroundContent = () => {
-    const proxiedImageUrl = getProxiedUrl(welcomeBgImageUrl || '');
+    const proxiedImageUrl = welcomeBgImageUrl?.startsWith('http') 
+      ? `https://api.allorigins.win/raw?url=${encodeURIComponent(welcomeBgImageUrl)}` 
+      : welcomeBgImageUrl;
 
     switch (welcomeBgType) {
       case 'color':
@@ -199,7 +200,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
           {welcomeSubtitle}
         </p>
         {isAdminLoggedIn ? (
-            <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex flex-wrap justify-center gap-4">
               <button
                   onClick={onSettingsClick}
                   className="bg-[var(--color-accent-secondary)] hover:bg-[var(--color-accent-secondary-hover)] text-[var(--color-accent-secondary-text)] font-bold py-3 px-10 rounded-full text-xl transition-transform transform hover:scale-105 shadow-lg shadow-black/50 flex items-center gap-2"
@@ -214,9 +215,25 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                   <HistoryIcon />
                   View History
               </button>
+               <button
+                  onClick={onViewOnlineHistory}
+                  className="bg-[var(--color-info)] hover:bg-[var(--color-info-hover)] text-[var(--color-info-text)] font-bold py-3 px-10 rounded-full text-xl transition-transform transform hover:scale-105 shadow-lg shadow-black/50 flex items-center gap-2"
+              >
+                  <GlobeIcon />
+                  Online History
+              </button>
             </div>
         ) : (
-          <div className="flex flex-col items-center gap-4">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            {settings.isOnlineHistoryEnabled && (
+                <button
+                    onClick={onViewOnlineHistory}
+                    className="bg-transparent hover:bg-[var(--color-bg-secondary)] border-2 border-[var(--color-text-secondary)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-text-primary)] font-bold py-3 px-10 rounded-full text-xl transition-all transform hover:scale-105 shadow-lg shadow-black/20 flex items-center gap-2"
+                >
+                    <GlobeIcon />
+                    History
+                </button>
+            )}
             <button
               onClick={onStart}
               disabled={isLoading || isCaching}
@@ -234,15 +251,6 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
             >
               {isLoading ? 'Starting...' : startButtonText}
             </button>
-            {settings.isOnlineHistoryEnabled && (
-                <button
-                    onClick={onViewOnlineHistory}
-                    className="flex items-center gap-2 bg-[var(--color-info)]/80 hover:bg-[var(--color-info)] text-[var(--color-info-text)] font-semibold py-2 px-6 rounded-full text-md transition-all transform hover:scale-105 shadow-md shadow-black/40"
-                >
-                    <GalleryIcon />
-                    Online Gallery
-                </button>
-            )}
           </div>
         )}
       </div>

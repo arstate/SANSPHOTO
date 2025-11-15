@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { DownloadIcon } from './icons/DownloadIcon';
 import { PrintIcon } from './icons/PrintIcon';
@@ -6,7 +5,7 @@ import { CheckIcon } from './icons/CheckIcon';
 import { BackIcon } from './icons/BackIcon';
 import { RestartIcon } from './icons/RestartIcon';
 import { Template, Event, Settings } from '../types';
-import { getCachedImage, getProxiedUrl } from '../utils/db';
+import { getCachedImage } from '../utils/db';
 
 type PrintSettings = {
   isEnabled: boolean;
@@ -456,7 +455,10 @@ const loadImage = (src: string): Promise<HTMLImageElement> => {
       if (!blobToLoad) {
         console.warn(`Gambar templat tidak ditemukan di cache. Mengambil melalui proxy: ${src}`);
         
-        const fetchUrl = getProxiedUrl(src);
+        let fetchUrl = src;
+        if (src.startsWith('http')) {
+          fetchUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(src)}`;
+        }
         
         const response = await fetch(fetchUrl);
         if (!response.ok) {

@@ -15,15 +15,15 @@ import RenameEventModal from './components/RenameEventModal';
 import AssignTemplatesModal from './components/AssignTemplatesModal';
 import EventQrCodeModal from './components/EventQrCodeModal';
 import HistoryScreen from './components/HistoryScreen';
+import OnlineHistoryScreen from './components/OnlineHistoryScreen';
+import AddOnlineHistoryModal from './components/AddOnlineHistoryModal';
 import PinInputModal from './components/PinInputModal';
 import KeyCodeScreen from './components/KeyCodeScreen';
 import ManageSessionsScreen from './components/ManageSessionsScreen';
-import ManageOnlineHistoryScreen from './components/ManageOnlineHistoryScreen';
-import OnlineHistoryScreen from './components/OnlineHistoryScreen';
 import ClosedScreen from './components/ClosedScreen';
 import { AppState, PhotoSlot, Settings, Template, Event, HistoryEntry, SessionKey, OnlineHistoryEntry } from './types';
 import { db, ref, onValue, off, set, push, update, remove, firebaseObjectToArray, query, orderByChild, equalTo, get } from './firebase';
-import { getAllHistoryEntries, addHistoryEntry, deleteHistoryEntry, cacheImage, getProxiedUrl } from './utils/db';
+import { getAllHistoryEntries, addHistoryEntry, deleteHistoryEntry, cacheImage } from './utils/db';
 import { FullscreenIcon } from './components/icons/FullscreenIcon';
 import useFullscreenLock from './hooks/useFullscreenLock';
 
@@ -74,7 +74,7 @@ const DEFAULT_SETTINGS: Settings = {
   // Closed Mode Defaults
   isClosedModeEnabled: false,
   reopenTimestamp: 0,
-  // Online History Defaults
+  // Online History
   isOnlineHistoryEnabled: false,
 };
 
@@ -93,6 +93,8 @@ const App: React.FC = () => {
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isPinModalOpen, setIsPinModalOpen] = useState(false);
+  const [isAddOnlineHistoryModalOpen, setIsAddOnlineHistoryModalOpen] = useState(false);
+  const [isSavingOnlineHistory, setIsSavingOnlineHistory] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
@@ -178,12 +180,12 @@ const App: React.FC = () => {
     const sessionKeysListener = onValue(sessionKeysRef, (snapshot) => {
         setSessionKeys(firebaseObjectToArray<SessionKey>(snapshot.val()));
     });
-
+    
     // Online History listener
     const onlineHistoryRef = ref(db, 'onlineHistory');
     const onlineHistoryListener = onValue(onlineHistoryRef, (snapshot) => {
         const data = firebaseObjectToArray<OnlineHistoryEntry>(snapshot.val());
-        setOnlineHistory(data.sort((a,b) => b.timestamp - a.timestamp));
+        setOnlineHistory(data.sort((a, b) => b.timestamp - a.timestamp));
     });
 
     return () => {
@@ -204,6 +206,18 @@ const App: React.FC = () => {
       root.classList.remove('light');
     }
   }, [settings.theme]);
+  
+  // Handle responsive mode for online history
+  useEffect(() => {
+    const container = document.getElementById('app-container');
+    if (container) {
+      if (appState === AppState.ONLINE_HISTORY) {
+        container.classList.add('responsive-mode');
+      } else {
+        container.classList.remove('responsive-mode');
+      }
+    }
+  }, [appState]);
 
   // Real-time progress update
   useEffect(() => {
@@ -375,13 +389,29 @@ const App: React.FC = () => {
     setTimeout(() => setAppState(AppState.TEMPLATE_SELECTION), 0); // Buka manage templates
   }, []);
 
-  const handleManageEvents = useCallback(() => { setAppState(AppState.MANAGE_EVENTS); }, []);
-  const handleManageSessions = useCallback(() => { setAppState(AppState.MANAGE_SESSIONS); }, []);
-  const handleGoToSettings = useCallback(() => { setAppState(AppState.SETTINGS); }, []);
-  const handleViewHistory = useCallback(() => { if (isAdminLoggedIn) { setAppState(AppState.HISTORY); } }, [isAdminLoggedIn]);
-  const handleViewOnlineHistory = useCallback(() => { setAppState(AppState.ONLINE_HISTORY); }, []);
-  const handleManageOnlineHistory = useCallback(() => { setAppState(AppState.MANAGE_ONLINE_HISTORY); }, []);
+
+  const handleManageEvents = useCallback(() => {
+    setAppState(AppState.MANAGE_EVENTS);
+  }, []);
+
+  const handleManageSessions = useCallback(() => {
+    setAppState(AppState.MANAGE_SESSIONS);
+  }, []);
+
+  const handleGoToSettings = useCallback(() => {
+    setAppState(AppState.SETTINGS);
+  }, []);
   
+  const handleViewHistory = useCallback(() => {
+      if (isAdminLoggedIn) {
+          setAppState(AppState.HISTORY);
+      }
+  }, [isAdminLoggedIn]);
+  
+  const handleViewOnlineHistory = useCallback(() => {
+    setAppState(AppState.ONLINE_HISTORY);
+  }, []);
+
   const handleSettingsChange = useCallback((newSettings: Settings) => {
     set(ref(db, 'settings'), newSettings);
   }, []);
@@ -558,99 +588,31 @@ const App: React.FC = () => {
       await deleteHistoryEntry(entryId);
       setHistory(prev => prev.filter(entry => entry.id !== entryId));
   }, []);
-
+  
   // Online History Handlers
-  const handleAddOnlineHistory = useCallback(async (originalUrl: string) => {
-    if (!originalUrl.includes('photos.app.goo.gl')) {
-        throw new Error('Please provide a valid Google Photos share link (must contain "photos.app.goo.gl").');
-    }
-
-    const proxyUrl = getProxiedUrl(originalUrl);
-    
-    let response;
+  const handleAddOnlineHistory = useCallback(async (urls: string[]) => {
+    setIsSavingOnlineHistory(true);
     try {
-        response = await fetch(proxyUrl);
-    } catch (networkError) {
-        console.error("Network error fetching from proxy:", networkError);
-        throw new Error("Could not connect to the proxy service. Please check your internet connection.");
-    }
-
-    if (!response.ok) {
-        throw new Error(`Failed to fetch the URL. Proxy status: ${response.status}. The service might be down.`);
-    }
-
-    const html = await response.text();
-    let imageUrl: string | null = null;
-
-    // --- Strategy: Find ALL potential URLs and pick the best one ---
-    const urlRegex = /(https?:\/\/lh3\.googleusercontent\.com\/[a-zA-Z0-9\-_=]+)/g;
-    const allMatches = html.match(urlRegex) || [];
-    
-    console.log(`Found ${allMatches.length} potential Google User Content URLs.`);
-
-    if (allMatches.length > 0) {
-        // FIX: The `sort` callback parameters were being inferred as `unknown`, causing a type error.
-        // Explicitly typing `uniqueUrls` as `string[]` ensures that `a` and `b` are correctly inferred as `string`.
-        const uniqueUrls: string[] = [...new Set(allMatches)];
-        
-        // Heuristic for finding the best URL: Prioritize '/pw/' links and high-res parameters
-        const sortedUrls = uniqueUrls.sort((a, b) => {
-            let scoreA = 0;
-            let scoreB = 0;
-
-            if (a.includes('/pw/')) scoreA += 100;
-            if (b.includes('/pw/')) scoreB += 100;
-
-            if (a.match(/=w\d{3,}/)) scoreA += 50;
-            if (b.match(/=w\d{3,}/)) scoreB += 50;
-            
-            if (a.match(/=s\d{2}/)) scoreA -= 20; // Deprioritize avatar sizes
-            if (b.match(/=s\d{2}/)) scoreB -= 20;
-
-            if (scoreA === scoreB) return b.length - a.length; // Tie-break with length
-            return scoreB - scoreA;
-        });
-        
-        if (sortedUrls.length > 0) {
-            imageUrl = sortedUrls[0];
-            console.log("Selected best URL based on heuristics:", imageUrl);
+        const historyRef = ref(db, 'onlineHistory');
+        for (const url of urls) {
+            const newEntry: Omit<OnlineHistoryEntry, 'id'> = {
+                googlePhotosUrl: url,
+                timestamp: Date.now(),
+            };
+            await push(historyRef, newEntry);
         }
-    }
-
-    // --- Fallback: If no URLs are found, try the og:image meta tag ---
-    if (!imageUrl) {
-        console.log("No content URLs found. Falling back to meta tag scraping.");
-        const metaTagRegex = /<meta[^>]*property\s*=\s*["']og:image["'][^>]*content\s*=\s*["']([^"']+)["']/;
-        const metaTagMatch = html.match(metaTagRegex);
-        if (metaTagMatch && metaTagMatch[1]) {
-            console.log("Fallback method success: Found URL in og:image tag.");
-            imageUrl = metaTagMatch[1];
-        }
-    }
-
-    if (!imageUrl) {
-        console.error("All scraping methods failed. The link might be invalid, private, or Google's page structure may have changed.");
-        throw new Error('Could not find a valid image URL in the provided link. Please ensure it is a public share link.');
-    }
-
-    // --- URL Manipulation for High Resolution ---
-    const highResUrl = imageUrl.replace(/=[w|h|s|p|k][^/]*$/, '') + '=w2400';
-
-    const newEntry: Omit<OnlineHistoryEntry, 'id'> = {
-        embedUrl: highResUrl,
-        originalUrl,
-        timestamp: Date.now(),
-    };
-    await push(ref(db, 'onlineHistory'), newEntry);
-  }, []);
-
-
-  const handleDeleteOnlineHistory = useCallback(async (entryId: string) => {
-    if (window.confirm("Are you sure you want to delete this online photo?")) {
-        await remove(ref(db, `onlineHistory/${entryId}`));
+    } catch (error) {
+        console.error("Error adding to online history:", error);
+        alert("Failed to add photos to online history. Please check the console for errors.");
+    } finally {
+        setIsSavingOnlineHistory(false);
+        setIsAddOnlineHistoryModalOpen(false);
     }
   }, []);
 
+  const handleDeleteOnlineHistoryEntry = useCallback(async (entryId: string) => {
+    await remove(ref(db, `onlineHistory/${entryId}`));
+  }, []);
 
   const handleBack = useCallback(() => {
     switch (appState) {
@@ -675,7 +637,6 @@ const App: React.FC = () => {
             break;
         case AppState.MANAGE_EVENTS:
         case AppState.MANAGE_SESSIONS:
-        case AppState.MANAGE_ONLINE_HISTORY:
             setAppState(AppState.SETTINGS);
             break;
         default:
@@ -778,7 +739,7 @@ const App: React.FC = () => {
         return <WelcomeScreen 
             onStart={handleStartSession} 
             onSettingsClick={handleGoToSettings} 
-            onViewHistory={handleViewHistory} 
+            onViewHistory={handleViewHistory}
             onViewOnlineHistory={handleViewOnlineHistory}
             isAdminLoggedIn={isAdminLoggedIn} 
             isCaching={isCaching} 
@@ -808,7 +769,7 @@ const App: React.FC = () => {
         />;
       
       case AppState.SETTINGS:
-        return <SettingsScreen settings={settings} onSettingsChange={handleSettingsChange} onManageTemplates={handleManageTemplates} onManageEvents={handleManageEvents} onManageSessions={handleManageSessions} onViewHistory={handleViewHistory} onManageOnlineHistory={handleManageOnlineHistory} onBack={handleBack} />;
+        return <SettingsScreen settings={settings} onSettingsChange={handleSettingsChange} onManageTemplates={handleManageTemplates} onManageEvents={handleManageEvents} onManageSessions={handleManageSessions} onViewHistory={handleViewHistory} onBack={handleBack} />;
       
       case AppState.MANAGE_EVENTS:
          return <ManageEventsScreen 
@@ -830,22 +791,20 @@ const App: React.FC = () => {
             onAddKey={handleAddSessionKey} 
             onDeleteKey={handleDeleteSessionKey}
           />;
-      
-      case AppState.MANAGE_ONLINE_HISTORY:
-          if (!isAdminLoggedIn) { setAppState(AppState.WELCOME); return null; }
-          return <ManageOnlineHistoryScreen 
-            onlineHistory={onlineHistory}
-            onAddEntry={handleAddOnlineHistory}
-            onDeleteEntry={handleDeleteOnlineHistory}
-            onBack={handleBack}
-          />;
 
       case AppState.HISTORY:
+          // FIX: Changed WELCOME to AppState.WELCOME to correctly reference the enum member.
           if (!isAdminLoggedIn) { setAppState(AppState.WELCOME); return null; }
           return <HistoryScreen history={history} events={events} onDelete={handleDeleteHistoryEntry} onBack={handleBack} />;
-
+      
       case AppState.ONLINE_HISTORY:
-          return <OnlineHistoryScreen onlineHistory={onlineHistory} onBack={handleBack} />;
+          return <OnlineHistoryScreen
+            history={onlineHistory}
+            isAdminLoggedIn={isAdminLoggedIn}
+            onBack={handleBack}
+            onAdd={() => setIsAddOnlineHistoryModalOpen(true)}
+            onDelete={handleDeleteOnlineHistoryEntry}
+          />;
 
       case AppState.EDIT_TEMPLATE_METADATA:
         if (!isAdminLoggedIn || !editingTemplate) { setAppState(AppState.WELCOME); return null; }
@@ -928,6 +887,13 @@ const App: React.FC = () => {
       {editingEvent && <RenameEventModal event={editingEvent} onSave={handleSaveRenameEvent} onClose={handleCancelRenameEvent} />}
       {assigningTemplatesEvent && <AssignTemplatesModal event={assigningTemplatesEvent} allTemplates={templates} onSave={handleSaveTemplateAssignments} onClose={handleCancelAssigningTemplates} />}
       {editingEventQr && <EventQrCodeModal event={editingEventQr} onSave={handleSaveQrCodeSettings} onClose={handleCancelEditQrCode} />}
+      {isAddOnlineHistoryModalOpen && (
+        <AddOnlineHistoryModal 
+            onClose={() => setIsAddOnlineHistoryModalOpen(false)}
+            onSave={handleAddOnlineHistory}
+            isSaving={isSavingOnlineHistory}
+        />
+      )}
       {appState === AppState.EDIT_TEMPLATE_METADATA && editingTemplate && (
          <TemplateMetadataModal template={editingTemplate} onSave={handleSaveTemplateMetadata} onClose={handleCancelEditTemplateMetadata} />
       )}
