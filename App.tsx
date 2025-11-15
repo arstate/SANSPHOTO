@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useCallback, useEffect } from 'react';
 import WelcomeScreen from './components/WelcomeScreen';
 import TemplateSelection from './components/TemplateSelection';
@@ -18,8 +19,10 @@ import HistoryScreen from './components/HistoryScreen';
 import PinInputModal from './components/PinInputModal';
 import KeyCodeScreen from './components/KeyCodeScreen';
 import ManageSessionsScreen from './components/ManageSessionsScreen';
+import ManageOnlineHistoryScreen from './components/ManageOnlineHistoryScreen';
+import OnlineHistoryScreen from './components/OnlineHistoryScreen';
 import ClosedScreen from './components/ClosedScreen';
-import { AppState, PhotoSlot, Settings, Template, Event, HistoryEntry, SessionKey } from './types';
+import { AppState, PhotoSlot, Settings, Template, Event, HistoryEntry, SessionKey, OnlineHistoryEntry } from './types';
 import { db, ref, onValue, off, set, push, update, remove, firebaseObjectToArray, query, orderByChild, equalTo, get } from './firebase';
 import { getAllHistoryEntries, addHistoryEntry, deleteHistoryEntry, cacheImage } from './utils/db';
 import { FullscreenIcon } from './components/icons/FullscreenIcon';
@@ -72,6 +75,8 @@ const DEFAULT_SETTINGS: Settings = {
   // Closed Mode Defaults
   isClosedModeEnabled: false,
   reopenTimestamp: 0,
+  // Online History Defaults
+  isOnlineHistoryEnabled: false,
 };
 
 const DEFAULT_TEMPLATE_DATA: Omit<Template, 'id'> = {
@@ -99,6 +104,7 @@ const App: React.FC = () => {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [onlineHistory, setOnlineHistory] = useState<OnlineHistoryEntry[]>([]);
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [sessionKeys, setSessionKeys] = useState<SessionKey[]>([]);
   
@@ -174,11 +180,19 @@ const App: React.FC = () => {
         setSessionKeys(firebaseObjectToArray<SessionKey>(snapshot.val()));
     });
 
+    // Online History listener
+    const onlineHistoryRef = ref(db, 'onlineHistory');
+    const onlineHistoryListener = onValue(onlineHistoryRef, (snapshot) => {
+        const data = firebaseObjectToArray<OnlineHistoryEntry>(snapshot.val());
+        setOnlineHistory(data.sort((a,b) => b.timestamp - a.timestamp));
+    });
+
     return () => {
       off(settingsRef, 'value', settingsListener);
       off(templatesRef, 'value', templatesListener);
       off(eventsRef, 'value', eventsListener);
       off(sessionKeysRef, 'value', sessionKeysListener);
+      off(onlineHistoryRef, 'value', onlineHistoryListener);
     };
   }, [cacheAllTemplates]);
 
@@ -362,24 +376,12 @@ const App: React.FC = () => {
     setTimeout(() => setAppState(AppState.TEMPLATE_SELECTION), 0); // Buka manage templates
   }, []);
 
-
-  const handleManageEvents = useCallback(() => {
-    setAppState(AppState.MANAGE_EVENTS);
-  }, []);
-
-  const handleManageSessions = useCallback(() => {
-    setAppState(AppState.MANAGE_SESSIONS);
-  }, []);
-
-  const handleGoToSettings = useCallback(() => {
-    setAppState(AppState.SETTINGS);
-  }, []);
-  
-  const handleViewHistory = useCallback(() => {
-      if (isAdminLoggedIn) {
-          setAppState(AppState.HISTORY);
-      }
-  }, [isAdminLoggedIn]);
+  const handleManageEvents = useCallback(() => { setAppState(AppState.MANAGE_EVENTS); }, []);
+  const handleManageSessions = useCallback(() => { setAppState(AppState.MANAGE_SESSIONS); }, []);
+  const handleGoToSettings = useCallback(() => { setAppState(AppState.SETTINGS); }, []);
+  const handleViewHistory = useCallback(() => { if (isAdminLoggedIn) { setAppState(AppState.HISTORY); } }, [isAdminLoggedIn]);
+  const handleViewOnlineHistory = useCallback(() => { setAppState(AppState.ONLINE_HISTORY); }, []);
+  const handleManageOnlineHistory = useCallback(() => { setAppState(AppState.MANAGE_ONLINE_HISTORY); }, []);
   
   const handleSettingsChange = useCallback((newSettings: Settings) => {
     set(ref(db, 'settings'), newSettings);
@@ -558,6 +560,39 @@ const App: React.FC = () => {
       setHistory(prev => prev.filter(entry => entry.id !== entryId));
   }, []);
 
+  // Online History Handlers
+  const handleAddOnlineHistory = useCallback(async (originalUrl: string) => {
+    if (!originalUrl.includes('photos.app.goo.gl')) {
+        throw new Error('Please provide a valid Google Photos share link.');
+    }
+    const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(originalUrl)}`;
+    const response = await fetch(proxyUrl);
+    if (!response.ok) {
+        throw new Error(`Failed to fetch the URL. Status: ${response.status}`);
+    }
+    const html = await response.text();
+    const match = html.match(/<meta\s+property="og:image"\s+content="([^"]+)"/);
+    const embedUrl = match ? match[1] : null;
+
+    if (!embedUrl) {
+        throw new Error('Could not find the image URL in the provided link.');
+    }
+
+    const newEntry: Omit<OnlineHistoryEntry, 'id'> = {
+        embedUrl,
+        originalUrl,
+        timestamp: Date.now(),
+    };
+    await push(ref(db, 'onlineHistory'), newEntry);
+  }, []);
+
+  const handleDeleteOnlineHistory = useCallback(async (entryId: string) => {
+    if (window.confirm("Are you sure you want to delete this online photo?")) {
+        await remove(ref(db, `onlineHistory/${entryId}`));
+    }
+  }, []);
+
+
   const handleBack = useCallback(() => {
     switch (appState) {
         case AppState.PREVIEW:
@@ -576,10 +611,12 @@ const App: React.FC = () => {
         case AppState.KEY_CODE_ENTRY:
         case AppState.SETTINGS:
         case AppState.HISTORY:
+        case AppState.ONLINE_HISTORY:
             setAppState(AppState.WELCOME);
             break;
         case AppState.MANAGE_EVENTS:
         case AppState.MANAGE_SESSIONS:
+        case AppState.MANAGE_ONLINE_HISTORY:
             setAppState(AppState.SETTINGS);
             break;
         default:
@@ -683,6 +720,7 @@ const App: React.FC = () => {
             onStart={handleStartSession} 
             onSettingsClick={handleGoToSettings} 
             onViewHistory={handleViewHistory} 
+            onViewOnlineHistory={handleViewOnlineHistory}
             isAdminLoggedIn={isAdminLoggedIn} 
             isCaching={isCaching} 
             cachingProgress={cachingProgress}
@@ -711,7 +749,7 @@ const App: React.FC = () => {
         />;
       
       case AppState.SETTINGS:
-        return <SettingsScreen settings={settings} onSettingsChange={handleSettingsChange} onManageTemplates={handleManageTemplates} onManageEvents={handleManageEvents} onManageSessions={handleManageSessions} onViewHistory={handleViewHistory} onBack={handleBack} />;
+        return <SettingsScreen settings={settings} onSettingsChange={handleSettingsChange} onManageTemplates={handleManageTemplates} onManageEvents={handleManageEvents} onManageSessions={handleManageSessions} onViewHistory={handleViewHistory} onManageOnlineHistory={handleManageOnlineHistory} onBack={handleBack} />;
       
       case AppState.MANAGE_EVENTS:
          return <ManageEventsScreen 
@@ -733,11 +771,22 @@ const App: React.FC = () => {
             onAddKey={handleAddSessionKey} 
             onDeleteKey={handleDeleteSessionKey}
           />;
+      
+      case AppState.MANAGE_ONLINE_HISTORY:
+          if (!isAdminLoggedIn) { setAppState(AppState.WELCOME); return null; }
+          return <ManageOnlineHistoryScreen 
+            onlineHistory={onlineHistory}
+            onAddEntry={handleAddOnlineHistory}
+            onDeleteEntry={handleDeleteOnlineHistory}
+            onBack={handleBack}
+          />;
 
       case AppState.HISTORY:
-          // FIX: Changed WELCOME to AppState.WELCOME to correctly reference the enum member.
           if (!isAdminLoggedIn) { setAppState(AppState.WELCOME); return null; }
           return <HistoryScreen history={history} events={events} onDelete={handleDeleteHistoryEntry} onBack={handleBack} />;
+
+      case AppState.ONLINE_HISTORY:
+          return <OnlineHistoryScreen onlineHistory={onlineHistory} onBack={handleBack} />;
 
       case AppState.EDIT_TEMPLATE_METADATA:
         if (!isAdminLoggedIn || !editingTemplate) { setAppState(AppState.WELCOME); return null; }
@@ -784,7 +833,8 @@ const App: React.FC = () => {
         return <WelcomeScreen 
             onStart={handleStartSession} 
             onSettingsClick={handleGoToSettings} 
-            onViewHistory={handleViewHistory} 
+            onViewHistory={handleViewHistory}
+            onViewOnlineHistory={handleViewOnlineHistory}
             isAdminLoggedIn={isAdminLoggedIn} 
             isCaching={isCaching} 
             cachingProgress={cachingProgress}

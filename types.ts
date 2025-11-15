@@ -1,4 +1,5 @@
 
+
 export enum AppState {
   WELCOME,
   KEY_CODE_ENTRY,
@@ -12,6 +13,8 @@ export enum AppState {
   CAPTURE,
   PREVIEW,
   HISTORY,
+  MANAGE_ONLINE_HISTORY, // New state for admin
+  ONLINE_HISTORY,        // New state for user
 }
 
 export interface PhotoSlot {
@@ -60,6 +63,8 @@ export interface Settings {
   // Closed Mode Settings
   isClosedModeEnabled?: boolean;
   reopenTimestamp?: number;
+  // Online History Settings
+  isOnlineHistoryEnabled?: boolean;
 }
 
 export interface Template {
@@ -100,4 +105,11 @@ export interface SessionKey {
   createdAt: number;
   progress?: string;
   currentEventName?: string;
+}
+
+export interface OnlineHistoryEntry {
+  id: string;
+  embedUrl: string;
+  originalUrl: string;
+  timestamp: number;
 }

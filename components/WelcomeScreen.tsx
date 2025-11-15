@@ -1,9 +1,12 @@
 
+
+
 import React, { useMemo, useRef, useEffect, useState } from 'react';
 import { SettingsIcon } from './icons/SettingsIcon';
 import { HistoryIcon } from './icons/HistoryIcon';
 import { AdminIcon } from './icons/AdminIcon';
 import { LogoutIcon } from './icons/LogoutIcon';
+import { GalleryIcon } from './icons/GalleryIcon';
 import { Settings } from '../types';
 import { GOOGLE_FONTS } from './SettingsScreen'; 
 
@@ -11,6 +14,7 @@ interface WelcomeScreenProps {
   onStart: () => void;
   onSettingsClick: () => void;
   onViewHistory: () => void;
+  onViewOnlineHistory: () => void;
   isAdminLoggedIn: boolean;
   isCaching: boolean;
   cachingProgress: number;
@@ -39,7 +43,8 @@ const CachingStatus: React.FC<{ progress: number }> = ({ progress }) => (
 const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ 
     onStart, 
     onSettingsClick, 
-    onViewHistory, 
+    onViewHistory,
+    onViewOnlineHistory,
     isAdminLoggedIn, 
     isCaching, 
     cachingProgress,
@@ -214,23 +219,34 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
               </button>
             </div>
         ) : (
-          <button
-            onClick={onStart}
-            disabled={isLoading || isCaching}
-            className={`
-                ${startButtonBgColor ? '' : 'bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)]'}
-                ${startButtonTextColor ? '' : 'text-[var(--color-accent-primary-text)]'}
-                ${isStartButtonShadowEnabled ? 'shadow-lg shadow-black/50' : ''}
-                font-bold py-3 px-10 rounded-full text-xl transition-transform transform hover:scale-105
-                disabled:bg-[var(--color-bg-tertiary)] disabled:transform-none disabled:cursor-wait
-            `}
-            style={{
-                backgroundColor: startButtonBgColor || undefined,
-                color: startButtonTextColor || undefined,
-            }}
-          >
-            {isLoading ? 'Starting...' : startButtonText}
-          </button>
+          <div className="flex flex-col items-center gap-4">
+            <button
+              onClick={onStart}
+              disabled={isLoading || isCaching}
+              className={`
+                  ${startButtonBgColor ? '' : 'bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)]'}
+                  ${startButtonTextColor ? '' : 'text-[var(--color-accent-primary-text)]'}
+                  ${isStartButtonShadowEnabled ? 'shadow-lg shadow-black/50' : ''}
+                  font-bold py-3 px-10 rounded-full text-xl transition-transform transform hover:scale-105
+                  disabled:bg-[var(--color-bg-tertiary)] disabled:transform-none disabled:cursor-wait
+              `}
+              style={{
+                  backgroundColor: startButtonBgColor || undefined,
+                  color: startButtonTextColor || undefined,
+              }}
+            >
+              {isLoading ? 'Starting...' : startButtonText}
+            </button>
+            {settings.isOnlineHistoryEnabled && (
+                <button
+                    onClick={onViewOnlineHistory}
+                    className="flex items-center gap-2 bg-[var(--color-info)]/80 hover:bg-[var(--color-info)] text-[var(--color-info-text)] font-semibold py-2 px-6 rounded-full text-md transition-all transform hover:scale-105 shadow-md shadow-black/40"
+                >
+                    <GalleryIcon />
+                    Online Gallery
+                </button>
+            )}
+          </div>
         )}
       </div>
       

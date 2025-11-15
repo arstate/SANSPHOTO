@@ -1,4 +1,6 @@
 
+
+
 import React, { useState } from 'react';
 import { Settings } from '../types';
 import { BackIcon } from './icons/BackIcon';
@@ -9,6 +11,7 @@ import KioskGuide from './KioskGuide';
 import { SettingsIcon } from './icons/SettingsIcon';
 import { EyeIcon } from './icons/EyeIcon';
 import { FolderIcon } from './icons/FolderIcon';
+import { GalleryIcon } from './icons/GalleryIcon';
 
 interface SettingsScreenProps {
     settings: Settings;
@@ -17,6 +20,7 @@ interface SettingsScreenProps {
     onManageEvents: () => void;
     onManageSessions: () => void;
     onViewHistory: () => void;
+    onManageOnlineHistory: () => void;
     onBack: () => void;
 }
 
@@ -54,7 +58,7 @@ const CategoryButton: React.FC<{
 );
 
 
-const SettingsScreen: React.FC<SettingsScreenProps> = ({ settings, onSettingsChange, onManageTemplates, onManageEvents, onManageSessions, onViewHistory, onBack }) => {
+const SettingsScreen: React.FC<SettingsScreenProps> = ({ settings, onSettingsChange, onManageTemplates, onManageEvents, onManageSessions, onViewHistory, onManageOnlineHistory, onBack }) => {
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState<SettingsCategory>('general');
 
@@ -688,14 +692,43 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ settings, onSettingsCha
               <div className="p-6 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] text-left">
                   <h3 className="text-xl font-bold mb-4 text-[var(--color-text-accent)]">Photobooth History</h3>
                   <p className="text-[var(--color-text-muted)] mb-4">
-                      View, filter, and manage all photos taken during events.
+                      View, filter, and manage all photos taken during events (stored on this device).
                   </p>
                   <button
                       onClick={onViewHistory}
                       className="w-full bg-[var(--color-info)] hover:bg-[var(--color-info-hover)] text-[var(--color-info-text)] font-bold py-3 px-6 rounded-full text-lg transition-transform transform hover:scale-105"
                   >
-                      View Photobooth History
+                      View Local History
                   </button>
+              </div>
+
+              {/* Online History */}
+              <div className="p-6 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] text-left space-y-4">
+                  <h3 className="text-xl font-bold text-[var(--color-text-accent)]">Online Gallery</h3>
+                  <div className="border-t border-[var(--color-border-primary)] pt-4">
+                      <label htmlFor="isOnlineHistoryEnabled" className="flex items-center justify-between cursor-pointer">
+                          <div>
+                              <span className="block text-sm font-medium text-[var(--color-text-secondary)]">Enable Online Gallery</span>
+                              <p className="text-xs text-[var(--color-text-muted)]">Show a public gallery on the welcome screen.</p>
+                          </div>
+                          <div className="relative">
+                              <input type="checkbox" id="isOnlineHistoryEnabled" name="isOnlineHistoryEnabled" checked={settings.isOnlineHistoryEnabled ?? false} onChange={handleSettingsInputChange} className="sr-only peer" />
+                              <div className="w-11 h-6 bg-[var(--color-bg-tertiary)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--color-accent-primary)]"></div>
+                          </div>
+                      </label>
+                  </div>
+                  <div className="pt-4">
+                      <p className="text-[var(--color-text-muted)] mb-4 text-sm">
+                          Add, remove, and manage photos displayed in the public online gallery.
+                      </p>
+                      <button
+                          onClick={onManageOnlineHistory}
+                          className="w-full bg-[var(--color-info)] hover:bg-[var(--color-info-hover)] text-[var(--color-info-text)] font-bold py-3 px-6 rounded-full text-lg transition-transform transform hover:scale-105 flex items-center justify-center gap-2"
+                      >
+                          <GalleryIcon />
+                          Manage Online Gallery
+                      </button>
+                  </div>
               </div>
           </div>
          );
