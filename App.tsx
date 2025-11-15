@@ -1,6 +1,3 @@
-
-
-
 import React, { useState, useCallback, useEffect } from 'react';
 import WelcomeScreen from './components/WelcomeScreen';
 import TemplateSelection from './components/TemplateSelection';
@@ -565,7 +562,7 @@ const App: React.FC = () => {
     if (!originalUrl.includes('photos.app.goo.gl')) {
         throw new Error('Please provide a valid Google Photos share link.');
     }
-    const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(originalUrl)}`;
+    const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(originalUrl)}`;
     const response = await fetch(proxyUrl);
     if (!response.ok) {
         throw new Error(`Failed to fetch the URL. Status: ${response.status}`);

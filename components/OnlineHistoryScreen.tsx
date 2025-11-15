@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { OnlineHistoryEntry } from '../types';
 import { BackIcon } from './icons/BackIcon';
@@ -13,8 +12,8 @@ const OnlineHistoryScreen: React.FC<OnlineHistoryScreenProps> = ({ onlineHistory
 
   const handleDownload = async (entry: OnlineHistoryEntry) => {
     try {
-        // Gunakan proxy yang sama dengan yang digunakan untuk menambahkan untuk konsistensi
-        const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(entry.embedUrl)}`;
+        // Gunakan proksi yang lebih andal untuk menghindari masalah CORS
+        const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(entry.embedUrl)}`;
         const response = await fetch(proxyUrl);
         if (!response.ok) {
             throw new Error('Network response was not ok');
