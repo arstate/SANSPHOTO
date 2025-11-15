@@ -562,7 +562,7 @@ const App: React.FC = () => {
     if (!originalUrl.includes('photos.app.goo.gl')) {
         throw new Error('Please provide a valid Google Photos share link (must contain "photos.app.goo.gl").');
     }
-    
+
     const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(originalUrl)}`;
     
     let response;
@@ -570,40 +570,56 @@ const App: React.FC = () => {
         response = await fetch(proxyUrl);
     } catch (networkError) {
         console.error("Network error fetching from proxy:", networkError);
-        throw new Error("Could not connect to the proxy service to fetch the image link. Please check your internet connection.");
+        throw new Error("Could not connect to the proxy service. Please check your internet connection.");
     }
 
     if (!response.ok) {
-        throw new Error(`Failed to fetch the URL via proxy. The proxy returned status: ${response.status}. The service might be temporarily down.`);
+        throw new Error(`Failed to fetch the URL. Proxy status: ${response.status}. The service might be down.`);
     }
 
     const html = await response.text();
+    let imageUrl: string | null = null;
 
-    // More robust regex to find the og:image meta tag regardless of attribute order
-    const metaTagRegex = /<meta[^>]*property\s*=\s*["']og:image["'][^>]*>/;
-    const metaTagMatch = html.match(metaTagRegex);
+    // --- New Primary Method: Direct URL Scraping ---
+    // This regex looks for the full URL pattern used by Google's CDN for user content.
+    const directUrlRegex = /(https:\/\/lh3\.googleusercontent\.com\/[a-zA-Z0-9\-_=]+)/;
+    const directMatch = html.match(directUrlRegex);
 
-    if (!metaTagMatch) {
-        console.error("Could not find og:image meta tag. The link might be invalid, private, or Google's page structure may have changed. HTML received:", html.substring(0, 1000));
-        throw new Error('Could not find the necessary image data tag in the provided link.');
+    if (directMatch && directMatch[1]) {
+        console.log("Primary method success: Found direct URL.");
+        imageUrl = directMatch[1];
+    } else {
+        // --- Fallback Method: Meta Tag Scraping ---
+        console.log("Primary method failed. Falling back to meta tag scraping.");
+        const metaTagRegex = /<meta[^>]*property\s*=\s*["']og:image["'][^>]*>/;
+        const metaTagMatch = html.match(metaTagRegex);
+        if (metaTagMatch) {
+            const contentRegex = /content\s*=\s*["']([^"']+)["']/;
+            const contentMatch = metaTagMatch[0].match(contentRegex);
+            if (contentMatch && contentMatch[1]) {
+                console.log("Fallback method success: Found URL in og:image tag.");
+                imageUrl = contentMatch[1];
+            }
+        }
     }
 
-    const contentRegex = /content\s*=\s*["']([^"']+)["']/;
-    const contentMatch = metaTagMatch[0].match(contentRegex);
-    const embedUrl = contentMatch ? contentMatch[1] : null;
-
-    if (!embedUrl) {
-        console.error("Found og:image meta tag, but could not extract content URL. Tag:", metaTagMatch[0]);
-        throw new Error('Found the image data tag, but could not read the image URL from it.');
+    if (!imageUrl) {
+        console.error("Both scraping methods failed. The link might be invalid, private, or Google's page structure may have changed. HTML received:", html.substring(0, 1500));
+        throw new Error('Could not find a valid image URL in the provided link. Please ensure it is a public share link.');
     }
+
+    // --- URL Manipulation for High Resolution ---
+    // Remove any existing size parameters and append a high-res parameter.
+    const highResUrl = imageUrl.replace(/=[w|h|s|p|k].*$/, '') + '=w2400';
 
     const newEntry: Omit<OnlineHistoryEntry, 'id'> = {
-        embedUrl,
+        embedUrl: highResUrl,
         originalUrl,
         timestamp: Date.now(),
     };
     await push(ref(db, 'onlineHistory'), newEntry);
   }, []);
+
 
   const handleDeleteOnlineHistory = useCallback(async (entryId: string) => {
     if (window.confirm("Are you sure you want to delete this online photo?")) {
