@@ -10,6 +10,7 @@ import KioskGuide from './KioskGuide';
 import { SettingsIcon } from './icons/SettingsIcon';
 import { EyeIcon } from './icons/EyeIcon';
 import { FolderIcon } from './icons/FolderIcon';
+import { ReviewsIcon } from './icons/ReviewsIcon';
 
 interface SettingsScreenProps {
     settings: Settings;
@@ -17,6 +18,7 @@ interface SettingsScreenProps {
     onManageTemplates: () => void;
     onManageEvents: () => void;
     onManageSessions: () => void;
+    onManageReviews: () => void;
     onViewHistory: () => void;
     onBack: () => void;
 }
@@ -55,7 +57,7 @@ const CategoryButton: React.FC<{
 );
 
 
-const SettingsScreen: React.FC<SettingsScreenProps> = ({ settings, onSettingsChange, onManageTemplates, onManageEvents, onManageSessions, onViewHistory, onBack }) => {
+const SettingsScreen: React.FC<SettingsScreenProps> = ({ settings, onSettingsChange, onManageTemplates, onManageEvents, onManageSessions, onManageReviews, onViewHistory, onBack }) => {
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState<SettingsCategory>('general');
 
@@ -562,17 +564,6 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ settings, onSettingsCha
                     </label>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 border-t border-[var(--color-border-primary)] pt-4">
-                    <label htmlFor="isOnlineHistoryButtonFillEnabled" className="flex items-center justify-between cursor-pointer">
-                        <span className="text-sm font-medium text-[var(--color-text-secondary)]">Enable Fill</span>
-                        <div className="relative"><input type="checkbox" id="isOnlineHistoryButtonFillEnabled" name="isOnlineHistoryButtonFillEnabled" checked={settings.isOnlineHistoryButtonFillEnabled ?? false} onChange={handleSettingsInputChange} className="sr-only peer" /><div className="w-11 h-6 bg-[var(--color-bg-tertiary)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--color-accent-primary)]"></div></div>
-                    </label>
-                    <label htmlFor="isOnlineHistoryButtonStrokeEnabled" className="flex items-center justify-between cursor-pointer">
-                        <span className="text-sm font-medium text-[var(--color-text-secondary)]">Enable Stroke</span>
-                        <div className="relative"><input type="checkbox" id="isOnlineHistoryButtonStrokeEnabled" name="isOnlineHistoryButtonStrokeEnabled" checked={settings.isOnlineHistoryButtonStrokeEnabled ?? true} onChange={handleSettingsInputChange} className="sr-only peer" /><div className="w-11 h-6 bg-[var(--color-bg-tertiary)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--color-accent-primary)]"></div></div>
-                    </label>
-                </div>
-
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 border-t border-[var(--color-border-primary)] pt-4">
                     {(settings.isOnlineHistoryButtonFillEnabled) && (
                         <div>
@@ -601,6 +592,37 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ settings, onSettingsCha
                     )}
                 </div>
             </div>
+
+            {/* Review Slider Settings */}
+            <div className="p-6 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] text-left space-y-4">
+              <h3 className="text-xl font-bold text-[var(--color-text-accent)]">Review Slider</h3>
+              <div className="border-t border-[var(--color-border-primary)] pt-4">
+                <label htmlFor="isReviewSliderEnabled" className="flex items-center justify-between cursor-pointer">
+                    <div>
+                        <span className="block text-sm font-medium text-[var(--color-text-secondary)]">Show Review Slider on Welcome Screen</span>
+                        <p className="text-xs text-[var(--color-text-muted)]">Displays user reviews in a slider at the bottom.</p>
+                    </div>
+                    <div className="relative">
+                        <input type="checkbox" id="isReviewSliderEnabled" name="isReviewSliderEnabled" checked={settings.isReviewSliderEnabled ?? true} onChange={handleSettingsInputChange} className="sr-only peer" />
+                        <div className="w-11 h-6 bg-[var(--color-bg-tertiary)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--color-accent-primary)]"></div>
+                    </div>
+                </label>
+              </div>
+              <div>
+                  <label htmlFor="reviewSliderMaxDescriptionLength" className="block text-sm font-medium text-[var(--color-text-secondary)]">Max Review Length in Slider (chars)</label>
+                  <p className="text-xs text-[var(--color-text-muted)] mb-2">Truncates long reviews to keep the slider clean.</p>
+                  <input
+                      type="number"
+                      id="reviewSliderMaxDescriptionLength"
+                      name="reviewSliderMaxDescriptionLength"
+                      value={settings.reviewSliderMaxDescriptionLength ?? 150}
+                      onChange={handleSettingsInputChange}
+                      min="50" max="500"
+                      className="mt-1 block w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md shadow-sm py-2 px-3 text-[var(--color-text-primary)] focus:outline-none focus:ring-[var(--color-border-focus)] focus:border-[var(--color-border-focus)] sm:text-sm"
+                  />
+              </div>
+            </div>
+
 
             {/* Theme Settings */}
             <div className="p-6 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] text-left space-y-4">
@@ -783,6 +805,20 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ settings, onSettingsCha
                   className="w-full bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-[var(--color-accent-primary-text)] font-bold py-3 px-6 rounded-full text-lg transition-transform transform hover:scale-105"
                 >
                   Manage All Templates
+                </button>
+              </div>
+
+              {/* Review Management */}
+              <div className="p-6 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] text-left">
+                <h3 className="text-xl font-bold mb-4 text-[var(--color-text-accent)]">Review Management</h3>
+                <p className="text-[var(--color-text-muted)] mb-4">
+                  View and delete user-submitted reviews and testimonials.
+                </p>
+                <button
+                  onClick={onManageReviews}
+                  className="w-full bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-[var(--color-accent-primary-text)] font-bold py-3 px-6 rounded-full text-lg transition-transform transform hover:scale-105"
+                >
+                  Manage Reviews
                 </button>
               </div>
               

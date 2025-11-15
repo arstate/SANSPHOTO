@@ -22,7 +22,9 @@ import PinInputModal from './components/PinInputModal';
 import KeyCodeScreen from './components/KeyCodeScreen';
 import ManageSessionsScreen from './components/ManageSessionsScreen';
 import ClosedScreen from './components/ClosedScreen';
-import { AppState, PhotoSlot, Settings, Template, Event, HistoryEntry, SessionKey, OnlineHistoryEntry } from './types';
+import RatingScreen from './components/RatingScreen';
+import ManageReviewsScreen from './components/ManageReviewsScreen';
+import { AppState, PhotoSlot, Settings, Template, Event, HistoryEntry, SessionKey, OnlineHistoryEntry, Review } from './types';
 import { db, ref, onValue, off, set, push, update, remove, firebaseObjectToArray, query, orderByChild, equalTo, get } from './firebase';
 import { getAllHistoryEntries, addHistoryEntry, deleteHistoryEntry, cacheImage } from './utils/db';
 import { FullscreenIcon } from './components/icons/FullscreenIcon';
@@ -66,27 +68,26 @@ const DEFAULT_SETTINGS: Settings = {
   startButtonBgColor: '',
   startButtonTextColor: '',
   isStartButtonShadowEnabled: true,
-  // New Print Settings Defaults
   isPrintButtonEnabled: true,
   printPaperSize: '4x6',
   printColorMode: 'color',
   isPrintCopyInputEnabled: true,
   printMaxCopies: 5,
-  // Closed Mode Defaults
   isClosedModeEnabled: false,
   reopenTimestamp: 0,
-  // Online History
   isOnlineHistoryEnabled: false,
-  // New Online History Button Defaults
   isOnlineHistoryButtonIconEnabled: true,
   onlineHistoryButtonText: 'History',
-  isOnlineHistoryButtonFillEnabled: false, // Default to outline button
-  onlineHistoryButtonFillColor: '', // Use CSS variables by default
-  onlineHistoryButtonTextColor: '', // Use CSS variables by default
+  isOnlineHistoryButtonFillEnabled: false,
+  onlineHistoryButtonFillColor: '',
+  onlineHistoryButtonTextColor: '',
   isOnlineHistoryButtonStrokeEnabled: true,
-  onlineHistoryButtonStrokeColor: '', // Use CSS variables by default
+  onlineHistoryButtonStrokeColor: '',
   isOnlineHistoryButtonShadowEnabled: true,
   maxRetakes: 3,
+  // Review Settings
+  isReviewSliderEnabled: true,
+  reviewSliderMaxDescriptionLength: 150,
 };
 
 const DEFAULT_TEMPLATE_DATA: Omit<Template, 'id'> = {
@@ -119,6 +120,7 @@ const App: React.FC = () => {
   const [onlineHistory, setOnlineHistory] = useState<OnlineHistoryEntry[]>([]);
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [sessionKeys, setSessionKeys] = useState<SessionKey[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
   
   const [currentSessionKey, setCurrentSessionKey] = useState<SessionKey | null>(null);
   const [currentTakeCount, setCurrentTakeCount] = useState(0);
@@ -204,12 +206,20 @@ const App: React.FC = () => {
         setOnlineHistory(data.sort((a, b) => b.timestamp - a.timestamp));
     });
 
+    // Reviews listener
+    const reviewsRef = ref(db, 'reviews');
+    const reviewsListener = onValue(reviewsRef, (snapshot) => {
+        const data = firebaseObjectToArray<Review>(snapshot.val());
+        setReviews(data.sort((a, b) => b.timestamp - a.timestamp));
+    });
+
     return () => {
       off(settingsRef, 'value', settingsListener);
       off(templatesRef, 'value', templatesListener);
       off(eventsRef, 'value', eventsListener);
       off(sessionKeysRef, 'value', sessionKeysListener);
       off(onlineHistoryRef, 'value', onlineHistoryListener);
+      off(reviewsRef, 'value', reviewsListener);
     };
   }, [cacheAllTemplates]);
 
@@ -249,6 +259,9 @@ const App: React.FC = () => {
             break;
         case AppState.RETAKE_PREVIEW:
             progress = 'Meninjau Foto';
+            break;
+        case AppState.RATING:
+            progress = 'Memberikan Ulasan';
             break;
         case AppState.PREVIEW:
             progress = 'Melihat Pratinjau Akhir';
@@ -415,6 +428,10 @@ const App: React.FC = () => {
 
   const handleManageSessions = useCallback(() => {
     setAppState(AppState.MANAGE_SESSIONS);
+  }, []);
+  
+  const handleManageReviews = useCallback(() => {
+    setAppState(AppState.MANAGE_REVIEWS);
   }, []);
 
   const handleGoToSettings = useCallback(() => {
@@ -632,9 +649,34 @@ const App: React.FC = () => {
   const handleDeleteOnlineHistoryEntry = useCallback(async (entryId: string) => {
     await remove(ref(db, `onlineHistory/${entryId}`));
   }, []);
+  
+  // Review Handlers
+  const handleSaveReview = useCallback(async (reviewData: Omit<Review, 'id' | 'timestamp' | 'eventId' | 'eventName'>) => {
+      const event = events.find(e => e.id === selectedEventId);
+      if (!event) return;
+      
+      const newReview: Omit<Review, 'id'> = {
+          ...reviewData,
+          eventId: event.id,
+          eventName: event.name,
+          timestamp: Date.now(),
+      };
+      await push(ref(db, 'reviews'), newReview);
+      setAppState(AppState.PREVIEW); // Lanjutkan ke preview setelah menyimpan
+  }, [events, selectedEventId]);
+
+  const handleSkipReview = useCallback(() => {
+      setAppState(AppState.PREVIEW);
+  }, []);
+  
+  const handleDeleteReview = useCallback(async (reviewId: string) => {
+      if (!window.confirm("Are you sure you want to delete this review?")) return;
+      await remove(ref(db, `reviews/${reviewId}`));
+  }, []);
 
   const handleBack = useCallback(() => {
     switch (appState) {
+        case AppState.RATING: // Tidak bisa kembali dari rating, harus skip atau submit
         case AppState.RETAKE_PREVIEW: // Cannot go back from retake, must finish
             break;
         case AppState.PREVIEW:
@@ -662,6 +704,7 @@ const App: React.FC = () => {
             break;
         case AppState.MANAGE_EVENTS:
         case AppState.MANAGE_SESSIONS:
+        case AppState.MANAGE_REVIEWS:
             setAppState(AppState.SETTINGS);
             break;
         default:
@@ -679,7 +722,7 @@ const App: React.FC = () => {
     if ((settings.maxRetakes ?? 0) > 0) {
       setAppState(AppState.RETAKE_PREVIEW);
     } else {
-      setAppState(AppState.PREVIEW);
+      setAppState(AppState.RATING);
     }
   }, [settings.maxRetakes]);
 
@@ -703,7 +746,7 @@ const App: React.FC = () => {
   }, [retakingPhotoIndex]);
 
   const handleFinishRetakePreview = useCallback(() => {
-      setAppState(AppState.PREVIEW);
+      setAppState(AppState.RATING);
   }, []);
   
   const handleSessionEnd = useCallback(() => {
@@ -806,6 +849,7 @@ const App: React.FC = () => {
             onAdminLogoutClick={handleAdminLogout}
             isLoading={isSessionLoading}
             settings={settings}
+            reviews={reviews}
         />;
       
       case AppState.KEY_CODE_ENTRY:
@@ -827,7 +871,7 @@ const App: React.FC = () => {
         />;
       
       case AppState.SETTINGS:
-        return <SettingsScreen settings={settings} onSettingsChange={handleSettingsChange} onManageTemplates={handleManageTemplates} onManageEvents={handleManageEvents} onManageSessions={handleManageSessions} onViewHistory={handleViewHistory} onBack={handleBack} />;
+        return <SettingsScreen settings={settings} onSettingsChange={handleSettingsChange} onManageTemplates={handleManageTemplates} onManageEvents={handleManageEvents} onManageSessions={handleManageSessions} onManageReviews={handleManageReviews} onViewHistory={handleViewHistory} onBack={handleBack} />;
       
       case AppState.MANAGE_EVENTS:
          return <ManageEventsScreen 
@@ -848,6 +892,14 @@ const App: React.FC = () => {
             onBack={handleBack} 
             onAddKey={handleAddSessionKey} 
             onDeleteKey={handleDeleteSessionKey}
+          />;
+      
+      case AppState.MANAGE_REVIEWS:
+          if (!isAdminLoggedIn) { setAppState(AppState.WELCOME); return null; }
+          return <ManageReviewsScreen
+            reviews={reviews}
+            onBack={handleBack}
+            onDelete={handleDeleteReview}
           />;
 
       case AppState.HISTORY:
@@ -895,6 +947,15 @@ const App: React.FC = () => {
           maxRetakes={settings.maxRetakes ?? 0}
         />;
 
+      case AppState.RATING:
+          if (!selectedEvent) { setAppState(AppState.WELCOME); return null; }
+          return <RatingScreen 
+              eventName={selectedEvent.name}
+              onSubmit={handleSaveReview}
+              onSkip={handleSkipReview}
+              maxDescriptionLength={settings.reviewSliderMaxDescriptionLength ?? 150}
+          />;
+
       case AppState.PREVIEW:
         if (!selectedTemplate || !currentSessionKey) { setAppState(AppState.WELCOME); return null; }
         return <PreviewScreen 
@@ -931,6 +992,7 @@ const App: React.FC = () => {
             onAdminLogoutClick={handleAdminLogout}
             isLoading={isSessionLoading}
             settings={settings}
+            reviews={reviews}
         />;
     }
   };

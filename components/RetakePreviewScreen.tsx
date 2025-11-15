@@ -25,8 +25,11 @@ const RetakePreviewScreen: React.FC<RetakePreviewScreenProps> = ({
   const TEMPLATE_WIDTH = isLandscape ? 1800 : 1200;
   const TEMPLATE_HEIGHT = isLandscape ? 1200 : 1800;
   
-  const canRetake = retakesUsed < maxRetakes;
-  const uniqueInputIds = [...new Set(template.photoSlots.map(s => s.inputId))].sort((a,b) => a-b);
+  // FIX: Coerce maxRetakes to a number to prevent type errors from props that might be strings from Firebase.
+  const numericMaxRetakes = Number(maxRetakes);
+  const canRetake = retakesUsed < numericMaxRetakes;
+  // FIX: Explicitly type sort parameters to ensure correct arithmetic operation.
+  const uniqueInputIds = [...new Set(template.photoSlots.map(s => s.inputId))].sort((a: number, b: number) => a - b);
 
   const drawCanvas = useCallback(async () => {
     setIsLoading(true);
@@ -190,7 +193,7 @@ const RetakePreviewScreen: React.FC<RetakePreviewScreenProps> = ({
             <div className="w-full text-center bg-[var(--color-bg-secondary)] p-4 rounded-lg border border-[var(--color-border-primary)]">
                 <p className="text-xl font-bold">Retakes Remaining:</p>
                 <p className={`text-4xl font-bebas tracking-wider ${canRetake ? 'text-[var(--color-text-accent)]' : 'text-red-500'}`}>
-                    {Math.max(0, maxRetakes - retakesUsed)}
+                    {Math.max(0, numericMaxRetakes - retakesUsed)}
                 </p>
             </div>
             <button
@@ -198,7 +201,7 @@ const RetakePreviewScreen: React.FC<RetakePreviewScreenProps> = ({
                 className="w-full bg-[var(--color-positive)] hover:bg-[var(--color-positive-hover)] text-[var(--color-positive-text)] font-bold py-4 px-8 rounded-full text-xl transition-transform transform hover:scale-105 flex items-center justify-center gap-3"
             >
                 <CheckIcon />
-                Done
+                Done & Continue
             </button>
         </div>
       </main>

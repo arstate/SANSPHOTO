@@ -7,10 +7,12 @@ export enum AppState {
   SETTINGS,
   MANAGE_EVENTS,
   MANAGE_SESSIONS,
+  MANAGE_REVIEWS,
   EDIT_TEMPLATE_METADATA,
   EDIT_TEMPLATE_LAYOUT,
   CAPTURE,
   RETAKE_PREVIEW,
+  RATING,
   PREVIEW,
   HISTORY,
   ONLINE_HISTORY,
@@ -75,6 +77,9 @@ export interface Settings {
   isOnlineHistoryButtonShadowEnabled?: boolean;
   // Retake Settings
   maxRetakes?: number;
+  // Review Settings
+  isReviewSliderEnabled?: boolean;
+  reviewSliderMaxDescriptionLength?: number;
 }
 
 export interface Template {
@@ -121,4 +126,14 @@ export interface SessionKey {
   createdAt: number;
   progress?: string;
   currentEventName?: string;
+}
+
+export interface Review {
+    id: string;
+    eventId: string;
+    eventName: string;
+    userName: string;
+    rating: number; // 1 to 5
+    description: string;
+    timestamp: number;
 }
