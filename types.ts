@@ -10,6 +10,7 @@ export enum AppState {
   EDIT_TEMPLATE_METADATA,
   EDIT_TEMPLATE_LAYOUT,
   CAPTURE,
+  RETAKE_PREVIEW,
   PREVIEW,
   HISTORY,
   ONLINE_HISTORY,
@@ -72,6 +73,8 @@ export interface Settings {
   isOnlineHistoryButtonStrokeEnabled?: boolean;
   onlineHistoryButtonStrokeColor?: string;
   isOnlineHistoryButtonShadowEnabled?: boolean;
+  // Retake Settings
+  maxRetakes?: number;
 }
 
 export interface Template {

@@ -4,6 +4,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import WelcomeScreen from './components/WelcomeScreen';
 import TemplateSelection from './components/TemplateSelection';
 import CaptureScreen from './components/CaptureScreen';
+import RetakePreviewScreen from './components/RetakePreviewScreen';
 import PreviewScreen from './components/PreviewScreen';
 import EditTemplateScreen from './components/EditTemplateScreen';
 import LoginModal from './components/LoginModal';
@@ -85,6 +86,7 @@ const DEFAULT_SETTINGS: Settings = {
   isOnlineHistoryButtonStrokeEnabled: true,
   onlineHistoryButtonStrokeColor: '', // Use CSS variables by default
   isOnlineHistoryButtonShadowEnabled: true,
+  maxRetakes: 3,
 };
 
 const DEFAULT_TEMPLATE_DATA: Omit<Template, 'id'> = {
@@ -126,6 +128,11 @@ const App: React.FC = () => {
   const [isFullscreen, setIsFullscreen] = useState(!!document.fullscreenElement);
   const [keyCodeError, setKeyCodeError] = useState<string | null>(null);
   const [isSessionLoading, setIsSessionLoading] = useState(false);
+  
+  // Retake feature state
+  const [retakesUsed, setRetakesUsed] = useState(0);
+  const [retakingPhotoIndex, setRetakingPhotoIndex] = useState<number | null>(null);
+
 
   // Activate strict kiosk mode based on settings
   useFullscreenLock(!!settings.isStrictKioskMode);
@@ -240,8 +247,11 @@ const App: React.FC = () => {
         case AppState.TEMPLATE_SELECTION:
             progress = 'Memilih Template';
             break;
+        case AppState.RETAKE_PREVIEW:
+            progress = 'Meninjau Foto';
+            break;
         case AppState.PREVIEW:
-            progress = 'Melihat Pratinjau Foto';
+            progress = 'Melihat Pratinjau Akhir';
             break;
         // The CAPTURE state is handled by handleCaptureProgressUpdate
     }
@@ -625,10 +635,16 @@ const App: React.FC = () => {
 
   const handleBack = useCallback(() => {
     switch (appState) {
+        case AppState.RETAKE_PREVIEW: // Cannot go back from retake, must finish
+            break;
         case AppState.PREVIEW:
-            setCapturedImages([]);
-            setSelectedTemplate(null);
-            setAppState(AppState.TEMPLATE_SELECTION);
+            if ((settings.maxRetakes ?? 0) > 0) {
+                setAppState(AppState.RETAKE_PREVIEW);
+            } else {
+                setCapturedImages([]);
+                setSelectedTemplate(null);
+                setAppState(AppState.TEMPLATE_SELECTION);
+            }
             break;
         case AppState.TEMPLATE_SELECTION:
             setSelectedEventId(null);
@@ -651,7 +667,7 @@ const App: React.FC = () => {
         default:
             setAppState(AppState.WELCOME);
     }
-  }, [appState]);
+  }, [appState, settings.maxRetakes]);
 
   const handleOpenLoginModal = useCallback(() => { setIsLoginModalOpen(true); }, []);
   const handleCloseLoginModal = useCallback(() => { setIsLoginModalOpen(false); }, []);
@@ -660,7 +676,34 @@ const App: React.FC = () => {
 
   const handleCaptureComplete = useCallback((images: string[]) => {
     setCapturedImages(images);
-    setAppState(AppState.PREVIEW);
+    if ((settings.maxRetakes ?? 0) > 0) {
+      setAppState(AppState.RETAKE_PREVIEW);
+    } else {
+      setAppState(AppState.PREVIEW);
+    }
+  }, [settings.maxRetakes]);
+
+  const handleStartRetake = useCallback((photoIndex: number) => {
+    if (settings.maxRetakes === undefined || retakesUsed >= settings.maxRetakes) return;
+    setRetakesUsed(prev => prev + 1);
+    setRetakingPhotoIndex(photoIndex);
+    setAppState(AppState.CAPTURE);
+  }, [retakesUsed, settings.maxRetakes]);
+
+  const handleRetakeComplete = useCallback((newImage: string) => {
+      if (retakingPhotoIndex === null) return;
+      
+      setCapturedImages(prevImages => {
+          const newImages = [...prevImages];
+          newImages[retakingPhotoIndex] = newImage;
+          return newImages;
+      });
+      setRetakingPhotoIndex(null);
+      setAppState(AppState.RETAKE_PREVIEW);
+  }, [retakingPhotoIndex]);
+
+  const handleFinishRetakePreview = useCallback(() => {
+      setAppState(AppState.PREVIEW);
   }, []);
   
   const handleSessionEnd = useCallback(() => {
@@ -682,6 +725,8 @@ const App: React.FC = () => {
     setSelectedEventId(null);
     setCurrentSessionKey(null);
     setCurrentTakeCount(0);
+    setRetakesUsed(0);
+    setRetakingPhotoIndex(null);
     setAppState(AppState.WELCOME);
   }, [currentSessionKey]);
 
@@ -695,6 +740,8 @@ const App: React.FC = () => {
       // Reset untuk pengambilan berikutnya
       setCapturedImages([]);
       setSelectedTemplate(null);
+      setRetakesUsed(0);
+      setRetakingPhotoIndex(null);
       // Kembali ke pemilihan template, acara tetap sama
       setAppState(AppState.TEMPLATE_SELECTION);
   }, [currentSessionKey, currentTakeCount]);
@@ -717,6 +764,8 @@ const App: React.FC = () => {
       setCurrentSessionKey(null);
       setCurrentTakeCount(0);
       setSelectedEventId(null);
+      setRetakesUsed(0);
+      setRetakingPhotoIndex(null);
       setAppState(AppState.WELCOME);
   }, [currentSessionKey]);
 
@@ -802,7 +851,6 @@ const App: React.FC = () => {
           />;
 
       case AppState.HISTORY:
-          // FIX: Changed WELCOME to AppState.WELCOME to correctly reference the enum member.
           if (!isAdminLoggedIn) { setAppState(AppState.WELCOME); return null; }
           return <HistoryScreen history={history} events={events} onDelete={handleDeleteHistoryEntry} onBack={handleBack} />;
       
@@ -826,13 +874,26 @@ const App: React.FC = () => {
       case AppState.CAPTURE:
         if (!selectedTemplate) { setAppState(AppState.WELCOME); return null; }
         return <CaptureScreen 
-            onComplete={handleCaptureComplete} 
             template={selectedTemplate} 
             countdownDuration={settings.countdownDuration} 
             flashEffectEnabled={settings.flashEffectEnabled}
+            onCaptureComplete={handleCaptureComplete}
+            onRetakeComplete={handleRetakeComplete}
+            retakeForIndex={retakingPhotoIndex}
             onProgressUpdate={handleCaptureProgressUpdate}
         />;
       
+      case AppState.RETAKE_PREVIEW:
+        if (!selectedTemplate) { setAppState(AppState.WELCOME); return null; }
+        return <RetakePreviewScreen
+          images={capturedImages}
+          template={selectedTemplate}
+          onStartRetake={handleStartRetake}
+          onDone={handleFinishRetakePreview}
+          retakesUsed={retakesUsed}
+          maxRetakes={settings.maxRetakes ?? 0}
+        />;
+
       case AppState.PREVIEW:
         if (!selectedTemplate || !currentSessionKey) { setAppState(AppState.WELCOME); return null; }
         return <PreviewScreen 

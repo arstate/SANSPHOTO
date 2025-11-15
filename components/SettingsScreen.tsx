@@ -162,6 +162,19 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ settings, onSettingsCha
                       </div>
                   </label>
                 </div>
+                <div className="border-t border-[var(--color-border-primary)] pt-4">
+                    <label htmlFor="maxRetakes" className="block text-sm font-medium text-[var(--color-text-secondary)]">Max Retakes per Session</label>
+                    <p className="text-xs text-[var(--color-text-muted)] mb-2">Number of times a user can retake individual photos. Set to 0 to disable.</p>
+                    <input
+                        type="number"
+                        id="maxRetakes"
+                        name="maxRetakes"
+                        value={settings.maxRetakes ?? 0}
+                        onChange={handleSettingsInputChange}
+                        min="0"
+                        className="mt-1 block w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md shadow-sm py-2 px-3 text-[var(--color-text-primary)] focus:outline-none focus:ring-[var(--color-border-focus)] focus:border-[var(--color-border-focus)] sm:text-sm"
+                    />
+                </div>
             </div>
 
             {/* Closed Mode Settings */}

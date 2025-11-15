@@ -3,14 +3,18 @@ import { CameraIcon } from './icons/CameraIcon';
 import { Template } from '../types';
 
 interface CaptureScreenProps {
-  onComplete: (images: string[]) => void;
+  onCaptureComplete: (images: string[]) => void;
+  onRetakeComplete: (image: string) => void;
+  retakeForIndex: number | null; // index in the capturedImages array
   template: Template;
   countdownDuration: number;
   flashEffectEnabled: boolean;
   onProgressUpdate?: (current: number, total: number) => void;
 }
 
-const CaptureScreen: React.FC<CaptureScreenProps> = ({ onComplete, template, countdownDuration, flashEffectEnabled, onProgressUpdate }) => {
+const CaptureScreen: React.FC<CaptureScreenProps> = ({ 
+  onCaptureComplete, onRetakeComplete, retakeForIndex, template, countdownDuration, flashEffectEnabled, onProgressUpdate 
+}) => {
   const [photoIndex, setPhotoIndex] = useState(0);
   const [countdown, setCountdown] = useState<number | null>(null);
   const [images, setImages] = useState<string[]>([]);
@@ -19,26 +23,29 @@ const CaptureScreen: React.FC<CaptureScreenProps> = ({ onComplete, template, cou
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
+  const isRetakeMode = retakeForIndex !== null;
   const isLandscape = template.orientation === 'landscape';
   const TEMPLATE_WIDTH = isLandscape ? 1800 : 1200;
   const TEMPLATE_HEIGHT = isLandscape ? 1200 : 1800;
 
-  const totalPhotos = useMemo(() => [...new Set(template.photoSlots.map(slot => slot.inputId))].length, [template.photoSlots]);
+  const totalPhotos = useMemo(() => isRetakeMode ? 1 : [...new Set(template.photoSlots.map(slot => slot.inputId))].length, [template.photoSlots, isRetakeMode]);
 
   // Update progress whenever photoIndex changes
   useEffect(() => {
-    onProgressUpdate?.(photoIndex + 1, totalPhotos);
-  }, [photoIndex, totalPhotos, onProgressUpdate]);
-
+    if (!isRetakeMode) {
+      onProgressUpdate?.(photoIndex + 1, totalPhotos);
+    }
+  }, [photoIndex, totalPhotos, onProgressUpdate, isRetakeMode]);
 
   const aspectRatio = useMemo(() => {
-    const currentInputId = photoIndex + 1;
+    // For retakes, retakeForIndex is the 0-based index. inputId is 1-based.
+    const currentInputId = isRetakeMode ? (retakeForIndex ?? 0) + 1 : photoIndex + 1;
     const slotForCurrentPhoto = template.photoSlots.find(slot => slot.inputId === currentInputId);
     if (slotForCurrentPhoto && slotForCurrentPhoto.height > 0) {
       return `${slotForCurrentPhoto.width} / ${slotForCurrentPhoto.height}`;
     }
     return '16 / 9'; 
-  }, [photoIndex, template.photoSlots]);
+  }, [photoIndex, template.photoSlots, isRetakeMode, retakeForIndex]);
 
   useEffect(() => {
     let stream: MediaStream | null = null;
@@ -77,17 +84,23 @@ const CaptureScreen: React.FC<CaptureScreenProps> = ({ onComplete, template, cou
         canvas.height = video.videoHeight;
         context.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
         const dataUrl = canvas.toDataURL('image/jpeg');
+        
+        if (isRetakeMode) {
+            onRetakeComplete(dataUrl);
+            return; // End here for retake
+        }
+
         const newImages = [...images, dataUrl];
         setImages(newImages);
         
         if (newImages.length === totalPhotos) {
-          onComplete(newImages);
+          onCaptureComplete(newImages);
         } else {
           setPhotoIndex(photoIndex + 1);
         }
       }
     }
-  }, [images, onComplete, photoIndex, totalPhotos]);
+  }, [images, onCaptureComplete, onRetakeComplete, photoIndex, totalPhotos, isRetakeMode]);
 
   useEffect(() => {
     if (countdown !== null && countdown > 0) {
@@ -158,7 +171,7 @@ const CaptureScreen: React.FC<CaptureScreenProps> = ({ onComplete, template, cou
                   className="w-full bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-[var(--color-accent-primary-text)] font-bold py-4 px-10 rounded-full text-xl transition-transform transform hover:scale-105 flex items-center justify-center gap-2"
                 >
                   <CameraIcon />
-                  Take Photo {photoIndex + 1}
+                  {isRetakeMode ? 'Take Retake' : `Take Photo ${photoIndex + 1}`}
                 </button>
               ) : (
                 <div className="text-center text-lg h-[64px] flex items-center justify-center">
@@ -170,10 +183,12 @@ const CaptureScreen: React.FC<CaptureScreenProps> = ({ onComplete, template, cou
 
         {/* Right Column: Live Template Preview */}
         <div className="w-full md:w-2/5 flex flex-col items-center p-4 md:p-2">
-          <h2 className="font-bebas text-4xl mb-4 shrink-0">PHOTO {Math.min(photoIndex + 1, totalPhotos)} / {totalPhotos}</h2>
+          <h2 className="font-bebas text-4xl mb-4 shrink-0">
+            {isRetakeMode ? `RETAKE PHOTO` : `PHOTO ${Math.min(photoIndex + 1, totalPhotos)} / ${totalPhotos}`}
+          </h2>
           <div className="w-full flex-grow flex items-center justify-center min-h-0">
             <div className={`relative w-full h-auto ${isLandscape ? 'aspect-[3/2]' : 'aspect-[2/3]'} bg-white rounded-lg overflow-hidden shadow-lg`}>
-                {images.map((imgSrc, index) => {
+                {!isRetakeMode && images.map((imgSrc, index) => {
                     const inputId = index + 1;
                     return template.photoSlots.filter(slot => slot.inputId === inputId).map(slot => (
                         <img
