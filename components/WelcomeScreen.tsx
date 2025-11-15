@@ -239,7 +239,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                     onClick={onViewOnlineHistory}
                     className={`
                         font-bold py-3 px-10 rounded-full text-xl transition-all transform hover:scale-105 flex items-center gap-2
-                        ${isOnlineHistoryButtonShadowEnabled ? 'shadow-lg shadow-black/20' : ''}
+                        ${isOnlineHistoryButtonShadowEnabled ? 'shadow-lg shadow-black/50' : ''}
                         ${isOnlineHistoryButtonStrokeEnabled ? 'border-2' : 'border-0'}
                         ${!isOnlineHistoryButtonFillEnabled && !onlineHistoryButtonFillColor ? 'hover:bg-[var(--color-bg-secondary)]/50' : ''}
                         ${isOnlineHistoryButtonFillEnabled && !onlineHistoryButtonFillColor ? 'bg-[var(--color-bg-secondary)] hover:brightness-110' : ''}

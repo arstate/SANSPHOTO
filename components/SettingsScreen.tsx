@@ -505,6 +505,26 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ settings, onSettingsCha
             <div className="p-6 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] text-left space-y-4">
                 <h3 className="text-xl font-bold text-[var(--color-text-accent)]">Online History Button (User)</h3>
                 
+                <div className="border-t border-[var(--color-border-primary)] pt-4">
+                    <label htmlFor="isOnlineHistoryEnabled" className="flex items-center justify-between cursor-pointer">
+                        <div>
+                            <span className="block text-sm font-medium text-[var(--color-text-secondary)]">Show Online History Button</span>
+                            <p className="text-xs text-[var(--color-text-muted)]">Toggles the button's visibility on the user's welcome screen.</p>
+                        </div>
+                        <div className="relative">
+                            <input
+                                type="checkbox"
+                                id="isOnlineHistoryEnabled"
+                                name="isOnlineHistoryEnabled"
+                                checked={settings.isOnlineHistoryEnabled ?? false}
+                                onChange={handleSettingsInputChange}
+                                className="sr-only peer"
+                            />
+                            <div className="w-11 h-6 bg-[var(--color-bg-tertiary)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--color-accent-primary)]"></div>
+                        </div>
+                    </label>
+                </div>
+                
                 <div>
                     <label htmlFor="onlineHistoryButtonText" className="block text-sm font-medium text-[var(--color-text-secondary)]">Button Text</label>
                     <input
@@ -710,26 +730,6 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ settings, onSettingsCha
                     />
                   </div>
                 )}
-                
-                <div className="border-t border-[var(--color-border-primary)] pt-4">
-                    <label htmlFor="isOnlineHistoryEnabled" className="flex items-center justify-between cursor-pointer">
-                        <div>
-                            <span className="block text-sm font-medium text-[var(--color-text-secondary)]">Enable Online History</span>
-                            <p className="text-xs text-[var(--color-text-muted)]">Show a public gallery of selected photos on the welcome screen.</p>
-                        </div>
-                        <div className="relative">
-                            <input
-                                type="checkbox"
-                                id="isOnlineHistoryEnabled"
-                                name="isOnlineHistoryEnabled"
-                                checked={settings.isOnlineHistoryEnabled ?? false}
-                                onChange={handleSettingsInputChange}
-                                className="sr-only peer"
-                            />
-                            <div className="w-11 h-6 bg-[var(--color-bg-tertiary)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--color-accent-primary)]"></div>
-                        </div>
-                    </label>
-                </div>
 
                 <div className="pt-4">
                   <p className="text-[var(--color-text-muted)] mb-4 text-sm">
