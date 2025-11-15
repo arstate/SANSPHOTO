@@ -560,19 +560,41 @@ const App: React.FC = () => {
   // Online History Handlers
   const handleAddOnlineHistory = useCallback(async (originalUrl: string) => {
     if (!originalUrl.includes('photos.app.goo.gl')) {
-        throw new Error('Please provide a valid Google Photos share link.');
+        throw new Error('Please provide a valid Google Photos share link (must contain "photos.app.goo.gl").');
     }
+    
     const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(originalUrl)}`;
-    const response = await fetch(proxyUrl);
-    if (!response.ok) {
-        throw new Error(`Failed to fetch the URL. Status: ${response.status}`);
+    
+    let response;
+    try {
+        response = await fetch(proxyUrl);
+    } catch (networkError) {
+        console.error("Network error fetching from proxy:", networkError);
+        throw new Error("Could not connect to the proxy service to fetch the image link. Please check your internet connection.");
     }
+
+    if (!response.ok) {
+        throw new Error(`Failed to fetch the URL via proxy. The proxy returned status: ${response.status}. The service might be temporarily down.`);
+    }
+
     const html = await response.text();
-    const match = html.match(/<meta\s+property="og:image"\s+content="([^"]+)"/);
-    const embedUrl = match ? match[1] : null;
+
+    // More robust regex to find the og:image meta tag regardless of attribute order
+    const metaTagRegex = /<meta[^>]*property\s*=\s*["']og:image["'][^>]*>/;
+    const metaTagMatch = html.match(metaTagRegex);
+
+    if (!metaTagMatch) {
+        console.error("Could not find og:image meta tag. The link might be invalid, private, or Google's page structure may have changed. HTML received:", html.substring(0, 1000));
+        throw new Error('Could not find the necessary image data tag in the provided link.');
+    }
+
+    const contentRegex = /content\s*=\s*["']([^"']+)["']/;
+    const contentMatch = metaTagMatch[0].match(contentRegex);
+    const embedUrl = contentMatch ? contentMatch[1] : null;
 
     if (!embedUrl) {
-        throw new Error('Could not find the image URL in the provided link.');
+        console.error("Found og:image meta tag, but could not extract content URL. Tag:", metaTagMatch[0]);
+        throw new Error('Found the image data tag, but could not read the image URL from it.');
     }
 
     const newEntry: Omit<OnlineHistoryEntry, 'id'> = {
