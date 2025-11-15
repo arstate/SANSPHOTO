@@ -13,8 +13,8 @@ export const getProxiedUrl = (url: string): string => {
   if (!url || !url.startsWith('http')) {
     return url;
   }
-  // Menggunakan corsproxy.io sebagai layanan proksi baru yang lebih andal.
-  return `https://corsproxy.io/?${url}`;
+  // Mengganti corsproxy.io karena galat 403. Mencoba layanan proksi alternatif.
+  return `https://thingproxy.freeboard.io/fetch/${url}`;
 };
 
 

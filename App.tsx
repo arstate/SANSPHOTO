@@ -589,11 +589,12 @@ const App: React.FC = () => {
     console.log(`Found ${allMatches.length} potential Google User Content URLs.`);
 
     if (allMatches.length > 0) {
-        const uniqueUrls = [...new Set(allMatches)];
+        // FIX: The `sort` callback parameters were being inferred as `unknown`, causing a type error.
+        // Explicitly typing `uniqueUrls` as `string[]` ensures that `a` and `b` are correctly inferred as `string`.
+        const uniqueUrls: string[] = [...new Set(allMatches)];
         
         // Heuristic for finding the best URL: Prioritize '/pw/' links and high-res parameters
-        // FIX: Explicitly type 'a' and 'b' as strings to resolve TypeScript errors where they were inferred as 'unknown'.
-        const sortedUrls = uniqueUrls.sort((a: string, b: string) => {
+        const sortedUrls = uniqueUrls.sort((a, b) => {
             let scoreA = 0;
             let scoreB = 0;
 
