@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useCallback, useEffect } from 'react';
 import WelcomeScreen from './components/WelcomeScreen';
 import TemplateSelection from './components/TemplateSelection';
@@ -88,6 +89,8 @@ const DEFAULT_SETTINGS: Settings = {
   // Review Settings
   isReviewSliderEnabled: true,
   reviewSliderMaxDescriptionLength: 150,
+  isReviewForFreebieEnabled: false,
+  reviewFreebieTakesCount: 1,
 };
 
 const DEFAULT_TEMPLATE_DATA: Omit<Template, 'id'> = {
@@ -324,6 +327,7 @@ const App: React.FC = () => {
           status: 'in_progress',
           createdAt: Date.now(),
           progress: 'Memilih Event', // Langsung set progress awal
+          hasBeenReviewed: false,
         };
         const newKeyRef = await push(ref(db, 'sessionKeys'), newKeyData);
         if (!newKeyRef.key) {
@@ -591,7 +595,8 @@ const App: React.FC = () => {
           maxTakes,
           takesUsed: 0,
           status: 'available',
-          createdAt: Date.now()
+          createdAt: Date.now(),
+          hasBeenReviewed: false,
       };
       await push(ref(db, 'sessionKeys'), newKey);
   }, [sessionKeys]);
@@ -653,7 +658,7 @@ const App: React.FC = () => {
   // Review Handlers
   const handleSaveReview = useCallback(async (reviewData: Omit<Review, 'id' | 'timestamp' | 'eventId' | 'eventName'>) => {
       const event = events.find(e => e.id === selectedEventId);
-      if (!event) return;
+      if (!event || !currentSessionKey) return;
       
       const newReview: Omit<Review, 'id'> = {
           ...reviewData,
@@ -662,12 +667,31 @@ const App: React.FC = () => {
           timestamp: Date.now(),
       };
       await push(ref(db, 'reviews'), newReview);
-      setAppState(AppState.PREVIEW); // Lanjutkan ke preview setelah menyimpan
-  }, [events, selectedEventId]);
+      
+      // Mark as reviewed and add free takes if applicable
+      const updates: Partial<SessionKey> = { hasBeenReviewed: true };
+      const newSessionKeyState = { ...currentSessionKey, hasBeenReviewed: true };
 
-  const handleSkipReview = useCallback(() => {
-      setAppState(AppState.PREVIEW);
-  }, []);
+      if (settings.isReviewForFreebieEnabled && reviewData.rating === 5) {
+        const freeTakes = settings.reviewFreebieTakesCount || 1;
+        const newMaxTakes = currentSessionKey.maxTakes + freeTakes;
+        updates.maxTakes = newMaxTakes;
+        newSessionKeyState.maxTakes = newMaxTakes;
+      }
+      
+      await update(ref(db, `sessionKeys/${currentSessionKey.id}`), updates);
+      setCurrentSessionKey(newSessionKeyState); // Update local state immediately
+
+      setAppState(AppState.PREVIEW); // Lanjutkan ke preview setelah menyimpan
+  }, [events, selectedEventId, currentSessionKey, settings.isReviewForFreebieEnabled, settings.reviewFreebieTakesCount]);
+
+  const handleSkipReview = useCallback(async () => {
+    if (currentSessionKey) {
+      await update(ref(db, `sessionKeys/${currentSessionKey.id}`), { hasBeenReviewed: true });
+      setCurrentSessionKey(prev => prev ? { ...prev, hasBeenReviewed: true } : null);
+    }
+    setAppState(AppState.PREVIEW);
+  }, [currentSessionKey]);
   
   const handleDeleteReview = useCallback(async (reviewId: string) => {
       if (!window.confirm("Are you sure you want to delete this review?")) return;
@@ -717,14 +741,22 @@ const App: React.FC = () => {
   const handleAdminLogin = useCallback(() => { setIsAdminLoggedIn(true); setIsLoginModalOpen(false); }, []);
   const handleAdminLogout = useCallback(() => { setIsAdminLoggedIn(false); }, []);
 
+  const decideNextStepAfterCapture = useCallback(() => {
+    if (currentSessionKey && currentTakeCount >= currentSessionKey.maxTakes && !(currentSessionKey.hasBeenReviewed)) {
+        setAppState(AppState.RATING);
+    } else {
+        setAppState(AppState.PREVIEW);
+    }
+  }, [currentSessionKey, currentTakeCount]);
+
   const handleCaptureComplete = useCallback((images: string[]) => {
     setCapturedImages(images);
     if ((settings.maxRetakes ?? 0) > 0) {
       setAppState(AppState.RETAKE_PREVIEW);
     } else {
-      setAppState(AppState.RATING);
+      decideNextStepAfterCapture();
     }
-  }, [settings.maxRetakes]);
+  }, [settings.maxRetakes, decideNextStepAfterCapture]);
 
   const handleStartRetake = useCallback((photoIndex: number) => {
     if (settings.maxRetakes === undefined || retakesUsed >= settings.maxRetakes) return;
@@ -746,8 +778,8 @@ const App: React.FC = () => {
   }, [retakingPhotoIndex]);
 
   const handleFinishRetakePreview = useCallback(() => {
-      setAppState(AppState.RATING);
-  }, []);
+    decideNextStepAfterCapture();
+  }, [decideNextStepAfterCapture]);
   
   const handleSessionEnd = useCallback(() => {
     if (currentSessionKey && currentSessionKey.status !== 'completed') {
@@ -948,12 +980,19 @@ const App: React.FC = () => {
         />;
 
       case AppState.RATING:
-          if (!selectedEvent) { setAppState(AppState.WELCOME); return null; }
+          if (!selectedEvent || !currentSessionKey) { setAppState(AppState.WELCOME); return null; }
+          // This is a safeguard. The logic in handle... functions should prevent this state if already reviewed.
+          if (currentSessionKey.hasBeenReviewed) {
+              setAppState(AppState.PREVIEW);
+              return null;
+          }
           return <RatingScreen 
               eventName={selectedEvent.name}
               onSubmit={handleSaveReview}
               onSkip={handleSkipReview}
               maxDescriptionLength={settings.reviewSliderMaxDescriptionLength ?? 150}
+              isReviewForFreebieEnabled={settings.isReviewForFreebieEnabled ?? false}
+              reviewFreebieTakesCount={settings.reviewFreebieTakesCount ?? 1}
           />;
 
       case AppState.PREVIEW:

@@ -1,5 +1,6 @@
 
 
+
 import React, { useState } from 'react';
 import { Settings } from '../types';
 import { BackIcon } from './icons/BackIcon';
@@ -35,7 +36,7 @@ export const GOOGLE_FONTS = [
   { name: 'Roboto Mono', value: "'Roboto Mono', monospace" },
 ];
 
-type SettingsCategory = 'general' | 'appearance' | 'security' | 'content';
+type SettingsCategory = 'general' | 'appearance' | 'security' | 'content' | 'reviews';
 
 const CategoryButton: React.FC<{
   label: string;
@@ -593,37 +594,6 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ settings, onSettingsCha
                 </div>
             </div>
 
-            {/* Review Slider Settings */}
-            <div className="p-6 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] text-left space-y-4">
-              <h3 className="text-xl font-bold text-[var(--color-text-accent)]">Review Slider</h3>
-              <div className="border-t border-[var(--color-border-primary)] pt-4">
-                <label htmlFor="isReviewSliderEnabled" className="flex items-center justify-between cursor-pointer">
-                    <div>
-                        <span className="block text-sm font-medium text-[var(--color-text-secondary)]">Show Review Slider on Welcome Screen</span>
-                        <p className="text-xs text-[var(--color-text-muted)]">Displays user reviews in a slider at the bottom.</p>
-                    </div>
-                    <div className="relative">
-                        <input type="checkbox" id="isReviewSliderEnabled" name="isReviewSliderEnabled" checked={settings.isReviewSliderEnabled ?? true} onChange={handleSettingsInputChange} className="sr-only peer" />
-                        <div className="w-11 h-6 bg-[var(--color-bg-tertiary)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--color-accent-primary)]"></div>
-                    </div>
-                </label>
-              </div>
-              <div>
-                  <label htmlFor="reviewSliderMaxDescriptionLength" className="block text-sm font-medium text-[var(--color-text-secondary)]">Max Review Length in Slider (chars)</label>
-                  <p className="text-xs text-[var(--color-text-muted)] mb-2">Truncates long reviews to keep the slider clean.</p>
-                  <input
-                      type="number"
-                      id="reviewSliderMaxDescriptionLength"
-                      name="reviewSliderMaxDescriptionLength"
-                      value={settings.reviewSliderMaxDescriptionLength ?? 150}
-                      onChange={handleSettingsInputChange}
-                      min="50" max="500"
-                      className="mt-1 block w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md shadow-sm py-2 px-3 text-[var(--color-text-primary)] focus:outline-none focus:ring-[var(--color-border-focus)] focus:border-[var(--color-border-focus)] sm:text-sm"
-                  />
-              </div>
-            </div>
-
-
             {/* Theme Settings */}
             <div className="p-6 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] text-left space-y-4">
               <h3 className="text-xl font-bold text-[var(--color-text-accent)]">App Theme</h3>
@@ -807,20 +777,6 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ settings, onSettingsCha
                   Manage All Templates
                 </button>
               </div>
-
-              {/* Review Management */}
-              <div className="p-6 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] text-left">
-                <h3 className="text-xl font-bold mb-4 text-[var(--color-text-accent)]">Review Management</h3>
-                <p className="text-[var(--color-text-muted)] mb-4">
-                  View and delete user-submitted reviews and testimonials.
-                </p>
-                <button
-                  onClick={onManageReviews}
-                  className="w-full bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-[var(--color-accent-primary-text)] font-bold py-3 px-6 rounded-full text-lg transition-transform transform hover:scale-105"
-                >
-                  Manage Reviews
-                </button>
-              </div>
               
               {/* History */}
               <div className="p-6 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] text-left">
@@ -837,6 +793,86 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ settings, onSettingsCha
               </div>
           </div>
          );
+      case 'reviews':
+        return (
+          <div className="space-y-6">
+            {/* Review Management Button */}
+            <div className="p-6 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] text-left">
+              <h3 className="text-xl font-bold mb-4 text-[var(--color-text-accent)]">Review Management</h3>
+              <p className="text-[var(--color-text-muted)] mb-4">
+                View and delete user-submitted reviews and testimonials.
+              </p>
+              <button
+                onClick={onManageReviews}
+                className="w-full bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-[var(--color-accent-primary-text)] font-bold py-3 px-6 rounded-full text-lg transition-transform transform hover:scale-105"
+              >
+                Manage Reviews
+              </button>
+            </div>
+
+            {/* Review Reward Settings */}
+            <div className="p-6 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] text-left space-y-4">
+              <h3 className="text-xl font-bold text-[var(--color-text-accent)]">Review Rewards</h3>
+              <div className="border-t border-[var(--color-border-primary)] pt-4">
+                <label htmlFor="isReviewForFreebieEnabled" className="flex items-center justify-between cursor-pointer">
+                    <div>
+                        <span className="block text-sm font-medium text-[var(--color-text-secondary)]">Reward for 5-Star Reviews</span>
+                        <p className="text-xs text-[var(--color-text-muted)]">Give users free photo sessions for leaving a 5-star review.</p>
+                    </div>
+                    <div className="relative">
+                        <input type="checkbox" id="isReviewForFreebieEnabled" name="isReviewForFreebieEnabled" checked={settings.isReviewForFreebieEnabled ?? false} onChange={handleSettingsInputChange} className="sr-only peer" />
+                        <div className="w-11 h-6 bg-[var(--color-bg-tertiary)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--color-accent-primary)]"></div>
+                    </div>
+                </label>
+              </div>
+              {settings.isReviewForFreebieEnabled && (
+                <div className="border-t border-[var(--color-border-primary)] pt-4">
+                    <label htmlFor="reviewFreebieTakesCount" className="block text-sm font-medium text-[var(--color-text-secondary)]">Number of Free Sessions</label>
+                    <p className="text-xs text-[var(--color-text-muted)] mb-2">How many extra photo sessions to award.</p>
+                    <input
+                        type="number"
+                        id="reviewFreebieTakesCount"
+                        name="reviewFreebieTakesCount"
+                        value={settings.reviewFreebieTakesCount ?? 1}
+                        onChange={handleSettingsInputChange}
+                        min="1"
+                        className="mt-1 block w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md shadow-sm py-2 px-3 text-[var(--color-text-primary)] focus:outline-none focus:ring-[var(--color-border-focus)] focus:border-[var(--color-border-focus)] sm:text-sm"
+                    />
+                </div>
+              )}
+            </div>
+
+            {/* Review Slider Settings */}
+            <div className="p-6 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] text-left space-y-4">
+              <h3 className="text-xl font-bold text-[var(--color-text-accent)]">Review Slider</h3>
+              <div className="border-t border-[var(--color-border-primary)] pt-4">
+                <label htmlFor="isReviewSliderEnabled" className="flex items-center justify-between cursor-pointer">
+                    <div>
+                        <span className="block text-sm font-medium text-[var(--color-text-secondary)]">Show Review Slider on Welcome Screen</span>
+                        <p className="text-xs text-[var(--color-text-muted)]">Displays user reviews in a slider at the bottom.</p>
+                    </div>
+                    <div className="relative">
+                        <input type="checkbox" id="isReviewSliderEnabled" name="isReviewSliderEnabled" checked={settings.isReviewSliderEnabled ?? true} onChange={handleSettingsInputChange} className="sr-only peer" />
+                        <div className="w-11 h-6 bg-[var(--color-bg-tertiary)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--color-accent-primary)]"></div>
+                    </div>
+                </label>
+              </div>
+              <div>
+                  <label htmlFor="reviewSliderMaxDescriptionLength" className="block text-sm font-medium text-[var(--color-text-secondary)]">Max Review Length in Slider (chars)</label>
+                  <p className="text-xs text-[var(--color-text-muted)] mb-2">Truncates long reviews to keep the slider clean.</p>
+                  <input
+                      type="number"
+                      id="reviewSliderMaxDescriptionLength"
+                      name="reviewSliderMaxDescriptionLength"
+                      value={settings.reviewSliderMaxDescriptionLength ?? 150}
+                      onChange={handleSettingsInputChange}
+                      min="50" max="500"
+                      className="mt-1 block w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md shadow-sm py-2 px-3 text-[var(--color-text-primary)] focus:outline-none focus:ring-[var(--color-border-focus)] focus:border-[var(--color-border-focus)] sm:text-sm"
+                  />
+              </div>
+            </div>
+          </div>
+        );
       default:
         return null;
     }
@@ -886,6 +922,12 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ settings, onSettingsCha
                  icon={<FolderIcon />}
                  isActive={activeCategory === 'content'}
                  onClick={() => setActiveCategory('content')}
+               />
+               <CategoryButton 
+                 label="Reviews"
+                 icon={<ReviewsIcon />}
+                 isActive={activeCategory === 'reviews'}
+                 onClick={() => setActiveCategory('reviews')}
                />
             </nav>
 

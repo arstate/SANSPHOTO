@@ -80,6 +80,8 @@ export interface Settings {
   // Review Settings
   isReviewSliderEnabled?: boolean;
   reviewSliderMaxDescriptionLength?: number;
+  isReviewForFreebieEnabled?: boolean;
+  reviewFreebieTakesCount?: number;
 }
 
 export interface Template {
@@ -126,6 +128,7 @@ export interface SessionKey {
   createdAt: number;
   progress?: string;
   currentEventName?: string;
+  hasBeenReviewed?: boolean;
 }
 
 export interface Review {

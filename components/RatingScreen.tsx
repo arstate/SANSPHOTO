@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { StarIcon } from './icons/StarIcon';
 import { Review } from '../types';
@@ -7,9 +8,11 @@ interface RatingScreenProps {
   onSubmit: (review: Omit<Review, 'id' | 'timestamp' | 'eventId' | 'eventName'>) => void;
   onSkip: () => void;
   maxDescriptionLength: number;
+  isReviewForFreebieEnabled: boolean;
+  reviewFreebieTakesCount: number;
 }
 
-const RatingScreen: React.FC<RatingScreenProps> = ({ eventName, onSubmit, onSkip, maxDescriptionLength }) => {
+const RatingScreen: React.FC<RatingScreenProps> = ({ eventName, onSubmit, onSkip, maxDescriptionLength, isReviewForFreebieEnabled, reviewFreebieTakesCount }) => {
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [userName, setUserName] = useState('');
@@ -31,6 +34,15 @@ const RatingScreen: React.FC<RatingScreenProps> = ({ eventName, onSubmit, onSkip
         <p className="text-center text-[var(--color-text-muted)] mb-1">Your feedback helps us improve!</p>
         <p className="text-center text-[var(--color-text-accent)] font-bold mb-6">{eventName}</p>
         
+        {isReviewForFreebieEnabled && reviewFreebieTakesCount > 0 && (
+          <div className="text-center bg-yellow-600/20 border border-yellow-500 p-3 rounded-lg mb-6">
+            <p className="font-bold text-yellow-300">⭐ SPECIAL OFFER! ⭐</p>
+            <p className="text-sm text-yellow-200">
+              Leave a 5-star review to get {reviewFreebieTakesCount} additional photo session{reviewFreebieTakesCount > 1 ? 's' : ''} for free!
+            </p>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label htmlFor="userName" className="block text-sm font-bold mb-2 text-[var(--color-text-secondary)]">Your Name</label>
