@@ -15,16 +15,10 @@ interface OnlineHistoryScreenProps {
 
 const OnlineHistoryScreen: React.FC<OnlineHistoryScreenProps> = ({ history, isAdminLoggedIn, onBack, onAdd, onDelete }) => {
 
-  const getProxiedUrl = (url: string) => {
-    if (!url || !url.startsWith('http')) {
-        return url;
-    }
-    return `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
-  };
-  
   const handleDownload = async (entry: OnlineHistoryEntry) => {
     try {
-        const response = await fetch(getProxiedUrl(entry.googlePhotosUrl));
+        // Coba ambil langsung tanpa proxy, sesuai permintaan.
+        const response = await fetch(entry.googlePhotosUrl);
         if (!response.ok) throw new Error('Network response was not ok.');
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
@@ -37,8 +31,9 @@ const OnlineHistoryScreen: React.FC<OnlineHistoryScreenProps> = ({ history, isAd
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
     } catch (error) {
-        console.error('Download failed:', error);
-        alert('Could not download the image. Please try again.');
+        console.error('Direct download failed. This is likely a CORS issue. Fallback: opening in a new tab.', error);
+        alert('Could not download the image directly. Opening in a new tab for you to save manually.');
+        window.open(entry.googlePhotosUrl, '_blank');
     }
   };
 
@@ -73,7 +68,7 @@ const OnlineHistoryScreen: React.FC<OnlineHistoryScreenProps> = ({ history, isAd
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
             {history.map(entry => (
               <div key={entry.id} className="group relative bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)] rounded-lg overflow-hidden aspect-w-2 aspect-h-3">
-                <img src={getProxiedUrl(entry.googlePhotosUrl)} alt={`Online history item ${entry.id}`} className="w-full h-full object-cover transition-transform group-hover:scale-105" loading="lazy" />
+                <img src={entry.googlePhotosUrl} alt={`Online history item ${entry.id}`} className="w-full h-full object-cover transition-transform group-hover:scale-105" loading="lazy" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
                 
                 <div className="absolute bottom-2 left-2 right-2 flex items-center justify-center gap-4 opacity-0 group-hover:opacity-100 transition-opacity">
