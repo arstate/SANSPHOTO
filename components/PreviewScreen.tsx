@@ -83,6 +83,59 @@ const PrintModal: React.FC<PrintModalProps> = ({ isOpen, onClose, onConfirm, ima
   );
 };
 
+// Helper function that prioritizes cache
+const loadImage = (src: string): Promise<HTMLImageElement> => {
+  return new Promise(async (resolve, reject) => {
+    const img = new Image();
+    // Penting untuk mengatur crossOrigin untuk gambar yang diambil dari proxy CORS
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+        // Hapus object URL setelah gambar dimuat untuk menghemat memori
+        if (img.src.startsWith('blob:')) {
+            URL.revokeObjectURL(img.src);
+        }
+        resolve(img);
+    };
+    img.onerror = (e) => {
+        console.error(`Gagal memuat gambar dari src: ${src.substring(0, 100)}...`, e);
+        reject(new Error('Gagal memuat gambar.'));
+    };
+
+    // 1. Langsung muat jika ini adalah URL data (misalnya, foto yang baru diambil)
+    if (src.startsWith('data:')) {
+      img.src = src;
+      return;
+    }
+
+    try {
+      // 2. Coba muat dari cache IndexedDB
+      const cachedBlob = await getCachedImage(src);
+      if (cachedBlob) {
+        const objectURL = URL.createObjectURL(cachedBlob);
+        img.src = objectURL;
+        return;
+      }
+
+      // 3. Fallback: ambil dari jaringan jika tidak ada di cache
+      console.warn(`Gambar tidak ditemukan di cache, mengambil dari jaringan: ${src}`);
+      let fetchUrl = src;
+      if (src.startsWith('http')) {
+          fetchUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(src)}`;
+      }
+      
+      const response = await fetch(fetchUrl);
+      if (!response.ok) {
+        throw new Error(`Gagal mengambil gambar. Status: ${response.status}`);
+      }
+      const blob = await response.blob();
+      img.src = URL.createObjectURL(blob);
+
+    } catch (error) {
+      reject(error);
+    }
+  });
+};
+
 
 const PreviewScreen: React.FC<PreviewScreenProps> = ({ 
     images, onRestart, onBack, template, onSaveHistory, event,
@@ -435,55 +488,6 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
     </div>
     </>
   );
-};
-
-// Helper function that was moved here to avoid being redefined on every render
-const loadImage = (src: string): Promise<HTMLImageElement> => {
-  return new Promise(async (resolve, reject) => {
-    if (src.startsWith('data:')) {
-      const img = new Image();
-      img.onload = () => resolve(img);
-      img.onerror = () => reject(new Error('Gagal memuat gambar dari URL data.'));
-      img.src = src;
-      return;
-    }
-
-    try {
-      const cachedBlob = await getCachedImage(src);
-      let blobToLoad: Blob | null = cachedBlob;
-
-      if (!blobToLoad) {
-        console.warn(`Gambar templat tidak ditemukan di cache. Mengambil melalui proxy: ${src}`);
-        
-        let fetchUrl = src;
-        if (src.startsWith('http')) {
-          fetchUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(src)}`;
-        }
-        
-        const response = await fetch(fetchUrl);
-        if (!response.ok) {
-          throw new Error(`Gagal mengambil gambar. Status: ${response.status}`);
-        }
-        blobToLoad = await response.blob();
-      }
-      
-      const objectURL = URL.createObjectURL(blobToLoad);
-      const img = new Image();
-      img.onload = () => {
-        URL.revokeObjectURL(objectURL);
-        resolve(img);
-      };
-      img.onerror = () => {
-        URL.revokeObjectURL(objectURL);
-        reject(new Error(`Gagal memuat gambar dari URL objek untuk: ${src}`));
-      };
-      img.src = objectURL;
-
-    } catch (error) {
-      console.error(`Kesalahan kritis saat memuat gambar templat dari ${src}:`, error);
-      reject(error);
-    }
-  });
 };
 
 export default PreviewScreen;
