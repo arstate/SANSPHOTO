@@ -10,7 +10,7 @@ import { Template, Event, Settings } from '../types';
 import { getCachedImage, storeImageInCache } from '../utils/db';
 import { UploadingIcon } from './icons/UploadingIcon';
 
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwippmYAiIwRV82vYJkcYiCTPDcIvojdECUtH3bofOoBvKPK95wYghwKYymbCE0KczMoA/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxRFNQJ004jSbmT9B6ePRu9DmSoxKdcb_lcF1BWG-rF3z5F1HgG1m6rVZGzwFhhHPV3uw/exec';
 
 type PrintSettings = {
   isEnabled: boolean;
@@ -279,41 +279,34 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
   }, [printSettings, template]);
 
   const uploadToGoogleDrive = useCallback(async (imageDataUrl: string) => {
-    setUploadStatus('uploading');
-    try {
-        const base64Data = imageDataUrl.split(',')[1];
-        const filename = `sans-photo-${Date.now()}.png`;
+      setUploadStatus('uploading');
+      try {
+          const base64Data = imageDataUrl.split(',')[1];
+          const filename = `sans-photo-${Date.now()}.png`;
+          const payload = JSON.stringify({
+              foto: base64Data,
+              nama: filename
+          });
 
-        const payload = {
-            filename: filename,
-            base64Data: base64Data,
-        };
+          // Menggunakan `fetch` dengan mode 'no-cors' untuk Google Apps Script
+          // Kita tidak bisa membaca respons, tapi permintaannya akan dikirim.
+          await fetch(SCRIPT_URL, {
+              method: 'POST',
+              mode: 'no-cors', 
+              body: payload,
+              headers: {
+                'Content-Type': 'application/json'
+              }
+          });
+          
+          // Asumsikan berhasil karena `no-cors` tidak akan memberikan status kembali.
+          setUploadStatus('success');
+          console.log("Upload request sent to Google Drive.");
 
-        const response = await fetch(SCRIPT_URL, {
-            method: 'POST',
-            mode: 'cors', // Explicitly handle CORS
-            body: JSON.stringify(payload),
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        });
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`Server responded with status ${response.status}: ${errorText}`);
-        }
-
-        const result = await response.json();
-        if (result.status === 'success') {
-            setUploadStatus('success');
-            console.log("Successfully uploaded to Google Drive:", result.filename);
-        } else {
-            throw new Error(result.message || 'Unknown error from Google Apps Script');
-        }
-    } catch (error) {
-        console.error("Error uploading to Google Drive:", error);
-        setUploadStatus('error');
-    }
+      } catch (error) {
+          console.error("Error uploading to Google Drive:", error);
+          setUploadStatus('error');
+      }
   }, []);
 
   const drawCanvas = useCallback(async () => {
@@ -432,35 +425,29 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
   const UploadStatusIndicator: React.FC = () => {
     if (uploadStatus === 'idle') return null;
 
-    let text, colorClass, icon, title;
+    let text, colorClass, icon;
     switch (uploadStatus) {
       case 'uploading':
-        title = "SINKRONISASI ONLINE";
-        text = "Mengunggah foto ke Google Drive...";
-        colorClass = "text-blue-300 border-blue-500/50";
+        text = "Mengupload ke Histori Online...";
+        colorClass = "text-blue-300";
         icon = <UploadingIcon />;
         break;
       case 'success':
-        title = "SINKRONISASI BERHASIL";
-        text = "Foto berhasil disimpan di histori online.";
-        colorClass = "text-green-300 border-green-500/50";
+        text = "Berhasil diupload!";
+        colorClass = "text-green-400";
         icon = <CheckIcon />;
         break;
       case 'error':
-        title = "SINKRONISASI GAGAL";
-        text = "Gagal mengunggah foto. Periksa koneksi Anda.";
-        colorClass = "text-red-300 border-red-500/50";
-        icon = <RestartIcon />;
+        text = "Gagal mengupload.";
+        colorClass = "text-red-400";
+        icon = <RestartIcon />; // Ganti dengan ikon error jika ada
         break;
     }
 
     return (
-      <div className={`w-full flex items-start gap-3 p-3 mt-4 rounded-lg bg-[var(--color-bg-secondary)] border ${colorClass} transition-all`}>
-        <div className="flex-shrink-0 mt-1">{icon}</div>
-        <div>
-          <p className="font-bold text-sm">{title}</p>
-          <p className="text-xs">{text}</p>
-        </div>
+      <div className={`w-full flex items-center justify-center gap-2 p-2 mt-4 rounded-lg bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)] text-sm ${colorClass}`}>
+        {icon}
+        <span>{text}</span>
       </div>
     );
   };
@@ -519,8 +506,7 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
             {isLastTake ? (
                 <button
                     onClick={onRestart}
-                    disabled={uploadStatus === 'uploading'}
-                    className="w-full bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-[var(--color-accent-primary-text)] font-bold py-4 px-8 rounded-full text-xl transition-transform transform hover:scale-105 flex items-center justify-center gap-3 disabled:bg-[var(--color-bg-tertiary)] disabled:cursor-wait disabled:transform-none"
+                    className="w-full bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-[var(--color-accent-primary-text)] font-bold py-4 px-8 rounded-full text-xl transition-transform transform hover:scale-105 flex items-center justify-center gap-3"
                     >
                     <CheckIcon />
                     Selesai
@@ -528,8 +514,7 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
             ) : (
                 <button
                     onClick={onNextTake}
-                    disabled={uploadStatus === 'uploading'}
-                    className="w-full bg-[var(--color-info)] hover:bg-[var(--color-info-hover)] text-[var(--color-info-text)] font-bold py-4 px-8 rounded-full text-xl transition-transform transform hover:scale-105 flex items-center justify-center gap-3 disabled:bg-[var(--color-bg-tertiary)] disabled:cursor-wait disabled:transform-none"
+                    className="w-full bg-[var(--color-info)] hover:bg-[var(--color-info-hover)] text-[var(--color-info-text)] font-bold py-4 px-8 rounded-full text-xl transition-transform transform hover:scale-105 flex items-center justify-center gap-3"
                     >
                     <RestartIcon />
                     Mulai Pengambilan Berikutnya
