@@ -1,8 +1,4 @@
-
-
-
-
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import WelcomeScreen from './components/WelcomeScreen';
 import TemplateSelection from './components/TemplateSelection';
 import CaptureScreen from './components/CaptureScreen';
@@ -158,6 +154,8 @@ const App: React.FC = () => {
   
   const [retakesUsed, setRetakesUsed] = useState(0);
   const [retakingPhotoIndex, setRetakingPhotoIndex] = useState<number | null>(null);
+  
+  const cachingSessionRef = useRef(0);
 
   useFullscreenLock(!!settings.isStrictKioskMode);
 
@@ -200,12 +198,18 @@ const App: React.FC = () => {
     };
   }, []);
 
-  const cacheAllTemplates = useCallback(async (templatesToCache: Template[]) => {
+  const cacheAllTemplates = useCallback(async (templatesToCache: Template[], sessionId: number) => {
       if (templatesToCache.length === 0) return;
+      if (sessionId !== cachingSessionRef.current) return;
+
       setIsCaching(true);
       setCachingProgress(0);
 
       for (let i = 0; i < templatesToCache.length; i++) {
+          if (sessionId !== cachingSessionRef.current) {
+              console.log('Caching process dibatalkan karena perubahan tenant.');
+              return;
+          }
           const template = templatesToCache[i];
           if (!template.imageUrl) continue;
 
@@ -227,13 +231,25 @@ const App: React.FC = () => {
           } catch (error) {
               console.error(`Gagal melakukan pra-cache gambar ${template.imageUrl}`, error);
           }
-          setCachingProgress(((i + 1) / templatesToCache.length) * 100);
+          if (sessionId === cachingSessionRef.current) {
+            setCachingProgress(((i + 1) / templatesToCache.length) * 100);
+          }
       }
-      setTimeout(() => setIsCaching(false), 1500);
+      if (sessionId === cachingSessionRef.current) {
+        setTimeout(() => {
+          if (sessionId === cachingSessionRef.current) {
+            setIsCaching(false);
+          }
+        }, 1500);
+      }
   }, []);
 
   useEffect(() => {
     if (!currentTenantId) return;
+
+    cachingSessionRef.current += 1;
+    const currentSessionId = cachingSessionRef.current;
+    setIsCaching(false);
 
     const loadHistory = async () => {
         const localHistory = await getAllHistoryEntries();
@@ -243,7 +259,6 @@ const App: React.FC = () => {
 
     const dataPath = `data/${currentTenantId}`;
 
-    // Listeners for tenant-specific data
     const settingsRef = ref(db, `${dataPath}/settings`);
     const templatesRef = ref(db, `${dataPath}/templates`);
     const eventsRef = ref(db, `${dataPath}/events`);
@@ -259,7 +274,7 @@ const App: React.FC = () => {
         if (snapshot.exists()) {
             const fetchedTemplates = firebaseObjectToArray<Template>(snapshot.val());
             setTemplates(fetchedTemplates);
-            cacheAllTemplates(fetchedTemplates);
+            cacheAllTemplates(fetchedTemplates, currentSessionId);
         } else if (currentTenantId === 'master') {
             push(templatesRef, DEFAULT_TEMPLATE_DATA);
         } else {
@@ -281,18 +296,15 @@ const App: React.FC = () => {
     };
   }, [currentTenantId, cacheAllTemplates]);
 
-  // Handle theme changes
   useEffect(() => {
     document.documentElement.classList.toggle('light', settings.theme === 'light');
   }, [settings.theme]);
   
-  // Handle responsive mode for online history
   useEffect(() => {
     const container = document.getElementById('app-container');
     container?.classList.toggle('responsive-mode', appState === AppState.ONLINE_HISTORY);
   }, [appState]);
 
-  // Real-time progress update
   useEffect(() => {
     if (!currentSessionKey || !currentTenantId) return;
     let progress = '';
@@ -308,7 +320,6 @@ const App: React.FC = () => {
     }
   }, [appState, currentSessionKey, currentTenantId]);
   
-  // Fullscreen management
   useEffect(() => {
     const handleFullscreenChange = () => setIsFullscreen(!!document.fullscreenElement);
     document.addEventListener('fullscreenchange', handleFullscreenChange);
