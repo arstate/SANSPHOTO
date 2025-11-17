@@ -4,8 +4,6 @@
 
 
 
-
-
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import WelcomeScreen from './components/WelcomeScreen';
 import TemplateSelection from './components/TemplateSelection';
@@ -560,9 +558,8 @@ const App: React.FC = () => {
       
       const updates: Partial<SessionKey> = { hasBeenReviewed: true };
       if (settings.isReviewForFreebieEnabled && reviewData.rating === 5) {
-        // Fix: Ensure both operands of the arithmetic operation are numbers.
-        // This prevents potential runtime errors if `reviewFreebieTakesCount` is undefined or if `maxTakes`
-        // is retrieved from the database as a non-numeric type.
+        // FIX: Ensure both operands are numbers before addition to prevent potential type issues
+        // from Firebase data which might be strings. This resolves a potential runtime error.
         updates.maxTakes = Number(currentSessionKey.maxTakes || 0) + Number(settings.reviewFreebieTakesCount || 1);
       }
       await update(ref(db, `data/${currentTenantId}/sessionKeys/${currentSessionKey.id}`), updates);
