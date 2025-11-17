@@ -10,7 +10,7 @@ import { Template, Event, Settings } from '../types';
 import { getCachedImage, storeImageInCache } from '../utils/db';
 import { UploadingIcon } from './icons/UploadingIcon';
 
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwUgQejn4wAm0PtreCZUwg8dJLEyrGEUYQF4brzniCPkmiiG4kDDyic5qDD5mJCLD09mg/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyCeYn_qT1d2c-xymVg2L95aME8ysvSlscvpjzdyWIXypTR4wBtNmcXJkCM1xXhAS_HCg/exec';
 
 type PrintSettings = {
   isEnabled: boolean;
@@ -281,25 +281,27 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
   const uploadToGoogleDrive = useCallback(async (imageDataUrl: string) => {
       setUploadStatus('uploading');
       try {
+          // 1. Ekstrak data base64 murni dari data URL
           const base64Data = imageDataUrl.split(',')[1];
+          // 2. Buat nama file yang unik
           const filename = `sans-photo-${Date.now()}.png`;
-          const payload = JSON.stringify({
-              foto: base64Data,
-              nama: filename
-          });
+          // 3. Buat URL dengan nama file sebagai parameter query
+          const urlWithParams = `${SCRIPT_URL}?filename=${encodeURIComponent(filename)}`;
 
-          // Menggunakan `fetch` dengan mode 'no-cors' untuk Google Apps Script
-          // Kita tidak bisa membaca respons, tapi permintaannya akan dikirim.
-          await fetch(SCRIPT_URL, {
+          // 4. Kirim data base64 sebagai string mentah di body
+          await fetch(urlWithParams, {
               method: 'POST',
-              mode: 'no-cors', 
-              body: payload,
+              mode: 'no-cors', // Mode 'no-cors' penting untuk menghindari error CORS dari Apps Script
+              body: base64Data, // Kirim string mentah, bukan JSON
               headers: {
-                'Content-Type': 'application/json'
+                // Saat mengirim string mentah, Content-Type defaultnya adalah text/plain,
+                // yang lebih mudah diterima oleh Apps Script.
+                'Content-Type': 'text/plain;charset=utf-8',
               }
           });
           
-          // Asumsikan berhasil karena `no-cors` tidak akan memberikan status kembali.
+          // Karena 'no-cors' tidak memberikan status kembali, kita asumsikan berhasil.
+          // Penanganan error yang lebih canggih memerlukan perubahan sisi server yang kompleks.
           setUploadStatus('success');
           console.log("Upload request sent to Google Drive.");
 
