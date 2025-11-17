@@ -7,7 +7,7 @@ interface OnlineHistoryScreenProps {
   onBack: () => void;
 }
 
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyscGKm6RSnFw2b3PMzQfGUhuWUxWKViW73fjoPp_5nvG3OxoWN3lJYY38tP7FvaOaL/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwbnlO9vk95yTKeHFFilhJbfFcjibH80sFzsA5II3BAkuNudCTabRNdBUhYlCEHHO5CYQ/exec';
 
 const OnlineHistoryScreen: React.FC<OnlineHistoryScreenProps> = ({ onBack }) => {
   const [photos, setPhotos] = useState<OnlineHistoryEntry[]>([]);
