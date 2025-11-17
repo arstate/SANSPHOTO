@@ -66,6 +66,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
 }) => {
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState<SettingsCategory>('general');
+  const isLight = settings.theme === 'light';
 
   const handleSettingsInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -881,9 +882,9 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
       case 'master':
         return isMasterAdmin ? (
           <div className="space-y-6">
-            <div className="p-6 bg-purple-900/20 rounded-lg border border-purple-700 text-left">
-              <h3 className="text-xl font-bold text-purple-300">Master Admin Area</h3>
-              <p className="text-purple-200/80 mb-4">Manage tenant admins who use your photobooth platform.</p>
+            <div className={`p-6 rounded-lg border text-left ${isLight ? 'bg-purple-100 border-purple-300' : 'bg-purple-900/20 border-purple-700'}`}>
+              <h3 className={`text-xl font-bold ${isLight ? 'text-purple-800' : 'text-purple-300'}`}>Master Admin Area</h3>
+              <p className={`${isLight ? 'text-purple-600' : 'text-purple-200/80'} mb-4`}>Manage tenant admins who use your photobooth platform.</p>
               <button
                 onClick={onManageTenants}
                 className="w-full bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-[var(--color-accent-primary-text)] font-bold py-3 px-6 rounded-full text-lg transition-transform transform hover:scale-105 flex items-center justify-center gap-2"

@@ -148,20 +148,19 @@ const App: React.FC = () => {
 
   useFullscreenLock(!!settings.isStrictKioskMode);
 
-  // Tenant detection from URL
+  // Tenant detection from URL hash to fix SPA routing issues
   useEffect(() => {
-    const path = window.location.pathname.split('/')[1] || '';
+    let allTenants: Tenant[] = [];
     const tenantsRef = ref(db, 'tenants');
-    
-    const listener = onValue(tenantsRef, (snapshot) => {
-        const fetchedTenants = firebaseObjectToArray<Tenant>(snapshot.val());
-        setTenants(fetchedTenants);
+
+    const checkPath = () => {
+        const path = window.location.hash.slice(1).replace(/^\//, ''); // e.g., #/tenant -> tenant
 
         if (path === '') {
             setCurrentTenantId('master');
             setTenantNotFound(false);
         } else {
-            const tenant = fetchedTenants.find(t => t.path === path);
+            const tenant = allTenants.find(t => t.path === path);
             if (tenant && tenant.isActive) {
                 setCurrentTenantId(tenant.id);
                 setTenantNotFound(false);
@@ -170,9 +169,22 @@ const App: React.FC = () => {
                 setTenantNotFound(true);
             }
         }
+    };
+
+    const onValueListener = onValue(tenantsRef, (snapshot) => {
+        const fetchedTenants = firebaseObjectToArray<Tenant>(snapshot.val());
+        setTenants(fetchedTenants);
+        allTenants = fetchedTenants;
+        checkPath(); // Re-check path when tenants data changes
     });
 
-    return () => off(tenantsRef, 'value', listener);
+    window.addEventListener('hashchange', checkPath);
+    checkPath(); // Initial check on load
+
+    return () => {
+        off(tenantsRef, 'value', onValueListener);
+        window.removeEventListener('hashchange', checkPath);
+    };
   }, []);
 
   const cacheAllTemplates = useCallback(async (templatesToCache: Template[]) => {

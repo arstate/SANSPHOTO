@@ -25,10 +25,11 @@ const RetakePreviewScreen: React.FC<RetakePreviewScreenProps> = ({
   const TEMPLATE_WIDTH = isLandscape ? 1800 : 1200;
   const TEMPLATE_HEIGHT = isLandscape ? 1200 : 1800;
   
-  // FIX: Coerce maxRetakes to a number to prevent type errors from props that might be strings from Firebase.
   const numericMaxRetakes = Number(maxRetakes);
   const canRetake = retakesUsed < numericMaxRetakes;
-  // FIX: Use Array.from to correctly convert the Set to a number array. The spread operator was causing type inference issues, leading to an `unknown[]` type.
+  // Fix: Use `Array.from()` to correctly convert a Set to a number array. The spread
+  // operator (`[...new Set()]`) can cause TypeScript to incorrectly infer the type as
+  // `unknown[]`, leading to errors in subsequent operations like `sort`.
   const uniqueInputIds: number[] = Array.from(new Set(template.photoSlots.map(s => s.inputId))).sort((a, b) => a - b);
 
   const drawCanvas = useCallback(async () => {

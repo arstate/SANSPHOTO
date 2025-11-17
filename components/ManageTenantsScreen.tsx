@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { Tenant } from '../types';
 import { BackIcon } from './icons/BackIcon';
@@ -8,6 +9,7 @@ import { TrashIcon } from './icons/TrashIcon';
 import { ToggleOnIcon } from './icons/ToggleOnIcon';
 import { ToggleOffIcon } from './icons/ToggleOffIcon';
 import { CopyIcon } from './icons/CopyIcon';
+import { ExternalLinkIcon } from './icons/ExternalLinkIcon';
 import TenantEditModal from './TenantEditModal';
 
 interface ManageTenantsScreenProps {
@@ -23,10 +25,14 @@ const ManageTenantsScreen: React.FC<ManageTenantsScreenProps> = ({ tenants, onBa
   const [copySuccess, setCopySuccess] = useState('');
 
   const handleCopyLink = (path: string) => {
-    const url = `${window.location.origin}/${path}`;
+    const url = `${window.location.origin}/#/${path}`;
     navigator.clipboard.writeText(url);
     setCopySuccess(path);
     setTimeout(() => setCopySuccess(''), 2000);
+  };
+  
+  const handleOpenLink = (path: string) => {
+    window.open(`/#/${path}`, '_blank');
   };
   
   const handleSaveTenant = (tenantData: Partial<Tenant>) => {
@@ -73,9 +79,12 @@ const ManageTenantsScreen: React.FC<ManageTenantsScreenProps> = ({ tenants, onBa
                   <div>
                     <p className={`font-bold text-lg ${tenant.isActive ? 'text-[var(--color-text-primary)]' : 'text-gray-400'}`}>{tenant.username}</p>
                     <div className="flex items-center gap-2 mt-1">
-                        <code className="text-sm text-[var(--color-text-accent)] bg-[var(--color-bg-primary)]/50 px-2 py-1 rounded">/{tenant.path}</code>
-                        <button onClick={() => handleCopyLink(tenant.path)} className="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]">
+                        <code className="text-sm text-[var(--color-text-accent)] bg-[var(--color-bg-primary)]/50 px-2 py-1 rounded">/#/{tenant.path}</code>
+                        <button onClick={() => handleCopyLink(tenant.path)} className="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]" aria-label="Copy link">
                             {copySuccess === tenant.path ? <span className="text-xs text-green-400">Copied!</span> : <CopyIcon />}
+                        </button>
+                         <button onClick={() => handleOpenLink(tenant.path)} className="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]" aria-label="Open link in new tab">
+                            <ExternalLinkIcon />
                         </button>
                     </div>
                   </div>
