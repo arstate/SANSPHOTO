@@ -18,7 +18,6 @@ interface EditingState {
   startX: number;
   startY: number;
   startSlotX: number;
-
   startSlotY: number;
   startSlotWidth: number;
   startSlotHeight: number;
@@ -29,11 +28,20 @@ const EditTemplateScreen: React.FC<EditTemplateScreenProps> = ({ template, onSav
   const [selectedSlotId, setSelectedSlotId] = useState<number | null>(null);
   const [editingState, setEditingState] = useState<EditingState | null>(null);
   const [zoom, setZoom] = useState(1);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [isSpacePressed, setIsSpacePressed] = useState(false);
+  const [isPanning, setIsPanning] = useState(false);
+
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const previewContainerRef = useRef<HTMLDivElement>(null);
+  const panState = useRef<{ startX: number; startY: number; scrollLeft: number; scrollTop: number } | null>(null);
   
   const isLandscape = template.orientation === 'landscape';
   const TEMPLATE_WIDTH = isLandscape ? 1800 : 1200;
   const TEMPLATE_HEIGHT = isLandscape ? 1200 : 1800;
+  
+  const STAGE_MULTIPLIER = 3;
+  const STAGE_WIDTH = TEMPLATE_WIDTH * STAGE_MULTIPLIER;
+  const STAGE_HEIGHT = TEMPLATE_HEIGHT * STAGE_MULTIPLIER;
 
   const selectedSlot = selectedSlotId !== null ? slots.find(s => s.id === selectedSlotId) : null;
   
@@ -45,10 +53,11 @@ const EditTemplateScreen: React.FC<EditTemplateScreenProps> = ({ template, onSav
   };
 
   const handlePointerDown = useCallback((e: React.MouseEvent | React.TouchEvent, slotId: number, action: EditAction) => {
+    if (isSpacePressed) return;
     e.stopPropagation();
     setSelectedSlotId(slotId);
     const currentSlot = slots.find(s => s.id === slotId);
-    if (!currentSlot || !containerRef.current) return;
+    if (!currentSlot || !previewContainerRef.current) return;
     
     const { x: startX, y: startY } = getPointerPosition(e);
 
@@ -62,10 +71,10 @@ const EditTemplateScreen: React.FC<EditTemplateScreenProps> = ({ template, onSav
       startSlotWidth: currentSlot.width,
       startSlotHeight: currentSlot.height,
     });
-  }, [slots]);
+  }, [slots, isSpacePressed]);
 
   const handlePointerMove = useCallback((e: MouseEvent | TouchEvent) => {
-    if (!editingState || !containerRef.current) return;
+    if (!editingState || !previewContainerRef.current) return;
     
     const { x, y } = getPointerPosition(e);
     
@@ -106,6 +115,80 @@ const EditTemplateScreen: React.FC<EditTemplateScreenProps> = ({ template, onSav
       window.removeEventListener('touchend', handlePointerUp);
     };
   }, [editingState, handlePointerMove, handlePointerUp]);
+
+  // Pan/Hand Tool Logic
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === ' ' || e.code === 'Space') {
+            e.preventDefault();
+            setIsSpacePressed(true);
+        }
+    };
+    const handleKeyUp = (e: KeyboardEvent) => {
+        if (e.key === ' ' || e.code === 'Space') {
+            e.preventDefault();
+            setIsSpacePressed(false);
+        }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+        window.removeEventListener('keydown', handleKeyDown);
+        window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, []);
+
+  const handlePanStart = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isSpacePressed || !scrollContainerRef.current) return;
+    e.preventDefault();
+    setIsPanning(true);
+    panState.current = {
+        startX: e.clientX,
+        startY: e.clientY,
+        scrollLeft: scrollContainerRef.current.scrollLeft,
+        scrollTop: scrollContainerRef.current.scrollTop,
+    };
+  };
+
+  useEffect(() => {
+      const scroller = scrollContainerRef.current;
+      if (!scroller) return;
+
+      const handlePanMove = (e: MouseEvent) => {
+          if (!panState.current) return;
+          e.preventDefault();
+          const dx = e.clientX - panState.current.startX;
+          const dy = e.clientY - panState.current.startY;
+          scroller.scrollLeft = panState.current.scrollLeft - dx;
+          scroller.scrollTop = panState.current.scrollTop - dy;
+      };
+
+      const handlePanEnd = () => {
+          setIsPanning(false);
+          panState.current = null;
+      };
+      
+      if(isPanning) {
+          window.addEventListener('mousemove', handlePanMove);
+          window.addEventListener('mouseup', handlePanEnd);
+      }
+
+      return () => {
+          window.removeEventListener('mousemove', handlePanMove);
+          window.removeEventListener('mouseup', handlePanEnd);
+      };
+  }, [isPanning]);
+  
+  // Initial centering of the preview
+  useEffect(() => {
+      if (scrollContainerRef.current) {
+          const container = scrollContainerRef.current;
+          container.scrollLeft = (STAGE_WIDTH - container.clientWidth) / 2;
+          container.scrollTop = (STAGE_HEIGHT - container.clientHeight) / 2;
+      }
+  }, [STAGE_WIDTH, STAGE_HEIGHT]);
+
 
   const handleAddSlot = () => {
     const newId = Date.now();
@@ -174,46 +257,59 @@ const EditTemplateScreen: React.FC<EditTemplateScreenProps> = ({ template, onSav
       <main className="flex-grow w-full flex flex-col md:flex-row min-h-0">
         {/* Left Column: Preview */}
         <div className="w-full md:w-2/3 p-4 flex flex-col items-stretch justify-center">
-            <div className="w-full flex-grow overflow-auto flex items-center justify-center rounded-lg bg-[var(--color-bg-primary)]/50 scrollbar-thin min-h-0">
-                <div
-                    ref={containerRef}
-                    className="relative bg-[var(--color-bg-secondary)] touch-none shadow-2xl shrink-0"
-                    style={{
-                        width: `${TEMPLATE_WIDTH}px`,
-                        height: `${TEMPLATE_HEIGHT}px`,
-                        transform: `scale(${zoom})`,
-                        transformOrigin: 'center',
-                        userSelect: 'none',
-                    }}
-                    onClick={() => setSelectedSlotId(null)}
-                >
-                    <img src={template.imageUrl} alt="Template background" className="absolute inset-0 w-full h-full pointer-events-none" />
-                    {slots.map((slot) => {
-                        const isSelected = slot.id === selectedSlotId;
-                        return (
-                        <div
-                            key={slot.id}
-                            onClick={(e) => e.stopPropagation()}
-                            onMouseDown={(e) => handlePointerDown(e, slot.id, 'drag')}
-                            onTouchStart={(e) => handlePointerDown(e, slot.id, 'drag')}
-                            className={`absolute bg-purple-500/30 border-2 border-dashed ${isSelected ? 'border-green-400' : 'border-purple-300'} cursor-move flex items-center justify-center`}
-                            style={{
-                            left: `${(slot.x / TEMPLATE_WIDTH) * 100}%`,
-                            top: `${(slot.y / TEMPLATE_HEIGHT) * 100}%`,
-                            width: `${(slot.width / TEMPLATE_WIDTH) * 100}%`,
-                            height: `${(slot.height / TEMPLATE_HEIGHT) * 100}%`,
-                            }}
-                        >
-                            <div className="text-white font-bebas text-2xl tracking-wider bg-black/30 px-2 py-1 rounded select-none pointer-events-none">
-                                INPUT {slot.inputId}
-                            </div>
-                            {isSelected && <div className={`absolute -bottom-2 -right-2 w-4 h-4 bg-green-400 border-2 border-white rounded-full cursor-se-resize`}
-                            onMouseDown={(e) => handlePointerDown(e, slot.id, 'resize-br')}
-                            onTouchStart={(e) => handlePointerDown(e, slot.id, 'resize-br')}
-                            />}
-                        </div>
-                        );
-                    })}
+            <div 
+              ref={scrollContainerRef} 
+              className="w-full flex-grow overflow-auto flex items-center justify-center rounded-lg bg-[var(--color-bg-primary)]/50 scrollbar-thin min-h-0"
+              style={{ cursor: isSpacePressed ? (isPanning ? 'grabbing' : 'grab') : 'default' }}
+              onMouseDown={handlePanStart}
+            >
+              <div 
+                  className="relative shrink-0"
+                  style={{ width: `${STAGE_WIDTH}px`, height: `${STAGE_HEIGHT}px` }}
+              >
+                  <div
+                      ref={previewContainerRef}
+                      className="absolute bg-[var(--color-bg-secondary)] touch-none shadow-2xl"
+                      style={{
+                          width: `${TEMPLATE_WIDTH}px`,
+                          height: `${TEMPLATE_HEIGHT}px`,
+                          top: `${(STAGE_HEIGHT - TEMPLATE_HEIGHT) / 2}px`,
+                          left: `${(STAGE_WIDTH - TEMPLATE_WIDTH) / 2}px`,
+                          transform: `scale(${zoom})`,
+                          transformOrigin: 'center',
+                          userSelect: 'none',
+                      }}
+                      onClick={() => !isSpacePressed && setSelectedSlotId(null)}
+                  >
+                      <img src={template.imageUrl} alt="Template background" className="absolute inset-0 w-full h-full pointer-events-none" />
+                      {slots.map((slot) => {
+                          const isSelected = slot.id === selectedSlotId;
+                          return (
+                          <div
+                              key={slot.id}
+                              onClick={(e) => !isSpacePressed && e.stopPropagation()}
+                              onMouseDown={(e) => handlePointerDown(e, slot.id, 'drag')}
+                              onTouchStart={(e) => handlePointerDown(e, slot.id, 'drag')}
+                              className={`absolute bg-purple-500/30 border-2 border-dashed ${isSelected ? 'border-green-400' : 'border-purple-300'} ${!isSpacePressed ? 'cursor-move' : ''} flex items-center justify-center`}
+                              style={{
+                                left: `${(slot.x / TEMPLATE_WIDTH) * 100}%`,
+                                top: `${(slot.y / TEMPLATE_HEIGHT) * 100}%`,
+                                width: `${(slot.width / TEMPLATE_WIDTH) * 100}%`,
+                                height: `${(slot.height / TEMPLATE_HEIGHT) * 100}%`,
+                                pointerEvents: isPanning ? 'none' : 'auto'
+                              }}
+                          >
+                              <div className="text-white font-bebas text-2xl tracking-wider bg-black/30 px-2 py-1 rounded select-none pointer-events-none">
+                                  INPUT {slot.inputId}
+                              </div>
+                              {isSelected && <div className={`absolute -bottom-2 -right-2 w-4 h-4 bg-green-400 border-2 border-white rounded-full ${!isSpacePressed ? 'cursor-se-resize' : ''}`}
+                              onMouseDown={(e) => handlePointerDown(e, slot.id, 'resize-br')}
+                              onTouchStart={(e) => handlePointerDown(e, slot.id, 'resize-br')}
+                              />}
+                          </div>
+                          );
+                      })}
+                  </div>
                 </div>
             </div>
             <div className="shrink-0 mt-4 flex items-center justify-center gap-4 bg-[var(--color-bg-secondary)] p-2 rounded-full">
@@ -278,8 +374,9 @@ const EditTemplateScreen: React.FC<EditTemplateScreenProps> = ({ template, onSav
                           </div>
                       </div>
                     ) : (
-                      <div className="w-full p-4 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] flex items-center justify-center min-h-[190px]">
-                          <p className="text-[var(--color-text-muted)] text-center">Select a slot on the left to edit its properties.</p>
+                      <div className="w-full p-4 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] flex flex-col items-center justify-center min-h-[190px] text-center">
+                          <p className="text-[var(--color-text-muted)]">Select a slot on the left to edit its properties.</p>
+                          <p className="text-[var(--color-text-muted)] mt-2 text-sm">Hold <kbd className="px-2 py-1 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded-lg">Space</kbd> to pan the view.</p>
                       </div>
                     )}
                 </div>
