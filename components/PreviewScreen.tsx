@@ -10,7 +10,7 @@ import { Template, Event, Settings } from '../types';
 import { getCachedImage, storeImageInCache } from '../utils/db';
 import { UploadingIcon } from './icons/UploadingIcon';
 
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyCeYn_qT1d2c-xymVg2L95aME8ysvSlscvpjzdyWIXypTR4wBtNmcXJkCM1xXhAS_HCg/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwippmYAiIwRV82vYJkcYiCTPDcIvojdECUtH3bofOoBvKPK95wYghwKYymbCE0KczMoA/exec';
 
 type PrintSettings = {
   isEnabled: boolean;
@@ -279,36 +279,41 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
   }, [printSettings, template]);
 
   const uploadToGoogleDrive = useCallback(async (imageDataUrl: string) => {
-      setUploadStatus('uploading');
-      try {
-          // 1. Ekstrak data base64 murni dari data URL
-          const base64Data = imageDataUrl.split(',')[1];
-          // 2. Buat nama file yang unik
-          const filename = `sans-photo-${Date.now()}.png`;
-          // 3. Buat URL dengan nama file sebagai parameter query
-          const urlWithParams = `${SCRIPT_URL}?filename=${encodeURIComponent(filename)}`;
+    setUploadStatus('uploading');
+    try {
+        const base64Data = imageDataUrl.split(',')[1];
+        const filename = `sans-photo-${Date.now()}.png`;
 
-          // 4. Kirim data base64 sebagai string mentah di body
-          await fetch(urlWithParams, {
-              method: 'POST',
-              mode: 'no-cors', // Mode 'no-cors' penting untuk menghindari error CORS dari Apps Script
-              body: base64Data, // Kirim string mentah, bukan JSON
-              headers: {
-                // Saat mengirim string mentah, Content-Type defaultnya adalah text/plain,
-                // yang lebih mudah diterima oleh Apps Script.
-                'Content-Type': 'text/plain;charset=utf-8',
-              }
-          });
-          
-          // Karena 'no-cors' tidak memberikan status kembali, kita asumsikan berhasil.
-          // Penanganan error yang lebih canggih memerlukan perubahan sisi server yang kompleks.
-          setUploadStatus('success');
-          console.log("Upload request sent to Google Drive.");
+        const payload = {
+            filename: filename,
+            base64Data: base64Data,
+        };
 
-      } catch (error) {
-          console.error("Error uploading to Google Drive:", error);
-          setUploadStatus('error');
-      }
+        const response = await fetch(SCRIPT_URL, {
+            method: 'POST',
+            mode: 'cors', // Explicitly handle CORS
+            body: JSON.stringify(payload),
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Server responded with status ${response.status}: ${errorText}`);
+        }
+
+        const result = await response.json();
+        if (result.status === 'success') {
+            setUploadStatus('success');
+            console.log("Successfully uploaded to Google Drive:", result.filename);
+        } else {
+            throw new Error(result.message || 'Unknown error from Google Apps Script');
+        }
+    } catch (error) {
+        console.error("Error uploading to Google Drive:", error);
+        setUploadStatus('error');
+    }
   }, []);
 
   const drawCanvas = useCallback(async () => {
