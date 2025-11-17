@@ -10,7 +10,7 @@ import { Template, Event, Settings } from '../types';
 import { getCachedImage, storeImageInCache } from '../utils/db';
 import { UploadingIcon } from './icons/UploadingIcon';
 
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyscGKm6RSnFw2b3PMzQfGUhuWUxWKViW73fjoPp_5nvG3OxoWN3lJYY38tP7FvaOaL/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz_M_DEMnrmT209yh4vhvIeAyWfofkLhdytbi2TrkXtC-DyIuVLIL8mnqe15bbAXtE2/exec';
 
 type PrintSettings = {
   isEnabled: boolean;
@@ -288,15 +288,12 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
               nama: filename
           });
 
-          // Menggunakan `fetch` dengan mode 'no-cors' untuk Google Apps Script
-          // Kita tidak bisa membaca respons, tapi permintaannya akan dikirim.
+          // Menggunakan `fetch` dengan mode 'no-cors' untuk Google Apps Script.
+          // Menghapus header 'Content-Type' untuk menghindari preflight request CORS.
           await fetch(SCRIPT_URL, {
               method: 'POST',
               mode: 'no-cors', 
-              body: payload,
-              headers: {
-                'Content-Type': 'application/json'
-              }
+              body: payload
           });
           
           // Asumsikan berhasil karena `no-cors` tidak akan memberikan status kembali.
