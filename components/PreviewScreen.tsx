@@ -10,7 +10,7 @@ import { Template, Event, Settings } from '../types';
 import { getCachedImage, storeImageInCache } from '../utils/db';
 import { UploadingIcon } from './icons/UploadingIcon';
 
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz_M_DEMnrmT209yh4vhvIeAyWfofkLhdytbi2TrkXtC-DyIuVLIL8mnqe15bbAXtE2/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyidvJIE30k4O06zU71VPXNKAEbZsxb8USZj2pn4SnfnYb5a4auKZnSGWsWo0_tl2efhw/exec';
 
 type PrintSettings = {
   isEnabled: boolean;
