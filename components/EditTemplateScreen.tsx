@@ -39,7 +39,7 @@ const EditTemplateScreen: React.FC<EditTemplateScreenProps> = ({ template, onSav
   const TEMPLATE_WIDTH = isLandscape ? 1800 : 1200;
   const TEMPLATE_HEIGHT = isLandscape ? 1200 : 1800;
   
-  const STAGE_MULTIPLIER = 3;
+  const STAGE_MULTIPLIER = 5;
   const STAGE_WIDTH = TEMPLATE_WIDTH * STAGE_MULTIPLIER;
   const STAGE_HEIGHT = TEMPLATE_HEIGHT * STAGE_MULTIPLIER;
 
