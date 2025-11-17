@@ -1,5 +1,4 @@
 
-
 import React, { useMemo, useRef, useEffect, useState } from 'react';
 import { SettingsIcon } from './icons/SettingsIcon';
 import { HistoryIcon } from './icons/HistoryIcon';
@@ -150,7 +149,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
 
   const backgroundContent = () => {
     const proxiedImageUrl = welcomeBgImageUrl?.startsWith('http') 
-      ? `https://corsproxy.io/?${encodeURIComponent(welcomeBgImageUrl)}` 
+      ? `https://images.weserv.nl/?url=${encodeURIComponent(welcomeBgImageUrl)}` 
       : welcomeBgImageUrl;
 
     switch (welcomeBgType) {

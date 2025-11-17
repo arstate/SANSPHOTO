@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect } from 'react';
 import { BackIcon } from './icons/BackIcon';
 import { AddIcon } from './icons/AddIcon';
@@ -47,7 +46,7 @@ const ImageFromCache: React.FC<{ src: string; alt: string; className: string; }>
         // 2. Jika tidak ada di cache, ambil dari jaringan
         let fetchUrl = src;
         if (src.startsWith('http')) {
-            fetchUrl = `https://corsproxy.io/?${encodeURIComponent(src)}`;
+            fetchUrl = `https://images.weserv.nl/?url=${encodeURIComponent(src)}`;
         }
         
         const response = await fetch(fetchUrl);

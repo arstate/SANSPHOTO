@@ -1,5 +1,4 @@
 
-
 import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { DownloadIcon } from './icons/DownloadIcon';
 import { PrintIcon } from './icons/PrintIcon';
@@ -115,7 +114,7 @@ const loadImage = (src: string): Promise<HTMLImageElement> => {
       // 3. Fallback: ambil dari jaringan jika tidak ada di cache
       let fetchUrl = src;
       if (src.startsWith('http')) {
-          fetchUrl = `https://corsproxy.io/?${encodeURIComponent(src)}`;
+          fetchUrl = `https://images.weserv.nl/?url=${encodeURIComponent(src)}`;
       }
       
       const response = await fetch(fetchUrl);

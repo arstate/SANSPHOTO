@@ -1,8 +1,7 @@
 
-
 import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { Template } from '../types';
-import { getCachedImage } from '../utils/db';
+import { getCachedImage, storeImageInCache } from '../utils/db';
 import { RestartIcon } from './icons/RestartIcon';
 import { CheckIcon } from './icons/CheckIcon';
 
@@ -58,24 +57,34 @@ const RetakePreviewScreen: React.FC<RetakePreviewScreenProps> = ({
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       const loadImage = (src: string): Promise<HTMLImageElement> => new Promise(async (resolve, reject) => {
-        try {
-          const img = new Image();
-          img.crossOrigin = 'anonymous';
-          img.onload = () => resolve(img);
-          img.onerror = () => reject(new Error(`Failed to load image from src: ${src.substring(0, 50)}...`));
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => {
+            if (img.src.startsWith('blob:')) URL.revokeObjectURL(img.src);
+            resolve(img);
+        };
+        img.onerror = () => reject(new Error(`Failed to load image from src: ${src.substring(0, 50)}...`));
 
-          if (src.startsWith('data:')) {
+        if (src.startsWith('data:')) {
             img.src = src;
-          } else {
-             const cachedBlob = await getCachedImage(src);
-             if (cachedBlob) {
-                 img.src = URL.createObjectURL(cachedBlob);
-             } else {
-                 img.src = `https://corsproxy.io/?${encodeURIComponent(src)}`;
-             }
-          }
-        } catch (e) {
-          reject(e);
+            return;
+        }
+        
+        try {
+            const cachedBlob = await getCachedImage(src);
+            if (cachedBlob) {
+                img.src = URL.createObjectURL(cachedBlob);
+                return;
+            }
+
+            const fetchUrl = `https://images.weserv.nl/?url=${encodeURIComponent(src)}`;
+            const response = await fetch(fetchUrl);
+            if (!response.ok) throw new Error(`Fetch failed: ${response.status}`);
+            const networkBlob = await response.blob();
+            await storeImageInCache(src, networkBlob);
+            img.src = URL.createObjectURL(networkBlob);
+        } catch(e) {
+            reject(e);
         }
       });
 
