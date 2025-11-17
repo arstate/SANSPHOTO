@@ -1,6 +1,5 @@
 
 
-
 import React, { useState } from 'react';
 import { Settings } from '../types';
 import { BackIcon } from './icons/BackIcon';
@@ -12,6 +11,7 @@ import { SettingsIcon } from './icons/SettingsIcon';
 import { EyeIcon } from './icons/EyeIcon';
 import { FolderIcon } from './icons/FolderIcon';
 import { ReviewsIcon } from './icons/ReviewsIcon';
+import { UsersIcon } from './icons/UsersIcon';
 
 interface SettingsScreenProps {
     settings: Settings;
@@ -22,6 +22,8 @@ interface SettingsScreenProps {
     onManageReviews: () => void;
     onViewHistory: () => void;
     onBack: () => void;
+    isMasterAdmin: boolean;
+    onManageTenants: () => void;
 }
 
 export const GOOGLE_FONTS = [
@@ -36,7 +38,7 @@ export const GOOGLE_FONTS = [
   { name: 'Roboto Mono', value: "'Roboto Mono', monospace" },
 ];
 
-type SettingsCategory = 'general' | 'appearance' | 'security' | 'content' | 'reviews';
+type SettingsCategory = 'general' | 'appearance' | 'security' | 'content' | 'reviews' | 'master';
 
 const CategoryButton: React.FC<{
   label: string;
@@ -58,7 +60,10 @@ const CategoryButton: React.FC<{
 );
 
 
-const SettingsScreen: React.FC<SettingsScreenProps> = ({ settings, onSettingsChange, onManageTemplates, onManageEvents, onManageSessions, onManageReviews, onViewHistory, onBack }) => {
+const SettingsScreen: React.FC<SettingsScreenProps> = ({ 
+    settings, onSettingsChange, onManageTemplates, onManageEvents, onManageSessions, onManageReviews, onViewHistory, onBack,
+    isMasterAdmin, onManageTenants
+}) => {
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState<SettingsCategory>('general');
 
@@ -873,6 +878,22 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ settings, onSettingsCha
             </div>
           </div>
         );
+      case 'master':
+        return isMasterAdmin ? (
+          <div className="space-y-6">
+            <div className="p-6 bg-purple-900/20 rounded-lg border border-purple-700 text-left">
+              <h3 className="text-xl font-bold text-purple-300">Master Admin Area</h3>
+              <p className="text-purple-200/80 mb-4">Manage tenant admins who use your photobooth platform.</p>
+              <button
+                onClick={onManageTenants}
+                className="w-full bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-[var(--color-accent-primary-text)] font-bold py-3 px-6 rounded-full text-lg transition-transform transform hover:scale-105 flex items-center justify-center gap-2"
+              >
+                <UsersIcon />
+                Manage Admins
+              </button>
+            </div>
+          </div>
+        ) : null;
       default:
         return null;
     }
@@ -929,6 +950,14 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ settings, onSettingsCha
                  isActive={activeCategory === 'reviews'}
                  onClick={() => setActiveCategory('reviews')}
                />
+               {isMasterAdmin && (
+                  <CategoryButton 
+                    label="Master"
+                    icon={<UsersIcon />}
+                    isActive={activeCategory === 'master'}
+                    onClick={() => setActiveCategory('master')}
+                  />
+               )}
             </nav>
 
             {/* Right Content */}

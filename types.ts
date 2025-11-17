@@ -16,6 +16,7 @@ export enum AppState {
   PREVIEW,
   HISTORY,
   ONLINE_HISTORY,
+  MANAGE_TENANTS,
 }
 
 export interface PhotoSlot {
@@ -139,4 +140,13 @@ export interface Review {
     rating: number; // 1 to 5
     description: string;
     timestamp: number;
+}
+
+export interface Tenant {
+  id: string;
+  username: string;
+  password?: string; // NOTE: Storing plaintext passwords is not secure. This is for exercise purposes.
+  path: string; // The unique URL path for this tenant, e.g., "client-a"
+  isActive: boolean;
+  createdAt: number;
 }

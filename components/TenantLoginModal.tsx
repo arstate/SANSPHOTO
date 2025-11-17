@@ -1,0 +1,75 @@
+
+import React, { useState } from 'react';
+import { Tenant } from '../types';
+
+interface TenantLoginModalProps {
+  tenant: Tenant;
+  onLogin: () => void;
+  onClose: () => void;
+}
+
+const TenantLoginModal: React.FC<TenantLoginModalProps> = ({ tenant, onLogin, onClose }) => {
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (username === tenant.username && password === tenant.password) {
+      setError('');
+      onLogin();
+    } else {
+      setError('Invalid username or password.');
+    }
+  };
+
+  return (
+    <div 
+      className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50"
+      onClick={onClose}
+    >
+      <div 
+        className="bg-[var(--color-bg-secondary)] rounded-lg shadow-xl p-8 w-full max-w-sm border border-[var(--color-border-primary)]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h2 className="font-bebas text-4xl text-center mb-1">Admin Login</h2>
+        <p className="text-center text-[var(--color-text-accent)] font-bold text-lg mb-6">{tenant.username}</p>
+        <form onSubmit={handleLogin}>
+          <div className="mb-4">
+            <label htmlFor="username" className="block text-sm font-bold mb-2 text-[var(--color-text-secondary)]">Username</label>
+            <input
+              id="username"
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              className="w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md py-2 px-3 text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-border-focus)]"
+              required
+            />
+          </div>
+          <div className="mb-6">
+            <label htmlFor="password" className="block text-sm font-bold mb-2 text-[var(--color-text-secondary)]">Password</label>
+            <input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md py-2 px-3 text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-border-focus)]"
+              required
+            />
+          </div>
+          {error && <p className="text-red-400 text-center mb-4">{error}</p>}
+          <div className="flex flex-col gap-3">
+            <button type="submit" className="w-full bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-[var(--color-accent-primary-text)] font-bold py-3 px-4 rounded-full text-lg">
+              Login
+            </button>
+            <button type="button" onClick={onClose} className="w-full bg-[var(--color-bg-tertiary)] hover:bg-[var(--color-border-secondary)] text-[var(--color-text-primary)] font-bold py-3 px-4 rounded-full text-lg">
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+export default TenantLoginModal;
