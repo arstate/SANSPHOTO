@@ -49,9 +49,12 @@ export const getImageBlob = (src: string): Promise<Blob> => {
 
       // 4. If not in cache, fetch from the network
       let fetchUrl = src;
-      // Use CORS proxy for external URLs
+      // Use a reliable image proxy for external URLs
       if (src.startsWith('http')) {
-        fetchUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(src)}`;
+        // We use images.weserv.nl, which is a specialized and reliable image proxy.
+        // It requires the URL without the protocol scheme.
+        const urlWithoutScheme = src.replace(/^https?:\/\//, '');
+        fetchUrl = `https://images.weserv.nl/?url=${urlWithoutScheme}`;
       }
       
       const response = await fetch(fetchUrl);

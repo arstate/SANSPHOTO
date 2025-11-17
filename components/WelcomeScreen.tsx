@@ -9,6 +9,7 @@ import { GlobeIcon } from './icons/GlobeIcon';
 import { Settings, Review } from '../types';
 import { GOOGLE_FONTS } from './SettingsScreen'; 
 import ReviewSlider from './ReviewSlider';
+import useCachedImage from '../hooks/useCachedImage';
 
 interface WelcomeScreenProps {
   onStart: () => void;
@@ -39,6 +40,26 @@ const CachingStatus: React.FC<{ progress: number }> = ({ progress }) => (
         </div>
     </div>
 );
+
+// New component for rendering background image from cache
+const CachedBackgroundImage: React.FC<{ src: string }> = ({ src }) => {
+  const { imageSrc, status } = useCachedImage(src);
+
+  if (status === 'loading') {
+    return <div className="absolute inset-0 w-full h-full bg-[var(--color-bg-tertiary)] animate-pulse" />;
+  }
+
+  if (status === 'error' || !imageSrc) {
+    return (
+      <div className="absolute inset-0 w-full h-full bg-red-900/30 flex flex-col items-center justify-center text-center text-xs text-red-300 p-2">
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+        <span>Background image failed to load.</span>
+      </div>
+    );
+  }
+
+  return <div className="absolute inset-0 w-full h-full bg-cover bg-center" style={{ backgroundImage: `url('${imageSrc}')` }} />;
+};
 
 
 const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ 
@@ -146,25 +167,6 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
       stopCamera();
     };
   }, [welcomeBgType]);
-
-
-  const backgroundContent = () => {
-    const proxiedImageUrl = welcomeBgImageUrl?.startsWith('http') 
-      ? `https://api.allorigins.win/raw?url=${encodeURIComponent(welcomeBgImageUrl)}` 
-      : welcomeBgImageUrl;
-
-    switch (welcomeBgType) {
-      case 'color':
-        return <div className="absolute inset-0 w-full h-full" style={{ backgroundColor: welcomeBgColor }} />;
-      case 'image':
-        return <div className="absolute inset-0 w-full h-full bg-cover bg-center" style={{ backgroundImage: `url('${proxiedImageUrl}')` }} />;
-      case 'camera':
-        return <video ref={videoRef} autoPlay playsInline muted className="absolute inset-0 w-full h-full object-cover transform -scale-x-100" />;
-      case 'default':
-      default:
-        return <div className="absolute inset-0 w-full h-full" style={{ backgroundColor: 'var(--color-bg-primary)' }} />;
-    }
-  };
   
   const hasReviewsToShow = !isAdminLoggedIn && (settings.isReviewSliderEnabled ?? true) && reviews.length > 0;
 
@@ -175,7 +177,10 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
         className="absolute inset-0 w-full h-full transition-transform duration-300"
         style={{ transform: `scale(${welcomeBgZoom / 100})` }}
       >
-        {backgroundContent()}
+        {welcomeBgType === 'color' && <div className="absolute inset-0 w-full h-full" style={{ backgroundColor: welcomeBgColor }} />}
+        {welcomeBgType === 'image' && welcomeBgImageUrl && <CachedBackgroundImage src={welcomeBgImageUrl} />}
+        {welcomeBgType === 'camera' && <video ref={videoRef} autoPlay playsInline muted className="absolute inset-0 w-full h-full object-cover transform -scale-x-100" />}
+        {(welcomeBgType === 'default' || !welcomeBgType) && <div className="absolute inset-0 w-full h-full" style={{ backgroundColor: 'var(--color-bg-primary)' }} />}
       </div>
 
       {(welcomeBgType === 'image' || welcomeBgType === 'camera') && (

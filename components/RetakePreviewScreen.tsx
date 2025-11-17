@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { Template } from '../types';
-import { getCachedImage } from '../utils/db';
+import { getImageBlob } from '../utils/imageLoader';
 import { RestartIcon } from './icons/RestartIcon';
 import { CheckIcon } from './icons/CheckIcon';
 
@@ -55,30 +55,33 @@ const RetakePreviewScreen: React.FC<RetakePreviewScreenProps> = ({
       ctx.fillStyle = 'white';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      const loadImage = (src: string): Promise<HTMLImageElement> => new Promise(async (resolve, reject) => {
-        try {
-          const img = new Image();
-          img.onload = () => resolve(img);
-          img.onerror = () => reject(new Error(`Failed to load image from src: ${src.substring(0, 50)}...`));
+      const loadImageElement = (src: string): Promise<HTMLImageElement> => {
+        return new Promise(async (resolve, reject) => {
+            const img = new Image();
+            let objectUrl: string | null = null;
+            
+            img.onload = () => {
+                if (objectUrl) URL.revokeObjectURL(objectUrl);
+                resolve(img);
+            };
+            img.onerror = () => {
+                if (objectUrl) URL.revokeObjectURL(objectUrl);
+                reject(new Error(`Failed to load image element from src: ${src.substring(0, 100)}...`));
+            };
 
-          if (src.startsWith('data:')) {
-            img.src = src;
-          } else {
-             const cachedBlob = await getCachedImage(src);
-             if (cachedBlob) {
-                 img.src = URL.createObjectURL(cachedBlob);
-             } else {
-                 img.src = `https://api.allorigins.win/raw?url=${encodeURIComponent(src)}`;
-             }
-          }
-        } catch (e) {
-          reject(e);
-        }
-      });
+            try {
+                const blob = await getImageBlob(src);
+                objectUrl = URL.createObjectURL(blob);
+                img.src = objectUrl;
+            } catch (error) {
+                reject(error);
+            }
+        });
+    };
 
       const imagePromises: Promise<HTMLImageElement>[] = [
-        loadImage(template.imageUrl), 
-        ...images.map(src => loadImage(src))
+        loadImageElement(template.imageUrl), 
+        ...images.map(src => loadImageElement(src))
       ];
       
       const [templateImg, ...loadedImages] = await Promise.all(imagePromises);
