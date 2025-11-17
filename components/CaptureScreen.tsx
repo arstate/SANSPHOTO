@@ -43,7 +43,10 @@ const CaptureScreen: React.FC<CaptureScreenProps> = ({
     const currentInputId = isRetakeMode ? (retakeForIndex ?? 0) + 1 : photoIndex + 1;
     const slotForCurrentPhoto = template.photoSlots.find(slot => slot.inputId === currentInputId);
     if (slotForCurrentPhoto && slotForCurrentPhoto.height > 0) {
-      return `${slotForCurrentPhoto.width} / ${slotForCurrentPhoto.height}`;
+      const isRotated = (slotForCurrentPhoto.rotation || 0) % 180 !== 0;
+      return isRotated
+        ? `${slotForCurrentPhoto.height} / ${slotForCurrentPhoto.width}`
+        : `${slotForCurrentPhoto.width} / ${slotForCurrentPhoto.height}`;
     }
     return '16 / 9'; 
   }, [photoIndex, template.photoSlots, isRetakeMode, retakeForIndex]);
@@ -202,12 +205,13 @@ const CaptureScreen: React.FC<CaptureScreenProps> = ({
                                 key={`existing-${slot.id}`}
                                 src={imgSrc}
                                 alt={`Previously captured photo ${inputId}`}
-                                className="absolute object-cover transform -scale-x-100"
+                                className="absolute object-cover"
                                 style={{
                                     left: `${(slot.x / TEMPLATE_WIDTH) * 100}%`,
                                     top: `${(slot.y / TEMPLATE_HEIGHT) * 100}%`,
                                     width: `${(slot.width / TEMPLATE_WIDTH) * 100}%`,
                                     height: `${(slot.height / TEMPLATE_HEIGHT) * 100}%`,
+                                    transform: `rotate(${slot.rotation || 0}deg) scaleX(-1)`,
                                 }}
                             />
                         ));
@@ -220,12 +224,13 @@ const CaptureScreen: React.FC<CaptureScreenProps> = ({
                                 key={`captured-${slot.id}`}
                                 src={imgSrc}
                                 alt={`Captured photo ${inputId}`}
-                                className="absolute object-cover transform -scale-x-100"
+                                className="absolute object-cover"
                                 style={{
                                     left: `${(slot.x / TEMPLATE_WIDTH) * 100}%`,
                                     top: `${(slot.y / TEMPLATE_HEIGHT) * 100}%`,
                                     width: `${(slot.width / TEMPLATE_WIDTH) * 100}%`,
                                     height: `${(slot.height / TEMPLATE_HEIGHT) * 100}%`,
+                                    transform: `rotate(${slot.rotation || 0}deg) scaleX(-1)`,
                                 }}
                             />
                         ));

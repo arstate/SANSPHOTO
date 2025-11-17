@@ -3,6 +3,7 @@ import { PhotoSlot, Template } from '../types';
 import { ZoomInIcon } from './icons/ZoomInIcon';
 import { ZoomOutIcon } from './icons/ZoomOutIcon';
 import { FitToScreenIcon } from './icons/FitToScreenIcon';
+import { RotateCwIcon } from './icons/RotateCwIcon';
 
 
 interface EditTemplateScreenProps {
@@ -200,6 +201,7 @@ const EditTemplateScreen: React.FC<EditTemplateScreenProps> = ({ template, onSav
       y: TEMPLATE_HEIGHT / 2 - 200,
       width: 400,
       height: 400,
+      rotation: 0,
     };
     setSlots([...slots, newSlot]);
     setSelectedSlotId(newId);
@@ -240,6 +242,19 @@ const EditTemplateScreen: React.FC<EditTemplateScreenProps> = ({ template, onSav
           ? { ...slot, [name]: numericValue }
           : slot
       )
+    );
+  };
+
+  const handleRotateSlot = (degrees: number) => {
+    if (!selectedSlotId) return;
+    setSlots(prevSlots =>
+      prevSlots.map(slot => {
+        if (slot.id === selectedSlotId) {
+          const currentRotation = slot.rotation || 0;
+          return { ...slot, rotation: (currentRotation + degrees + 360) % 360 };
+        }
+        return slot;
+      })
     );
   };
 
@@ -296,7 +311,8 @@ const EditTemplateScreen: React.FC<EditTemplateScreenProps> = ({ template, onSav
                                 top: `${(slot.y / TEMPLATE_HEIGHT) * 100}%`,
                                 width: `${(slot.width / TEMPLATE_WIDTH) * 100}%`,
                                 height: `${(slot.height / TEMPLATE_HEIGHT) * 100}%`,
-                                pointerEvents: isPanning ? 'none' : 'auto'
+                                pointerEvents: isPanning ? 'none' : 'auto',
+                                transform: `rotate(${slot.rotation || 0}deg)`,
                               }}
                           >
                               <div className="text-white font-bebas text-2xl tracking-wider bg-black/30 px-2 py-1 rounded select-none pointer-events-none">
@@ -305,6 +321,7 @@ const EditTemplateScreen: React.FC<EditTemplateScreenProps> = ({ template, onSav
                               {isSelected && <div className={`absolute -bottom-2 -right-2 w-4 h-4 bg-green-400 border-2 border-white rounded-full ${!isSpacePressed ? 'cursor-se-resize' : ''}`}
                               onMouseDown={(e) => handlePointerDown(e, slot.id, 'resize-br')}
                               onTouchStart={(e) => handlePointerDown(e, slot.id, 'resize-br')}
+                              style={{ transform: `rotate(-${slot.rotation || 0}deg)` }} // Counter-rotate the handle
                               />}
                           </div>
                           );
@@ -342,7 +359,7 @@ const EditTemplateScreen: React.FC<EditTemplateScreenProps> = ({ template, onSav
                                       className="mt-1 block w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md shadow-sm py-2 px-3 text-[var(--color-text-primary)] focus:outline-none focus:ring-[var(--color-border-focus)] focus:border-[var(--color-border-focus)] sm:text-sm"
                                   />
                               </div>
-                              <div /> 
+                              <div />
                               <div>
                                   <label htmlFor="x" className="block text-sm font-medium text-[var(--color-text-secondary)]">X Position</label>
                                   <input
@@ -370,6 +387,16 @@ const EditTemplateScreen: React.FC<EditTemplateScreenProps> = ({ template, onSav
                                       type="number" id="height" name="height" value={selectedSlot.height} onChange={handlePropertyChange}
                                       className="mt-1 block w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md shadow-sm py-2 px-3 text-[var(--color-text-primary)] focus:outline-none focus:ring-[var(--color-border-focus)] focus:border-[var(--color-border-focus)] sm:text-sm"
                                   />
+                              </div>
+                              <div className="col-span-2">
+                                <label htmlFor="rotation" className="block text-sm font-medium text-[var(--color-text-secondary)]">Rotation (°)</label>
+                                <div className="flex items-center gap-2 mt-1">
+                                    <input
+                                        type="number" id="rotation" name="rotation" value={selectedSlot.rotation || 0} onChange={handlePropertyChange}
+                                        className="block w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md shadow-sm py-2 px-3 text-[var(--color-text-primary)] focus:outline-none focus:ring-[var(--color-border-focus)] focus:border-[var(--color-border-focus)] sm:text-sm"
+                                    />
+                                    <button onClick={() => handleRotateSlot(90)} className="p-2 bg-[var(--color-bg-tertiary)] hover:bg-[var(--color-border-secondary)] rounded-md" aria-label="Rotate 90 degrees clockwise"><RotateCwIcon/></button>
+                                </div>
                               </div>
                           </div>
                       </div>

@@ -310,40 +310,43 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
 
       // Gambar foto yang diambil dan pangkas agar sesuai dengan slot
       template.photoSlots.forEach(slot => {
-        if (!slot) return;
-        // inputId berbasis 1, loadedImages berbasis 0
         const img = loadedImages[slot.inputId - 1];
         if (!img) return;
         
         ctx.save();
-        // Balikkan secara horizontal agar sesuai dengan pratinjau kamera
-        ctx.scale(-1, 1);
-        ctx.translate(-canvasWidth, 0);
-
+        
         const slotAspectRatio = slot.width / slot.height;
         const imgAspectRatio = img.width / img.height;
         
         let sx, sy, sWidth, sHeight;
-
         if (imgAspectRatio > slotAspectRatio) {
-            // Gambar lebih lebar dari slot
             sHeight = img.height;
             sWidth = sHeight * slotAspectRatio;
             sx = (img.width - sWidth) / 2;
             sy = 0;
         } else {
-            // Gambar lebih tinggi dari slot
             sWidth = img.width;
             sHeight = sWidth / slotAspectRatio;
             sx = 0;
             sy = (img.height - sHeight) / 2;
         }
-        const destX = slot.x;
-        const destY = slot.y;
-        const destWidth = slot.width;
-        const destHeight = slot.height;
+        
+        const slotCenterX = slot.x + slot.width / 2;
+        const slotCenterY = slot.y + slot.height / 2;
+        const rotationDegrees = slot.rotation || 0;
 
-        ctx.drawImage(img, sx, sy, sWidth, sHeight, canvasWidth - destX - destWidth, destY, destWidth, destHeight);
+        ctx.translate(slotCenterX, slotCenterY);
+        if (rotationDegrees !== 0) {
+            ctx.rotate(rotationDegrees * Math.PI / 180);
+        }
+        ctx.scale(-1, 1);
+
+        ctx.drawImage(
+            img,
+            sx, sy, sWidth, sHeight,
+            -slot.width / 2, -slot.height / 2, slot.width, slot.height
+        );
+        
         ctx.restore();
       });
 

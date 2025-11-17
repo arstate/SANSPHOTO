@@ -99,9 +99,7 @@ const RetakePreviewScreen: React.FC<RetakePreviewScreenProps> = ({
         if (!img) return;
         
         ctx.save();
-        ctx.scale(-1, 1);
-        ctx.translate(-TEMPLATE_WIDTH, 0);
-
+        
         const slotAspectRatio = slot.width / slot.height;
         const imgAspectRatio = img.width / img.height;
         
@@ -117,12 +115,23 @@ const RetakePreviewScreen: React.FC<RetakePreviewScreenProps> = ({
             sx = 0;
             sy = (img.height - sHeight) / 2;
         }
-        const destX = slot.x;
-        const destY = slot.y;
-        const destWidth = slot.width;
-        const destHeight = slot.height;
 
-        ctx.drawImage(img, sx, sy, sWidth, sHeight, TEMPLATE_WIDTH - destX - destWidth, destY, destWidth, destHeight);
+        const slotCenterX = slot.x + slot.width / 2;
+        const slotCenterY = slot.y + slot.height / 2;
+        const rotationDegrees = slot.rotation || 0;
+
+        ctx.translate(slotCenterX, slotCenterY);
+        if (rotationDegrees !== 0) {
+            ctx.rotate(rotationDegrees * Math.PI / 180);
+        }
+        ctx.scale(-1, 1);
+
+        ctx.drawImage(
+            img,
+            sx, sy, sWidth, sHeight,
+            -slot.width / 2, -slot.height / 2, slot.width, slot.height
+        );
+        
         ctx.restore();
       });
 
