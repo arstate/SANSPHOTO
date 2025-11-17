@@ -1,5 +1,3 @@
-
-
 import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { DownloadIcon } from './icons/DownloadIcon';
 import { PrintIcon } from './icons/PrintIcon';
@@ -10,7 +8,7 @@ import { Template, Event, Settings } from '../types';
 import { getCachedImage, storeImageInCache } from '../utils/db';
 import { UploadingIcon } from './icons/UploadingIcon';
 
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwbnlO9vk95yTKeHFFilhJbfFcjibH80sFzsA5II3BAkuNudCTabRNdBUhYlCEHHO5CYQ/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwY0buPZKYyyGg5dEmDB-_OqOJWjJH5a169BKYawqD0F3Qs7UZCPd6qW-Fz1eJdjSzIzw/exec';
 
 type PrintSettings = {
   isEnabled: boolean;
@@ -32,7 +30,6 @@ interface PreviewScreenProps {
   isDownloadButtonEnabled: boolean;
   isAutoDownloadEnabled: boolean;
   printSettings: PrintSettings;
-  isMasterAdmin: boolean;
 }
 
 interface PrintModalProps {
@@ -143,16 +140,21 @@ const loadImage = (src: string): Promise<HTMLImageElement> => {
 
 const PreviewScreen: React.FC<PreviewScreenProps> = ({ 
     images, onRestart, onBack, template, onSaveHistory, event,
-    currentTake, maxTakes, onNextTake, isDownloadButtonEnabled, isAutoDownloadEnabled, printSettings, isMasterAdmin
+    currentTake, maxTakes, onNextTake, isDownloadButtonEnabled, isAutoDownloadEnabled, printSettings
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const finalImageRef = useRef<HTMLImageElement>(null);
   const historySavedRef = useRef(false);
   const downloadTriggeredRef = useRef(false);
+  const progressIntervalRef = useRef<number | null>(null);
+
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
+  
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isFinishing, setIsFinishing] = useState(false);
 
   const isLastTake = currentTake >= maxTakes;
   const isLandscape = template.orientation === 'landscape';
@@ -278,36 +280,63 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
     setIsPrintModalOpen(false);
   }, [printSettings, template]);
 
-  const uploadToGoogleDrive = useCallback(async (imageDataUrl: string) => {
-      setUploadStatus('uploading');
-      try {
-          const base64Data = imageDataUrl.split(',')[1];
-          const filename = `sans-photo-${Date.now()}.png`;
-          const payload = JSON.stringify({
-              foto: base64Data,
-              nama: filename
-          });
+  const handleUploadAndFinish = useCallback(async () => {
+    if (isFinishing) return;
 
-          // Menggunakan `fetch` dengan mode 'no-cors' untuk Google Apps Script
-          // Kita tidak bisa membaca respons, tapi permintaannya akan dikirim.
-          await fetch(SCRIPT_URL, {
-              method: 'POST',
-              mode: 'no-cors', 
-              body: payload,
-              headers: {
-                'Content-Type': 'application/json'
-              }
-          });
-          
-          // Asumsikan berhasil karena `no-cors` tidak akan memberikan status kembali.
-          setUploadStatus('success');
-          console.log("Upload request sent to Google Drive.");
+    const canvas = canvasRef.current;
+    if (!canvas) {
+        setErrorMsg("Canvas not available for upload.");
+        return;
+    }
 
-      } catch (error) {
-          console.error("Error uploading to Google Drive:", error);
-          setUploadStatus('error');
-      }
-  }, []);
+    setIsFinishing(true);
+    setUploadStatus('uploading');
+    setUploadProgress(0);
+    
+    // Cleanup previous interval if any
+    if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
+
+    // Fake progress simulation
+    progressIntervalRef.current = window.setInterval(() => {
+        setUploadProgress(prev => {
+            if (prev >= 95) {
+                if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
+                return prev;
+            }
+            return prev + Math.random() * 10;
+        });
+    }, 300);
+
+    try {
+        const imageDataUrl = canvas.toDataURL("image/jpeg", 0.6);
+        const filename = `sans-photo-${Date.now()}.jpg`;
+
+        const payload = JSON.stringify({
+            foto: imageDataUrl,
+            nama: filename
+        });
+
+        await fetch(SCRIPT_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            body: payload,
+        });
+        
+        if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
+        setUploadProgress(100);
+        setUploadStatus('success');
+
+        setTimeout(() => {
+            onRestart();
+        }, 1500);
+
+    } catch (error) {
+        if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
+        console.error("Upload failed:", error);
+        setUploadStatus('error');
+        setIsFinishing(false); // Allow retry
+    }
+  }, [isFinishing, onRestart]);
 
   const drawCanvas = useCallback(async () => {
     setIsLoading(true);
@@ -398,10 +427,6 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
           historySavedRef.current = true;
       }
 
-      if (isMasterAdmin) {
-          uploadToGoogleDrive(finalImageDataUrl);
-      }
-
       if (isAutoDownloadEnabled && !downloadTriggeredRef.current) {
           handleDownload(finalImageDataUrl);
           downloadTriggeredRef.current = true;
@@ -413,41 +438,44 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
       setErrorMsg("Tidak dapat menghasilkan gambar akhir. Templat mungkin tidak tersedia atau ada masalah jaringan.");
       setIsLoading(false);
     }
-  }, [images, template, onSaveHistory, handleDownload, TEMPLATE_WIDTH, TEMPLATE_HEIGHT, isAutoDownloadEnabled, isMasterAdmin, uploadToGoogleDrive]);
+  }, [images, template, onSaveHistory, handleDownload, TEMPLATE_WIDTH, TEMPLATE_HEIGHT, isAutoDownloadEnabled]);
 
   useEffect(() => {
     // Reset refs for each new preview
     historySavedRef.current = false;
     downloadTriggeredRef.current = false;
     drawCanvas();
+    
+    // Cleanup interval on component unmount
+    return () => {
+        if (progressIntervalRef.current) {
+            clearInterval(progressIntervalRef.current);
+        }
+    }
   }, [drawCanvas]);
   
   const UploadStatusIndicator: React.FC = () => {
-    if (uploadStatus === 'idle') return null;
-
-    let text, colorClass, icon;
-    switch (uploadStatus) {
-      case 'uploading':
-        text = "Mengupload ke Histori Online...";
-        colorClass = "text-blue-300";
-        icon = <UploadingIcon />;
-        break;
-      case 'success':
-        text = "Berhasil diupload!";
-        colorClass = "text-green-400";
-        icon = <CheckIcon />;
-        break;
-      case 'error':
-        text = "Gagal mengupload.";
-        colorClass = "text-red-400";
-        icon = <RestartIcon />; // Ganti dengan ikon error jika ada
-        break;
-    }
+    if (uploadStatus === 'idle' || uploadStatus === 'success') return null;
 
     return (
-      <div className={`w-full flex items-center justify-center gap-2 p-2 mt-4 rounded-lg bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)] text-sm ${colorClass}`}>
-        {icon}
-        <span>{text}</span>
+      <div className="w-full p-2 mt-4 rounded-lg bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)]">
+        {uploadStatus === 'uploading' && (
+          <>
+            <div className="flex justify-between mb-1">
+              <span className="text-base font-medium text-blue-300">Uploading to Gallery</span>
+              <span className="text-sm font-medium text-blue-300">{Math.round(uploadProgress)}%</span>
+            </div>
+            <div className="w-full bg-[var(--color-border-secondary)] rounded-full h-2.5">
+              <div
+                className="bg-[var(--color-info)] h-2.5 rounded-full transition-all duration-300"
+                style={{ width: `${uploadProgress}%` }}
+              ></div>
+            </div>
+          </>
+        )}
+        {uploadStatus === 'error' && (
+          <p className="text-center text-red-400">Upload failed. Please try again.</p>
+        )}
       </div>
     );
   };
@@ -505,17 +533,24 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
         <div className="flex flex-col items-center gap-4 w-full max-w-sm">
             {isLastTake ? (
                 <button
-                    onClick={onRestart}
-                    className="w-full bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-[var(--color-accent-primary-text)] font-bold py-4 px-8 rounded-full text-xl transition-transform transform hover:scale-105 flex items-center justify-center gap-3"
-                    >
-                    <CheckIcon />
-                    Selesai
+                    onClick={handleUploadAndFinish}
+                    disabled={isFinishing}
+                    className="w-full bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-[var(--color-accent-primary-text)] font-bold py-4 px-8 rounded-full text-xl transition-transform transform hover:scale-105 flex items-center justify-center gap-3 disabled:bg-[var(--color-bg-tertiary)] disabled:cursor-wait"
+                >
+                  {uploadStatus === 'uploading' ? <UploadingIcon /> : <CheckIcon />}
+                  <span>
+                    {uploadStatus === 'idle' && 'Selesai & Upload'}
+                    {uploadStatus === 'uploading' && 'Uploading...'}
+                    {uploadStatus === 'success' && 'Success!'}
+                    {uploadStatus === 'error' && 'Retry Upload'}
+                  </span>
                 </button>
             ) : (
                 <button
                     onClick={onNextTake}
-                    className="w-full bg-[var(--color-info)] hover:bg-[var(--color-info-hover)] text-[var(--color-info-text)] font-bold py-4 px-8 rounded-full text-xl transition-transform transform hover:scale-105 flex items-center justify-center gap-3"
-                    >
+                    disabled={isFinishing}
+                    className="w-full bg-[var(--color-info)] hover:bg-[var(--color-info-hover)] text-[var(--color-info-text)] font-bold py-4 px-8 rounded-full text-xl transition-transform transform hover:scale-105 flex items-center justify-center gap-3 disabled:bg-[var(--color-bg-tertiary)] disabled:cursor-wait"
+                >
                     <RestartIcon />
                     Mulai Pengambilan Berikutnya
                 </button>
@@ -525,7 +560,7 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
               {isDownloadButtonEnabled && (
                 <button
                   onClick={() => handleDownload()}
-                  disabled={isLoading || !!errorMsg}
+                  disabled={isLoading || !!errorMsg || isFinishing}
                   className="w-full flex-1 bg-[var(--color-positive)] hover:bg-[var(--color-positive-hover)] text-[var(--color-positive-text)] font-bold py-4 px-8 rounded-full text-xl transition-transform transform hover:scale-105 flex items-center justify-center gap-3 disabled:bg-[var(--color-bg-tertiary)] disabled:cursor-not-allowed disabled:transform-none"
                 >
                   <DownloadIcon />
@@ -536,7 +571,7 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
               {printSettings.isEnabled && (
                  <button
                   onClick={() => setIsPrintModalOpen(true)}
-                  disabled={isLoading || !!errorMsg}
+                  disabled={isLoading || !!errorMsg || isFinishing}
                   className="w-full flex-1 bg-[var(--color-info)] hover:bg-[var(--color-info-hover)] text-[var(--color-info-text)] font-bold py-4 px-8 rounded-full text-xl transition-transform transform hover:scale-105 flex items-center justify-center gap-3 disabled:bg-[var(--color-bg-tertiary)] disabled:cursor-not-allowed disabled:transform-none"
                 >
                   <PrintIcon />
@@ -545,7 +580,7 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
               )}
             </div>
 
-            {isMasterAdmin && <UploadStatusIndicator />}
+            <UploadStatusIndicator />
 
             {event?.isQrCodeEnabled && event.qrCodeImageUrl && (
                 <div className="p-4 bg-[var(--color-bg-secondary)] rounded-lg text-center">
