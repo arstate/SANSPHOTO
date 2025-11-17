@@ -2,6 +2,8 @@
 
 
 
+
+
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import WelcomeScreen from './components/WelcomeScreen';
 import TemplateSelection from './components/TemplateSelection';
@@ -379,7 +381,7 @@ const App: React.FC = () => {
       setIsSessionLoading(true);
       try {
         const newKeyData: Omit<SessionKey, 'id'> = {
-          code: 'FREEPLAY', maxTakes: settings.freePlayMaxTakes || 1, takesUsed: 1, status: 'in_progress', createdAt: Date.now(), progress: 'Memilih Event', hasBeenReviewed: false,
+          code: 'FREEPLAY', maxTakes: Number(settings.freePlayMaxTakes) || 1, takesUsed: 1, status: 'in_progress', createdAt: Date.now(), progress: 'Memilih Event', hasBeenReviewed: false,
         };
         const newKeyRef = await push(ref(db, `data/${currentTenantId}/sessionKeys`), newKeyData);
         if (!newKeyRef.key) throw new Error("Could not get new session key.");
@@ -556,8 +558,9 @@ const App: React.FC = () => {
       
       const updates: Partial<SessionKey> = { hasBeenReviewed: true };
       if (settings.isReviewForFreebieEnabled && reviewData.rating === 5) {
-        // FIX: Explicitly convert to numbers to ensure numeric addition, as values from Firebase might be strings at runtime.
-        updates.maxTakes = currentSessionKey.maxTakes + (settings.reviewFreebieTakesCount || 1);
+        // FIX: Ensure both operands are numbers before addition to prevent potential type issues
+        // from Firebase data which might be strings. This resolves a potential runtime error.
+        updates.maxTakes = Number(currentSessionKey.maxTakes || 0) + Number(settings.reviewFreebieTakesCount || 1);
       }
       await update(ref(db, `data/${currentTenantId}/sessionKeys/${currentSessionKey.id}`), updates);
       setCurrentSessionKey(prev => prev ? { ...prev, ...updates } : null);

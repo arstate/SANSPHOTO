@@ -10,7 +10,7 @@ import { Template, Event, Settings } from '../types';
 import { getCachedImage, storeImageInCache } from '../utils/db';
 import { UploadingIcon } from './icons/UploadingIcon';
 
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxRFNQJ004jSbmT9B6ePRu9DmSoxKdcb_lcF1BWG-rF3z5F1HgG1m6rVZGzwFhhHPV3uw/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwUgQejn4wAm0PtreCZUwg8dJLEyrGEUYQF4brzniCPkmiiG4kDDyic5qDD5mJCLD09mg/exec';
 
 type PrintSettings = {
   isEnabled: boolean;
@@ -288,15 +288,18 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
               nama: filename
           });
 
-          const response = await fetch(SCRIPT_URL, {
+          // Menggunakan `fetch` dengan mode 'no-cors' untuk Google Apps Script
+          // Kita tidak bisa membaca respons, tapi permintaannya akan dikirim.
+          await fetch(SCRIPT_URL, {
               method: 'POST',
-              mode: 'no-cors', // Diperlukan untuk permintaan sederhana ke Google Apps Script
-              redirect: 'follow',
+              mode: 'no-cors', 
               body: payload,
+              headers: {
+                'Content-Type': 'application/json'
+              }
           });
           
-          // Dengan mode 'no-cors', kita tidak bisa memeriksa status response.
-          // Kita anggap berhasil jika fetch tidak melempar error.
+          // Asumsikan berhasil karena `no-cors` tidak akan memberikan status kembali.
           setUploadStatus('success');
           console.log("Upload request sent to Google Drive.");
 
@@ -422,29 +425,35 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
   const UploadStatusIndicator: React.FC = () => {
     if (uploadStatus === 'idle') return null;
 
-    let text, colorClass, icon;
+    let text, colorClass, icon, title;
     switch (uploadStatus) {
       case 'uploading':
-        text = "Mengupload ke Histori Online...";
-        colorClass = "text-blue-300";
+        title = "SINKRONISASI ONLINE";
+        text = "Mengunggah foto ke Google Drive...";
+        colorClass = "text-blue-300 border-blue-500/50";
         icon = <UploadingIcon />;
         break;
       case 'success':
-        text = "Berhasil diupload!";
-        colorClass = "text-green-400";
+        title = "SINKRONISASI BERHASIL";
+        text = "Foto berhasil disimpan di histori online.";
+        colorClass = "text-green-300 border-green-500/50";
         icon = <CheckIcon />;
         break;
       case 'error':
-        text = "Gagal mengupload.";
-        colorClass = "text-red-400";
-        icon = <RestartIcon />; // Ganti dengan ikon error jika ada
+        title = "SINKRONISASI GAGAL";
+        text = "Gagal mengunggah foto. Periksa koneksi Anda.";
+        colorClass = "text-red-300 border-red-500/50";
+        icon = <RestartIcon />;
         break;
     }
 
     return (
-      <div className={`w-full flex items-center justify-center gap-2 p-2 mt-4 rounded-lg bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)] text-sm ${colorClass}`}>
-        {icon}
-        <span>{text}</span>
+      <div className={`w-full flex items-start gap-3 p-3 mt-4 rounded-lg bg-[var(--color-bg-secondary)] border ${colorClass} transition-all`}>
+        <div className="flex-shrink-0 mt-1">{icon}</div>
+        <div>
+          <p className="font-bold text-sm">{title}</p>
+          <p className="text-xs">{text}</p>
+        </div>
       </div>
     );
   };
@@ -503,7 +512,8 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
             {isLastTake ? (
                 <button
                     onClick={onRestart}
-                    className="w-full bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-[var(--color-accent-primary-text)] font-bold py-4 px-8 rounded-full text-xl transition-transform transform hover:scale-105 flex items-center justify-center gap-3"
+                    disabled={uploadStatus === 'uploading'}
+                    className="w-full bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-[var(--color-accent-primary-text)] font-bold py-4 px-8 rounded-full text-xl transition-transform transform hover:scale-105 flex items-center justify-center gap-3 disabled:bg-[var(--color-bg-tertiary)] disabled:cursor-wait disabled:transform-none"
                     >
                     <CheckIcon />
                     Selesai
@@ -511,7 +521,8 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
             ) : (
                 <button
                     onClick={onNextTake}
-                    className="w-full bg-[var(--color-info)] hover:bg-[var(--color-info-hover)] text-[var(--color-info-text)] font-bold py-4 px-8 rounded-full text-xl transition-transform transform hover:scale-105 flex items-center justify-center gap-3"
+                    disabled={uploadStatus === 'uploading'}
+                    className="w-full bg-[var(--color-info)] hover:bg-[var(--color-info-hover)] text-[var(--color-info-text)] font-bold py-4 px-8 rounded-full text-xl transition-transform transform hover:scale-105 flex items-center justify-center gap-3 disabled:bg-[var(--color-bg-tertiary)] disabled:cursor-wait disabled:transform-none"
                     >
                     <RestartIcon />
                     Mulai Pengambilan Berikutnya

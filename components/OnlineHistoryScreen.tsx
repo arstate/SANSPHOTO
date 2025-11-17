@@ -7,7 +7,7 @@ interface OnlineHistoryScreenProps {
   onBack: () => void;
 }
 
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxRFNQJ004jSbmT9B6ePRu9DmSoxKdcb_lcF1BWG-rF3z5F1HgG1m6rVZGzwFhhHPV3uw/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwUgQejn4wAm0PtreCZUwg8dJLEyrGEUYQF4brzniCPkmiiG4kDDyic5qDD5mJCLD09mg/exec';
 
 const OnlineHistoryScreen: React.FC<OnlineHistoryScreenProps> = ({ onBack }) => {
   const [photos, setPhotos] = useState<OnlineHistoryEntry[]>([]);
@@ -40,22 +40,12 @@ const OnlineHistoryScreen: React.FC<OnlineHistoryScreenProps> = ({ onBack }) => 
   
   const handleDownload = async (entry: OnlineHistoryEntry) => {
     try {
-        const response = await fetch(entry.url);
-        if (!response.ok) throw new Error('Network response was not ok.');
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.style.display = 'none';
-        a.href = url;
-        a.download = entry.nama || `sans-photo-online-${new Date(entry.waktu).getTime()}.jpg`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-    } catch (error) {
-        console.error('Direct download failed. This is likely a CORS issue. Fallback: opening in a new tab.', error);
-        alert('Could not download the image directly. Opening in a new tab for you to save manually.');
+        // Karena thumbnail Google Drive dilindungi CORS, kita tidak bisa mengambilnya sebagai blob.
+        // Solusinya adalah membuka link di tab baru agar pengguna dapat menyimpannya secara manual.
+        alert('Could not download the image directly due to security restrictions. Opening in a new tab for you to save manually.');
         window.open(entry.url, '_blank');
+    } catch (error) {
+        console.error('Error opening image:', error);
     }
   };
 
