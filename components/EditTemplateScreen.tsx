@@ -3,7 +3,6 @@ import { PhotoSlot, Template } from '../types';
 import { ZoomInIcon } from './icons/ZoomInIcon';
 import { ZoomOutIcon } from './icons/ZoomOutIcon';
 import { FitToScreenIcon } from './icons/FitToScreenIcon';
-import useCachedImage from '../hooks/useCachedImage';
 
 
 interface EditTemplateScreenProps {
@@ -19,35 +18,11 @@ interface EditingState {
   startX: number;
   startY: number;
   startSlotX: number;
+
   startSlotY: number;
   startSlotWidth: number;
   startSlotHeight: number;
 }
-
-// A new component to handle loading the background image with caching
-const BackgroundImage: React.FC<{ src: string }> = ({ src }) => {
-  const { imageSrc, status } = useCachedImage(src);
-
-  if (status === 'loading') {
-    return (
-      <div className="absolute inset-0 w-full h-full bg-[var(--color-bg-tertiary)] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--color-text-accent)]"></div>
-      </div>
-    );
-  }
-
-  if (status === 'error' || !imageSrc) {
-    return (
-      <div className="absolute inset-0 w-full h-full bg-red-900/30 flex flex-col items-center justify-center text-center text-xs text-red-300 p-2">
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-        <span>Template background failed to load.</span>
-      </div>
-    );
-  }
-
-  return <img src={imageSrc} alt="Template background" className="absolute inset-0 w-full h-full pointer-events-none" />;
-};
-
 
 const EditTemplateScreen: React.FC<EditTemplateScreenProps> = ({ template, onSave, onCancel }) => {
   const [slots, setSlots] = useState<PhotoSlot[]>(template.photoSlots);
@@ -212,7 +187,7 @@ const EditTemplateScreen: React.FC<EditTemplateScreenProps> = ({ template, onSav
                     }}
                     onClick={() => setSelectedSlotId(null)}
                 >
-                    <BackgroundImage src={template.imageUrl} />
+                    <img src={template.imageUrl} alt="Template background" className="absolute inset-0 w-full h-full pointer-events-none" />
                     {slots.map((slot) => {
                         const isSelected = slot.id === selectedSlotId;
                         return (
