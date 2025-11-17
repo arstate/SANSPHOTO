@@ -6,9 +6,6 @@ import { BackIcon } from './icons/BackIcon';
 import { RestartIcon } from './icons/RestartIcon';
 import { Template, Event, Settings } from '../types';
 import { getCachedImage, storeImageInCache } from '../utils/db';
-import { UploadingIcon } from './icons/UploadingIcon';
-
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwY0buPZKYyyGg5dEmDB-_OqOJWjJH5a169BKYawqD0F3Qs7UZCPd6qW-Fz1eJdjSzIzw/exec';
 
 type PrintSettings = {
   isEnabled: boolean;
@@ -146,15 +143,10 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
   const finalImageRef = useRef<HTMLImageElement>(null);
   const historySavedRef = useRef(false);
   const downloadTriggeredRef = useRef(false);
-  const progressIntervalRef = useRef<number | null>(null);
 
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
-  
-  const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [isFinishing, setIsFinishing] = useState(false);
 
   const isLastTake = currentTake >= maxTakes;
   const isLandscape = template.orientation === 'landscape';
@@ -280,64 +272,6 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
     setIsPrintModalOpen(false);
   }, [printSettings, template]);
 
-  const handleUploadAndFinish = useCallback(async () => {
-    if (isFinishing) return;
-
-    const canvas = canvasRef.current;
-    if (!canvas) {
-        setErrorMsg("Canvas not available for upload.");
-        return;
-    }
-
-    setIsFinishing(true);
-    setUploadStatus('uploading');
-    setUploadProgress(0);
-    
-    // Cleanup previous interval if any
-    if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
-
-    // Fake progress simulation
-    progressIntervalRef.current = window.setInterval(() => {
-        setUploadProgress(prev => {
-            if (prev >= 95) {
-                if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
-                return prev;
-            }
-            return prev + Math.random() * 10;
-        });
-    }, 300);
-
-    try {
-        const imageDataUrl = canvas.toDataURL("image/jpeg", 0.6);
-        const filename = `sans-photo-${Date.now()}.jpg`;
-
-        const payload = JSON.stringify({
-            foto: imageDataUrl,
-            nama: filename
-        });
-
-        await fetch(SCRIPT_URL, {
-            method: 'POST',
-            mode: 'no-cors',
-            body: payload,
-        });
-        
-        if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
-        setUploadProgress(100);
-        setUploadStatus('success');
-
-        setTimeout(() => {
-            onRestart();
-        }, 1500);
-
-    } catch (error) {
-        if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
-        console.error("Upload failed:", error);
-        setUploadStatus('error');
-        setIsFinishing(false); // Allow retry
-    }
-  }, [isFinishing, onRestart]);
-
   const drawCanvas = useCallback(async () => {
     setIsLoading(true);
     setErrorMsg(null);
@@ -445,40 +379,7 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
     historySavedRef.current = false;
     downloadTriggeredRef.current = false;
     drawCanvas();
-    
-    // Cleanup interval on component unmount
-    return () => {
-        if (progressIntervalRef.current) {
-            clearInterval(progressIntervalRef.current);
-        }
-    }
   }, [drawCanvas]);
-  
-  const UploadStatusIndicator: React.FC = () => {
-    if (uploadStatus === 'idle' || uploadStatus === 'success') return null;
-
-    return (
-      <div className="w-full p-2 mt-4 rounded-lg bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)]">
-        {uploadStatus === 'uploading' && (
-          <>
-            <div className="flex justify-between mb-1">
-              <span className="text-base font-medium text-blue-300">Uploading to Gallery</span>
-              <span className="text-sm font-medium text-blue-300">{Math.round(uploadProgress)}%</span>
-            </div>
-            <div className="w-full bg-[var(--color-border-secondary)] rounded-full h-2.5">
-              <div
-                className="bg-[var(--color-info)] h-2.5 rounded-full transition-all duration-300"
-                style={{ width: `${uploadProgress}%` }}
-              ></div>
-            </div>
-          </>
-        )}
-        {uploadStatus === 'error' && (
-          <p className="text-center text-red-400">Upload failed. Please try again.</p>
-        )}
-      </div>
-    );
-  };
 
   return (
     <>
@@ -533,22 +434,17 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
         <div className="flex flex-col items-center gap-4 w-full max-w-sm">
             {isLastTake ? (
                 <button
-                    onClick={handleUploadAndFinish}
-                    disabled={isFinishing}
+                    onClick={onRestart}
+                    disabled={isLoading || !!errorMsg}
                     className="w-full bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-[var(--color-accent-primary-text)] font-bold py-4 px-8 rounded-full text-xl transition-transform transform hover:scale-105 flex items-center justify-center gap-3 disabled:bg-[var(--color-bg-tertiary)] disabled:cursor-wait"
                 >
-                  {uploadStatus === 'uploading' ? <UploadingIcon /> : <CheckIcon />}
-                  <span>
-                    {uploadStatus === 'idle' && 'Selesai & Upload'}
-                    {uploadStatus === 'uploading' && 'Uploading...'}
-                    {uploadStatus === 'success' && 'Success!'}
-                    {uploadStatus === 'error' && 'Retry Upload'}
-                  </span>
+                  <CheckIcon />
+                  <span>Selesai</span>
                 </button>
             ) : (
                 <button
                     onClick={onNextTake}
-                    disabled={isFinishing}
+                    disabled={isLoading || !!errorMsg}
                     className="w-full bg-[var(--color-info)] hover:bg-[var(--color-info-hover)] text-[var(--color-info-text)] font-bold py-4 px-8 rounded-full text-xl transition-transform transform hover:scale-105 flex items-center justify-center gap-3 disabled:bg-[var(--color-bg-tertiary)] disabled:cursor-wait"
                 >
                     <RestartIcon />
@@ -560,7 +456,7 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
               {isDownloadButtonEnabled && (
                 <button
                   onClick={() => handleDownload()}
-                  disabled={isLoading || !!errorMsg || isFinishing}
+                  disabled={isLoading || !!errorMsg}
                   className="w-full flex-1 bg-[var(--color-positive)] hover:bg-[var(--color-positive-hover)] text-[var(--color-positive-text)] font-bold py-4 px-8 rounded-full text-xl transition-transform transform hover:scale-105 flex items-center justify-center gap-3 disabled:bg-[var(--color-bg-tertiary)] disabled:cursor-not-allowed disabled:transform-none"
                 >
                   <DownloadIcon />
@@ -571,7 +467,7 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
               {printSettings.isEnabled && (
                  <button
                   onClick={() => setIsPrintModalOpen(true)}
-                  disabled={isLoading || !!errorMsg || isFinishing}
+                  disabled={isLoading || !!errorMsg}
                   className="w-full flex-1 bg-[var(--color-info)] hover:bg-[var(--color-info-hover)] text-[var(--color-info-text)] font-bold py-4 px-8 rounded-full text-xl transition-transform transform hover:scale-105 flex items-center justify-center gap-3 disabled:bg-[var(--color-bg-tertiary)] disabled:cursor-not-allowed disabled:transform-none"
                 >
                   <PrintIcon />
@@ -579,8 +475,6 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
                 </button>
               )}
             </div>
-
-            <UploadStatusIndicator />
 
             {event?.isQrCodeEnabled && event.qrCodeImageUrl && (
                 <div className="p-4 bg-[var(--color-bg-secondary)] rounded-lg text-center">

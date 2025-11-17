@@ -1,7 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { OnlineHistoryEntry } from '../types';
 import { BackIcon } from './icons/BackIcon';
 import { DownloadIcon } from './icons/DownloadIcon';
+import { UploadingIcon } from './icons/UploadingIcon';
+import { CloseIcon } from './icons/CloseIcon';
 
 interface OnlineHistoryScreenProps {
   onBack: () => void;
@@ -9,10 +12,60 @@ interface OnlineHistoryScreenProps {
 
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwbnlO9vk95yTKeHFFilhJbfFcjibH80sFzsA5II3BAkuNudCTabRNdBUhYlCEHHO5CYQ/exec';
 
+const PhotoPreviewModal: React.FC<{
+  photo: OnlineHistoryEntry;
+  onClose: () => void;
+  onDownload: (entry: OnlineHistoryEntry) => void;
+  isDownloading: boolean;
+}> = ({ photo, onClose, onDownload, isDownloading }) => {
+  return (
+    <div
+      className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
+      onClick={onClose}
+    >
+      <div
+        className="relative bg-[var(--color-bg-secondary)] rounded-lg shadow-xl w-full h-full max-w-screen-lg max-h-screen-lg flex flex-col p-4"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 bg-black/50 hover:bg-black/80 text-white p-2 rounded-full z-10"
+          aria-label="Close"
+        >
+          <CloseIcon />
+        </button>
+
+        <div className="flex-grow flex items-center justify-center min-h-0">
+            <img 
+                src={photo.url} 
+                alt={photo.nama} 
+                className="max-w-full max-h-full object-contain rounded-md"
+            />
+        </div>
+
+        <div className="flex-shrink-0 pt-4 mt-4 border-t border-[var(--color-border-primary)] text-center">
+            <button
+                onClick={() => onDownload(photo)}
+                disabled={isDownloading}
+                className="bg-[var(--color-positive)] hover:bg-[var(--color-positive-hover)] text-[var(--color-positive-text)] font-bold py-3 px-8 rounded-full text-lg transition-transform transform hover:scale-105 flex items-center justify-center gap-3 disabled:bg-[var(--color-bg-tertiary)] disabled:cursor-wait mx-auto"
+                aria-label="Download Photo"
+            >
+                {isDownloading ? <UploadingIcon /> : <DownloadIcon />}
+                <span>{isDownloading ? 'Downloading...' : 'Download'}</span>
+            </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
 const OnlineHistoryScreen: React.FC<OnlineHistoryScreenProps> = ({ onBack }) => {
   const [photos, setPhotos] = useState<OnlineHistoryEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [downloading, setDownloading] = useState<string | null>(null);
+  const [selectedPhoto, setSelectedPhoto] = useState<OnlineHistoryEntry | null>(null);
 
   useEffect(() => {
     const fetchHistory = async () => {
@@ -39,13 +92,30 @@ const OnlineHistoryScreen: React.FC<OnlineHistoryScreenProps> = ({ onBack }) => 
   }, []);
   
   const handleDownload = async (entry: OnlineHistoryEntry) => {
+    if (downloading) return;
+    setDownloading(entry.nama);
     try {
-        // Karena thumbnail Google Drive dilindungi CORS, kita tidak bisa mengambilnya sebagai blob.
-        // Solusinya adalah membuka link di tab baru agar pengguna dapat menyimpannya secara manual.
-        alert('Could not download the image directly due to security restrictions. Opening in a new tab for you to save manually.');
-        window.open(entry.url, '_blank');
+      // Gunakan proksi untuk melewati masalah CORS dengan URL gambar Google Drive
+      const proxiedUrl = `https://images.weserv.nl/?url=${encodeURIComponent(entry.url)}`;
+      const response = await fetch(proxiedUrl);
+      if (!response.ok) {
+        throw new Error(`Gagal mengambil gambar melalui proksi: ${response.statusText}`);
+      }
+      const blob = await response.blob();
+      
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = entry.nama || `sans-photo-${Date.now()}.jpg`;
+      document.body.appendChild(link);
+      link.click();
+      
+      document.body.removeChild(link);
+      URL.revokeObjectURL(link.href);
     } catch (error) {
-        console.error('Error opening image:', error);
+      console.error('Error downloading image:', error);
+      alert(`Gagal mengunduh ${entry.nama}. Silakan periksa koneksi Anda dan coba lagi.`);
+    } finally {
+      setDownloading(null);
     }
   };
 
@@ -83,17 +153,25 @@ const OnlineHistoryScreen: React.FC<OnlineHistoryScreenProps> = ({ onBack }) => 
     return (
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
         {photos.map(entry => (
-          <div key={entry.nama} className="group relative bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)] rounded-lg overflow-hidden aspect-w-2 aspect-h-3">
+          <div 
+            key={entry.nama} 
+            className="group relative bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)] rounded-lg overflow-hidden aspect-w-2 aspect-h-3 cursor-pointer"
+            onClick={() => setSelectedPhoto(entry)}
+          >
             <img src={entry.url} alt={entry.nama} className="w-full h-full object-cover transition-transform group-hover:scale-105" loading="lazy" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
             
-            <div className="absolute bottom-2 left-2 right-2 flex items-center justify-center gap-4 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="absolute bottom-2 right-2">
                <button
-                    onClick={() => handleDownload(entry)}
-                    className="bg-green-500/80 hover:bg-green-500 text-white font-bold p-3 rounded-full transition-transform transform hover:scale-110"
+                    onClick={(e) => {
+                        e.stopPropagation(); // Mencegah modal terbuka
+                        handleDownload(entry);
+                    }}
+                    disabled={!!downloading}
+                    className="bg-black/40 hover:bg-black/60 text-white font-bold p-3 rounded-full transition-all transform hover:scale-110 disabled:scale-100 disabled:cursor-wait disabled:bg-black/60"
                     aria-label="Download Photo"
                 >
-                    <DownloadIcon />
+                    {downloading === entry.nama ? <UploadingIcon /> : <DownloadIcon />}
                 </button>
             </div>
           </div>
@@ -103,24 +181,34 @@ const OnlineHistoryScreen: React.FC<OnlineHistoryScreenProps> = ({ onBack }) => 
   }
 
   return (
-    <div className="relative flex flex-col w-full h-full bg-[var(--color-bg-primary)]">
-      <header className="sticky top-0 bg-[var(--color-bg-primary)]/80 backdrop-blur-sm z-10 p-4 flex items-center justify-center">
-        <div className="absolute top-4 left-4">
-          <button
-            onClick={onBack}
-            className="bg-[var(--color-bg-secondary)]/50 hover:bg-[var(--color-bg-tertiary)]/70 text-[var(--color-text-primary)] font-bold p-3 rounded-full transition-colors"
-            aria-label="Go Back"
-          >
-            <BackIcon />
-          </button>
-        </div>
-        <h2 className="text-4xl font-bebas tracking-wider text-[var(--color-text-primary)]">Online History</h2>
-      </header>
-      
-      <main className="flex-grow overflow-y-auto scrollbar-thin p-4">
-        {renderContent()}
-      </main>
-    </div>
+    <>
+      {selectedPhoto && (
+        <PhotoPreviewModal
+          photo={selectedPhoto}
+          onClose={() => setSelectedPhoto(null)}
+          onDownload={handleDownload}
+          isDownloading={downloading === selectedPhoto.nama}
+        />
+      )}
+      <div className="relative flex flex-col w-full h-full bg-[var(--color-bg-primary)]">
+        <header className="sticky top-0 bg-[var(--color-bg-primary)]/80 backdrop-blur-sm z-10 p-4 flex items-center justify-center">
+          <div className="absolute top-4 left-4">
+            <button
+              onClick={onBack}
+              className="bg-[var(--color-bg-secondary)]/50 hover:bg-[var(--color-bg-tertiary)]/70 text-[var(--color-text-primary)] font-bold p-3 rounded-full transition-colors"
+              aria-label="Go Back"
+            >
+              <BackIcon />
+            </button>
+          </div>
+          <h2 className="text-4xl font-bebas tracking-wider text-[var(--color-text-primary)]">Online History</h2>
+        </header>
+        
+        <main className="flex-grow overflow-y-auto scrollbar-thin p-4">
+          {renderContent()}
+        </main>
+      </div>
+    </>
   );
 };
 

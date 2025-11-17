@@ -3,16 +3,12 @@ import { Template } from '../types';
 import { getCachedImage, storeImageInCache } from '../utils/db';
 import { RestartIcon } from './icons/RestartIcon';
 import { CheckIcon } from './icons/CheckIcon';
-import { UploadingIcon } from './icons/UploadingIcon';
-
-// URL Google Apps Script untuk menangani unggahan
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyMNj-A6CT9KOC1Zd5ZpPGktv9PWYcpOjWIt_TrEyAqvBm2TVtKebNy7D2zuFCKPyKQ3w/exec';
 
 interface RetakePreviewScreenProps {
   images: string[];
   template: Template;
   onStartRetake: (photoIndex: number) => void;
-  onDone: () => void;
+  onDone: (imageDataUrl: string) => void;
   retakesUsed: number;
   maxRetakes: number;
 }
@@ -22,11 +18,8 @@ const RetakePreviewScreen: React.FC<RetakePreviewScreenProps> = ({
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const finalImageRef = useRef<HTMLImageElement>(null);
-  const progressIntervalRef = useRef<number | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
-  const [uploadProgress, setUploadProgress] = useState(0);
 
   const isLandscape = template.orientation === 'landscape';
   const TEMPLATE_WIDTH = isLandscape ? 1800 : 1200;
@@ -148,70 +141,23 @@ const RetakePreviewScreen: React.FC<RetakePreviewScreenProps> = ({
     }
   }, [images, template, TEMPLATE_WIDTH, TEMPLATE_HEIGHT]);
 
-  const handleUploadAndContinue = useCallback(async () => {
-    if (uploadStatus === 'uploading' || uploadStatus === 'success') return;
-
+  const handleContinue = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) {
-      setErrorMsg("Canvas not available for upload.");
-      return;
+        setErrorMsg("Canvas not available.");
+        return;
     }
-
-    setUploadStatus('uploading');
-    setUploadProgress(0);
-
-    // Bersihkan interval sebelumnya jika ada
-    if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
-
-    // Simulasi progres palsu
-    progressIntervalRef.current = window.setInterval(() => {
-      setUploadProgress(prev => {
-        if (prev >= 95) {
-          if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
-          return prev;
-        }
-        return prev + Math.random() * 10;
-      });
-    }, 300);
-
-    try {
-      const imageDataUrl = canvas.toDataURL("image/jpeg", 0.6);
-      const filename = `sans-photo-${Date.now()}.jpg`;
-      const payload = JSON.stringify({ foto: imageDataUrl, nama: filename });
-
-      await fetch(SCRIPT_URL, {
-        method: 'POST',
-        mode: 'no-cors',
-        body: payload,
-      });
-      
-      if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
-      setUploadProgress(100);
-      setUploadStatus('success');
-
-      setTimeout(() => {
-        onDone();
-      }, 1500);
-
-    } catch (error) {
-      if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
-      console.error("Upload failed:", error);
-      setUploadStatus('error');
-    }
-  }, [uploadStatus, onDone]);
+    // Get original quality PNG data
+    const imageDataUrl = canvas.toDataURL("image/png"); 
+    // Pass data up and continue navigation, upload will be handled in the background
+    onDone(imageDataUrl);
+  }, [onDone]);
 
   useEffect(() => {
     drawCanvas();
-    
-    // Cleanup interval on component unmount
-    return () => {
-        if (progressIntervalRef.current) {
-            clearInterval(progressIntervalRef.current);
-        }
-    }
   }, [drawCanvas]);
   
-  const isActionDisabled = isLoading || !!errorMsg || uploadStatus === 'uploading' || uploadStatus === 'success';
+  const isActionDisabled = isLoading || !!errorMsg;
 
   return (
     <div className="relative flex flex-col items-center justify-center h-full w-full p-4">
@@ -275,43 +221,17 @@ const RetakePreviewScreen: React.FC<RetakePreviewScreenProps> = ({
                 </p>
             </div>
             <button
-                onClick={handleUploadAndContinue}
+                onClick={handleContinue}
                 disabled={isActionDisabled}
                 className="w-full bg-[var(--color-positive)] hover:bg-[var(--color-positive-hover)] text-[var(--color-positive-text)] font-bold py-4 px-8 rounded-full text-xl transition-transform transform hover:scale-105 flex items-center justify-center gap-3 disabled:bg-[var(--color-bg-tertiary)] disabled:cursor-not-allowed"
             >
-                {uploadStatus === 'uploading' && <UploadingIcon />}
-                {uploadStatus !== 'uploading' && <CheckIcon />}
-                <span>
-                    {uploadStatus === 'idle' && 'Done & Continue'}
-                    {uploadStatus === 'uploading' && 'Uploading...'}
-                    {uploadStatus === 'success' && 'Success!'}
-                    {uploadStatus === 'error' && 'Retry Upload'}
-                </span>
+                <CheckIcon />
+                <span>Done & Continue</span>
             </button>
-            {uploadStatus === 'error' && (
-              <p className="text-center text-sm text-red-400">Upload failed. Please check your connection and try again.</p>
-            )}
         </div>
       </main>
       
       <canvas ref={canvasRef} className="hidden"></canvas>
-
-      {uploadStatus === 'uploading' && (
-        <div className="fixed bottom-0 left-0 right-0 p-4 bg-[var(--color-bg-secondary)]/80 backdrop-blur-sm z-50 transition-opacity duration-300">
-            <div className="max-w-md mx-auto text-center">
-                <div className="flex justify-between mb-1 text-sm font-medium text-[var(--color-text-primary)]">
-                  <span>Uploading to Gallery...</span>
-                  <span>{Math.round(uploadProgress)}%</span>
-                </div>
-                <div className="w-full bg-[var(--color-border-secondary)] rounded-full h-2.5">
-                  <div
-                    className="bg-[var(--color-info)] h-2.5 rounded-full transition-all duration-300"
-                    style={{ width: `${uploadProgress}%` }}
-                  ></div>
-                </div>
-            </div>
-        </div>
-      )}
     </div>
   );
 };

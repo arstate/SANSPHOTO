@@ -1,4 +1,5 @@
 
+
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import WelcomeScreen from './components/WelcomeScreen';
 import TemplateSelection from './components/TemplateSelection';
@@ -33,6 +34,8 @@ import { getAllHistoryEntries, addHistoryEntry, deleteHistoryEntry, getCachedIma
 import { FullscreenIcon } from './components/icons/FullscreenIcon';
 import useFullscreenLock from './hooks/useFullscreenLock';
 
+// URL Google Apps Script untuk menangani unggahan
+const SCRIPT_URL_RETAKE = 'https://script.google.com/macros/s/AKfycbwZY1besq9swP1LsqIlHAiekq5MAr4pJ_DAJtbPTDSD-U_hPngd4tztkYJtnAHdVT0J9w/exec';
 
 const INITIAL_PHOTO_SLOTS: PhotoSlot[] = [
   { id: 1, inputId: 1, x: 90,  y: 70,   width: 480, height: 480 },
@@ -114,6 +117,41 @@ const DEFAULT_TEMPLATE_DATA: Omit<Template, 'id'> = {
   photoSlots: INITIAL_PHOTO_SLOTS,
 };
 
+const GlobalUploadIndicator: React.FC<{ status: 'uploading' | 'success' | 'error', progress: number }> = ({ status, progress }) => {
+    let message = '';
+    let bgColor = '';
+
+    switch (status) {
+        case 'uploading':
+            message = `Uploading to Gallery... ${Math.round(progress)}%`;
+            bgColor = 'bg-[var(--color-info)]';
+            break;
+        case 'success':
+            message = 'Upload successful!';
+            bgColor = 'bg-[var(--color-positive)]';
+            break;
+        case 'error':
+            message = 'Upload failed. Please check connection.';
+            bgColor = 'bg-[var(--color-negative)]';
+            break;
+    }
+
+    return (
+        <div className="fixed bottom-0 left-0 right-0 p-3 bg-[var(--color-bg-secondary)]/90 backdrop-blur-sm z-50 transition-transform duration-300 transform translate-y-0">
+            <div className="max-w-md mx-auto text-center">
+                <p className="text-sm text-white mb-1">{message}</p>
+                <div className="w-full bg-[var(--color-border-secondary)] rounded-full h-2">
+                    <div
+                        className={`${bgColor} h-2 rounded-full transition-all duration-300`}
+                        style={{ width: `${progress}%` }}
+                    ></div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+
 const App: React.FC = () => {
   const [appState, setAppState] = useState<AppState>(AppState.WELCOME);
   const [capturedImages, setCapturedImages] = useState<string[]>([]);
@@ -148,6 +186,7 @@ const App: React.FC = () => {
   const [isFullscreen, setIsFullscreen] = useState(!!document.fullscreenElement);
   const [keyCodeError, setKeyCodeError] = useState<string | null>(null);
   const [isSessionLoading, setIsSessionLoading] = useState(false);
+  const [uploadInfo, setUploadInfo] = useState<{ id: number, progress: number; status: 'uploading' | 'success' | 'error' | 'idle' }>({ id: 0, progress: 0, status: 'idle' });
   
   const [retakesUsed, setRetakesUsed] = useState(0);
   const [retakingPhotoIndex, setRetakingPhotoIndex] = useState<number | null>(null);
@@ -687,6 +726,50 @@ const App: React.FC = () => {
     await update(ref(db), updates);
   }, []);
 
+  const handleUploadToDrive = useCallback((imageDataUrl: string) => {
+    const uploadId = Date.now();
+    setUploadInfo({ id: uploadId, progress: 0, status: 'uploading' });
+
+    const progressInterval = setInterval(() => {
+        setUploadInfo(prev => {
+            if (prev.id !== uploadId || prev.status !== 'uploading') {
+                clearInterval(progressInterval);
+                return prev;
+            }
+            if (prev.progress >= 95) {
+                clearInterval(progressInterval);
+                return prev;
+            }
+            return { ...prev, progress: prev.progress + Math.random() * 10 };
+        });
+    }, 400);
+
+    (async () => {
+        try {
+            const filename = `sans-photo-${Date.now()}.png`;
+            const payload = JSON.stringify({ foto: imageDataUrl, nama: filename });
+
+            await fetch(SCRIPT_URL_RETAKE, {
+                method: 'POST',
+                mode: 'no-cors',
+                body: payload,
+            });
+
+            clearInterval(progressInterval);
+            setUploadInfo(prev => prev.id === uploadId ? { ...prev, progress: 100, status: 'success' } : prev);
+            
+            setTimeout(() => {
+                setUploadInfo(prev => prev.id === uploadId ? { ...prev, status: 'idle' } : prev);
+            }, 3000);
+
+        } catch (error) {
+            console.error("Background upload failed:", error);
+            clearInterval(progressInterval);
+            setUploadInfo(prev => prev.id === uploadId ? { ...prev, status: 'error' } : prev);
+        }
+    })();
+  }, []);
+
   // Other callbacks that just change state
   const handleGoToSettings = useCallback(() => setAppState(AppState.SETTINGS), []);
   const handleViewHistory = useCallback(() => { if (isAdminLoggedIn) setAppState(AppState.HISTORY); }, [isAdminLoggedIn]);
@@ -715,7 +798,10 @@ const App: React.FC = () => {
   const handleCaptureComplete = useCallback((images: string[]) => { setCapturedImages(images); if ((settings.maxRetakes ?? 0) > 0) setAppState(AppState.RETAKE_PREVIEW); else decideNextStepAfterCapture(); }, [settings.maxRetakes, decideNextStepAfterCapture]);
   const handleStartRetake = useCallback((photoIndex: number) => { if (settings.maxRetakes === undefined || retakesUsed >= settings.maxRetakes) return; setRetakesUsed(prev => prev + 1); setRetakingPhotoIndex(photoIndex); setAppState(AppState.CAPTURE); }, [retakesUsed, settings.maxRetakes]);
   const handleRetakeComplete = useCallback((newImage: string) => { if (retakingPhotoIndex === null) return; setCapturedImages(prev => { const newImages = [...prev]; newImages[retakingPhotoIndex] = newImage; return newImages; }); setRetakingPhotoIndex(null); setAppState(AppState.RETAKE_PREVIEW); }, [retakingPhotoIndex]);
-  const handleFinishRetakePreview = useCallback(() => decideNextStepAfterCapture(), [decideNextStepAfterCapture]);
+  const handleFinishRetakePreview = useCallback((imageDataUrl: string) => {
+    handleUploadToDrive(imageDataUrl);
+    decideNextStepAfterCapture();
+  }, [handleUploadToDrive, decideNextStepAfterCapture]);
   const handleStartNextTake = useCallback(() => { if (!currentSessionKey || currentTakeCount >= currentSessionKey.maxTakes) return; const nextTake = currentTakeCount + 1; setCurrentTakeCount(nextTake); if(currentTenantId) update(ref(db, `data/${currentTenantId}/sessionKeys/${currentSessionKey.id}`), { takesUsed: nextTake }); setCapturedImages([]); setSelectedTemplate(null); setRetakesUsed(0); setRetakingPhotoIndex(null); setAppState(AppState.TEMPLATE_SELECTION); }, [currentSessionKey, currentTakeCount, currentTenantId]);
   const handleSaveHistoryFromSession = useCallback(async (imageDataUrl: string) => { const event = events.find(e => e.id === selectedEventId); if (!event) return; const timestamp = Date.now(); const newEntry: HistoryEntry = { id: String(timestamp), eventId: event.id, eventName: event.name, imageDataUrl, timestamp: timestamp }; await addHistoryEntry(newEntry); setHistory(prev => [newEntry, ...prev].sort((a,b) => b.timestamp - a.timestamp)); }, [events, selectedEventId]);
 
@@ -795,6 +881,10 @@ const App: React.FC = () => {
         )}
         {renderContent()}
       </main>
+
+      {uploadInfo.status !== 'idle' && (
+          <GlobalUploadIndicator status={uploadInfo.status} progress={uploadInfo.progress} />
+      )}
     </div>
   );
 };
