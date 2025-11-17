@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { DownloadIcon } from './icons/DownloadIcon';
 import { PrintIcon } from './icons/PrintIcon';
@@ -6,7 +5,7 @@ import { CheckIcon } from './icons/CheckIcon';
 import { BackIcon } from './icons/BackIcon';
 import { RestartIcon } from './icons/RestartIcon';
 import { Template, Event, Settings } from '../types';
-import { getCachedImage, storeImageInCache } from '../utils/db';
+import { getImageBlob } from '../utils/imageLoader';
 
 type PrintSettings = {
   isEnabled: boolean;
@@ -83,58 +82,6 @@ const PrintModal: React.FC<PrintModalProps> = ({ isOpen, onClose, onConfirm, ima
     </div>
   );
 };
-
-// Helper function that prioritizes cache and caches on miss
-const loadImage = (src: string): Promise<HTMLImageElement> => {
-  return new Promise(async (resolve, reject) => {
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => {
-        if (img.src.startsWith('blob:')) {
-            URL.revokeObjectURL(img.src);
-        }
-        resolve(img);
-    };
-    img.onerror = (e) => reject(new Error(`Gagal memuat gambar dari src: ${src.substring(0, 100)}...`));
-
-    // 1. Langsung muat jika ini adalah URL data (misalnya, foto yang baru diambil)
-    if (src.startsWith('data:')) {
-      img.src = src;
-      return;
-    }
-
-    try {
-      // 2. Coba muat dari cache IndexedDB
-      const cachedBlob = await getCachedImage(src);
-      if (cachedBlob) {
-        img.src = URL.createObjectURL(cachedBlob);
-        return;
-      }
-
-      // 3. Fallback: ambil dari jaringan jika tidak ada di cache
-      let fetchUrl = src;
-      if (src.startsWith('http')) {
-          fetchUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(src)}`;
-      }
-      
-      const response = await fetch(fetchUrl);
-      if (!response.ok) {
-        throw new Error(`Gagal mengambil gambar. Status: ${response.status}`);
-      }
-      const networkBlob = await response.blob();
-      
-      // 4. Simpan blob yang baru diambil di cache
-      await storeImageInCache(src, networkBlob);
-      
-      // 5. Muat gambar dari blob yang baru diambil
-      img.src = URL.createObjectURL(networkBlob);
-
-    } catch (error) {
-      reject(error);
-    }
-  });
-};
-
 
 const PreviewScreen: React.FC<PreviewScreenProps> = ({ 
     images, onRestart, onBack, template, onSaveHistory, event,
@@ -289,6 +236,31 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
         setIsLoading(false);
         return;
     }
+
+    // Helper function to load an image source (data URL, network URL via cache) into an HTMLImageElement
+    const loadImageElement = (src: string): Promise<HTMLImageElement> => {
+        return new Promise(async (resolve, reject) => {
+            const img = new Image();
+            let objectUrl: string | null = null;
+            
+            img.onload = () => {
+                if (objectUrl) URL.revokeObjectURL(objectUrl);
+                resolve(img);
+            };
+            img.onerror = () => {
+                if (objectUrl) URL.revokeObjectURL(objectUrl);
+                reject(new Error(`Failed to load image element from src: ${src.substring(0, 100)}...`));
+            };
+
+            try {
+                const blob = await getImageBlob(src);
+                objectUrl = URL.createObjectURL(blob);
+                img.src = objectUrl;
+            } catch (error) {
+                reject(error);
+            }
+        });
+    };
       
     const canvasWidth = TEMPLATE_WIDTH;
     const canvasHeight = TEMPLATE_HEIGHT;
@@ -302,8 +274,8 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
       ctx.fillRect(0,0,canvas.width, canvas.height);
 
       const imagePromises: Promise<HTMLImageElement>[] = [
-        loadImage(template.imageUrl), 
-        ...images.map(src => loadImage(src))
+        loadImageElement(template.imageUrl), 
+        ...images.map(src => loadImageElement(src))
       ];
 
       const [templateImg, ...loadedImages] = await Promise.all(imagePromises);

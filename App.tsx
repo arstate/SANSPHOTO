@@ -29,9 +29,10 @@ import TenantEditModal from './components/TenantEditModal';
 
 import { AppState, PhotoSlot, Settings, Template, Event, HistoryEntry, SessionKey, OnlineHistoryEntry, Review, Tenant } from './types';
 import { db, ref, onValue, off, set, push, update, remove, firebaseObjectToArray, query, orderByChild, equalTo, get } from './firebase';
-import { getAllHistoryEntries, addHistoryEntry, deleteHistoryEntry, getCachedImage, storeImageInCache } from './utils/db';
+import { getAllHistoryEntries, addHistoryEntry, deleteHistoryEntry } from './utils/db';
 import { FullscreenIcon } from './components/icons/FullscreenIcon';
 import useFullscreenLock from './hooks/useFullscreenLock';
+import { getImageBlob } from './utils/imageLoader';
 
 
 const INITIAL_PHOTO_SLOTS: PhotoSlot[] = [
@@ -207,29 +208,15 @@ const App: React.FC = () => {
 
       for (let i = 0; i < templatesToCache.length; i++) {
           if (sessionId !== cachingSessionRef.current) {
-              console.log('Caching process dibatalkan karena perubahan tenant.');
+              console.log('Caching process cancelled due to tenant change.');
               return;
           }
           const template = templatesToCache[i];
-          if (!template.imageUrl) continue;
-
           try {
-              const isCached = await getCachedImage(template.imageUrl);
-              if (!isCached) {
-                  let fetchUrl = template.imageUrl;
-                  if (template.imageUrl.startsWith('http')) {
-                      fetchUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(template.imageUrl)}`;
-                  }
-                  const response = await fetch(fetchUrl);
-                  if (response.ok) {
-                      const blob = await response.blob();
-                      await storeImageInCache(template.imageUrl, blob);
-                  } else {
-                      console.error(`Gagal melakukan pra-cache gambar ${template.imageUrl}: Status ${response.status}`);
-                  }
-              }
+              // Simply calling getImageBlob will fetch and cache it if not present.
+              await getImageBlob(template.imageUrl);
           } catch (error) {
-              console.error(`Gagal melakukan pra-cache gambar ${template.imageUrl}`, error);
+              console.error(`Failed to pre-cache image ${template.imageUrl}`, error);
           }
           if (sessionId === cachingSessionRef.current) {
             setCachingProgress(((i + 1) / templatesToCache.length) * 100);
