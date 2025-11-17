@@ -544,10 +544,19 @@ const App: React.FC = () => {
     else if (currentTenantId) setIsTenantLoginModalOpen(true);
   }, [currentTenantId]);
   
-  const handleAdminLogin = useCallback(() => {
+  const handleAdminLogin = useCallback((tenant?: Tenant) => {
+    if (tenant) {
+      // Tenant login from master page
+      setIsAdminLoggedIn(true);
+      setIsMasterAdmin(false);
+      setIsLoginModalOpen(false);
+      window.location.hash = `#/${tenant.path}`;
+    } else {
+      // Master admin login
       setIsAdminLoggedIn(true);
       setIsMasterAdmin(true);
       setIsLoginModalOpen(false);
+    }
   }, []);
   
   const handleTenantAdminLogin = useCallback(() => {
@@ -707,7 +716,7 @@ const App: React.FC = () => {
         </button>
       </div>
       
-      {isLoginModalOpen && <LoginModal onLogin={handleAdminLogin} onClose={() => setIsLoginModalOpen(false)} />}
+      {isLoginModalOpen && <LoginModal tenants={tenants} onLogin={handleAdminLogin} onClose={() => setIsLoginModalOpen(false)} />}
       {isTenantLoginModalOpen && currentTenant && <TenantLoginModal tenant={currentTenant} onLogin={handleTenantAdminLogin} onClose={() => setIsTenantLoginModalOpen(false)} />}
       {isPinModalOpen && <PinInputModal correctPin={settings.fullscreenPin || '1234'} onCorrectPin={handleCorrectPin} onClose={() => setIsPinModalOpen(false)} />}
       {editingEvent && <RenameEventModal event={editingEvent} onSave={handleSaveRenameEvent} onClose={handleCancelRenameEvent} />}

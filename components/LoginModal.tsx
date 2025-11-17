@@ -1,24 +1,42 @@
 
+
 import React, { useState } from 'react';
+import { Tenant } from '../types';
 
 interface LoginModalProps {
-  onLogin: () => void;
+  tenants: Tenant[];
+  onLogin: (tenant?: Tenant) => void;
   onClose: () => void;
 }
 
-const LoginModal: React.FC<LoginModalProps> = ({ onLogin, onClose }) => {
+const LoginModal: React.FC<LoginModalProps> = ({ tenants, onLogin, onClose }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // 1. Check for master admin
     if (username === 'admin' && password === '12345') {
       setError('');
-      onLogin();
-    } else {
-      setError('Invalid username or password.');
+      onLogin(); // Call without args for master
+      return;
     }
+
+    // 2. Check for tenant admins
+    const matchedTenant = tenants.find(
+      t => t.isActive && t.username === username && t.password === password
+    );
+
+    if (matchedTenant) {
+      setError('');
+      onLogin(matchedTenant); // Call with tenant object for redirect
+      return;
+    }
+
+    // 3. If no match, show error
+    setError('Invalid username or password.');
   };
 
   return (
