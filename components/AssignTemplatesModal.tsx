@@ -150,9 +150,9 @@ const AssignTemplatesModal: React.FC<AssignTemplatesModalProps> = ({ event, allT
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-grow overflow-hidden">
           {/* Assigned Templates */}
-          <div className="bg-[var(--color-bg-primary)]/50 p-3 rounded-lg flex flex-col">
-            <h3 className="font-bold text-center mb-2 text-green-400">Assigned Templates ({assigned.length})</h3>
-            <div className="space-y-2 overflow-y-auto flex-grow pr-1" onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
+          <div className="bg-[var(--color-bg-primary)]/50 p-3 rounded-lg flex flex-col min-h-0">
+            <h3 className="font-bold text-center mb-2 text-green-400 shrink-0">Assigned Templates ({assigned.length})</h3>
+            <div className="space-y-2 overflow-y-auto flex-grow pr-1 scrollbar-thin" onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
               {assigned.length > 0 ? assigned.map(t => 
                 <DraggableTemplateItem key={t.id} template={t} action="unassign" />
               ) : <p className="text-[var(--color-text-muted)] text-center pt-8">Drag templates here to assign.</p>}
@@ -160,15 +160,15 @@ const AssignTemplatesModal: React.FC<AssignTemplatesModalProps> = ({ event, allT
           </div>
 
           {/* Available Templates */}
-          <div className="bg-[var(--color-bg-primary)]/50 p-3 rounded-lg flex flex-col">
-            <h3 className="font-bold text-center mb-2 text-yellow-400">Available Templates ({available.length})</h3>
-            <div className="space-y-2 overflow-y-auto flex-grow pr-1">
+          <div className="bg-[var(--color-bg-primary)]/50 p-3 rounded-lg flex flex-col min-h-0">
+            <h3 className="font-bold text-center mb-2 text-yellow-400 shrink-0">Available Templates ({available.length})</h3>
+            <div className="space-y-2 overflow-y-auto flex-grow pr-1 scrollbar-thin">
               {available.length > 0 ? available.map(t => <TemplateItem key={t.id} template={t} action="assign" />) : <p className="text-[var(--color-text-muted)] text-center pt-8">No available templates.</p>}
             </div>
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-3 pt-4 mt-4 border-t border-[var(--color-border-primary)]">
+        <div className="flex flex-col sm:flex-row gap-3 pt-4 mt-4 border-t border-[var(--color-border-primary)] shrink-0">
           <button onClick={handleSave} className="flex-1 w-full bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-[var(--color-accent-primary-text)] font-bold py-3 px-4 rounded-full text-lg">
             Save Changes
           </button>
