@@ -1,4 +1,5 @@
 
+
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import WelcomeScreen from './components/WelcomeScreen';
 import TemplateSelection from './components/TemplateSelection';
@@ -106,14 +107,41 @@ const DEFAULT_SETTINGS: Settings = {
   ratingScreenSkipButtonText: 'Lewati untuk sekarang',
 };
 
-const DEFAULT_TEMPLATE_DATA: Omit<Template, 'id'> = {
-  name: 'Portrait 4x6',
-  imageUrl: 'https://lh3.googleusercontent.com/pw/AP1GczMwGZ8j7Lessgx9F6qavNTLnoC1UodPtOLNCDQf7vMM_sFZdxkg-ADr8yLGa0aaFtaS_TAut_FQTfmgt3rwzaWL5cCEawjyp64oQMkJC3aZrd7fRXQ=w2400',
-  widthMM: 102,
-  heightMM: 152,
-  orientation: 'portrait',
-  photoSlots: INITIAL_PHOTO_SLOTS,
-};
+const DEFAULT_TEMPLATES: Omit<Template, 'id'>[] = [
+  {
+    name: 'Portrait 4x6',
+    imageUrl: 'https://lh3.googleusercontent.com/pw/AP1GczMwGZ8j7Lessgx9F6qavNTLnoC1UodPtOLNCDQf7vMM_sFZdxkg-ADr8yLGa0aaFtaS_TAut_FQTfmgt3rwzaWL5cCEawjyp64oQMkJC3aZrd7fRXQ=w2400',
+    widthMM: 102,
+    heightMM: 152,
+    orientation: 'portrait',
+    photoSlots: INITIAL_PHOTO_SLOTS,
+  },
+  {
+    name: 'Landscape Strip',
+    imageUrl: 'https://lh3.googleusercontent.com/pw/AP1GczPMv-XkK8V0fB07j1AUQ7m_vL4qGAbPlQ-bWRvXQp6S5iDAJv5BKT_q2z_GeTA8_4I4c2R2oT_E8rI7n5G0f275lY-q9y4-C6S5ZpQ_j7M-qj0_XyU=w2400',
+    widthMM: 152,
+    heightMM: 102,
+    orientation: 'landscape',
+    photoSlots: [
+      { id: 1, inputId: 1, x: 120, y: 395, width: 480, height: 480 },
+      { id: 2, inputId: 2, x: 660, y: 395, width: 480, height: 480 },
+      { id: 3, inputId: 3, x: 1200, y: 395, width: 480, height: 480 }
+    ],
+  },
+  {
+    name: 'Classic 4-Cut',
+    imageUrl: 'https://lh3.googleusercontent.com/pw/AP1GczOaZ-gR8J-n7K-L9M-p0q9r8s7t6u5v4w3x2y1z_A_B_C_D_E_F_G=w2400',
+    widthMM: 102,
+    heightMM: 152,
+    orientation: 'portrait',
+    photoSlots: [
+      { id: 1, inputId: 1, x: 120, y: 120, width: 450, height: 450 },
+      { id: 2, inputId: 2, x: 630, y: 120, width: 450, height: 450 },
+      { id: 3, inputId: 3, x: 120, y: 630, width: 450, height: 450 },
+      { id: 4, inputId: 4, x: 630, y: 630, width: 450, height: 450 }
+    ],
+  },
+];
 
 const App: React.FC = () => {
   const [appState, setAppState] = useState<AppState>(AppState.WELCOME);
@@ -232,7 +260,7 @@ const App: React.FC = () => {
             try {
                 let fetchUrl = template.imageUrl;
                 if (template.imageUrl.startsWith('http')) {
-                    fetchUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(template.imageUrl)}`;
+                    fetchUrl = `https://corsproxy.io/?${encodeURIComponent(template.imageUrl)}`;
                 }
                 const response = await fetch(fetchUrl);
                 if (!response.ok) {
@@ -305,7 +333,9 @@ const App: React.FC = () => {
             setTemplates(fetchedTemplates);
             cacheAllTemplates(fetchedTemplates, currentSessionId);
         } else if (currentTenantId === 'master') {
-            push(templatesRef, DEFAULT_TEMPLATE_DATA);
+            DEFAULT_TEMPLATES.forEach(templateData => {
+                push(templatesRef, templateData);
+            });
         } else {
             setTemplates([]);
         }

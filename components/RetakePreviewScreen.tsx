@@ -1,3 +1,5 @@
+
+
 import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { Template } from '../types';
 import { getCachedImage } from '../utils/db';
@@ -58,6 +60,7 @@ const RetakePreviewScreen: React.FC<RetakePreviewScreenProps> = ({
       const loadImage = (src: string): Promise<HTMLImageElement> => new Promise(async (resolve, reject) => {
         try {
           const img = new Image();
+          img.crossOrigin = 'anonymous';
           img.onload = () => resolve(img);
           img.onerror = () => reject(new Error(`Failed to load image from src: ${src.substring(0, 50)}...`));
 
@@ -68,7 +71,7 @@ const RetakePreviewScreen: React.FC<RetakePreviewScreenProps> = ({
              if (cachedBlob) {
                  img.src = URL.createObjectURL(cachedBlob);
              } else {
-                 img.src = `https://api.allorigins.win/raw?url=${encodeURIComponent(src)}`;
+                 img.src = `https://corsproxy.io/?${encodeURIComponent(src)}`;
              }
           }
         } catch (e) {

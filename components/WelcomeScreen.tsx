@@ -150,7 +150,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
 
   const backgroundContent = () => {
     const proxiedImageUrl = welcomeBgImageUrl?.startsWith('http') 
-      ? `https://api.allorigins.win/raw?url=${encodeURIComponent(welcomeBgImageUrl)}` 
+      ? `https://corsproxy.io/?${encodeURIComponent(welcomeBgImageUrl)}` 
       : welcomeBgImageUrl;
 
     switch (welcomeBgType) {

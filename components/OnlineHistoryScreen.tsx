@@ -1,3 +1,5 @@
+
+
 import React from 'react';
 import { OnlineHistoryEntry } from '../types';
 import { BackIcon } from './icons/BackIcon';
@@ -17,8 +19,8 @@ const OnlineHistoryScreen: React.FC<OnlineHistoryScreenProps> = ({ history, isAd
 
   const handleDownload = async (entry: OnlineHistoryEntry) => {
     try {
-        // Coba ambil langsung tanpa proxy, sesuai permintaan.
-        const response = await fetch(entry.googlePhotosUrl);
+        const fetchUrl = `https://corsproxy.io/?${encodeURIComponent(entry.googlePhotosUrl)}`;
+        const response = await fetch(fetchUrl);
         if (!response.ok) throw new Error('Network response was not ok.');
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
@@ -31,7 +33,7 @@ const OnlineHistoryScreen: React.FC<OnlineHistoryScreenProps> = ({ history, isAd
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
     } catch (error) {
-        console.error('Direct download failed. This is likely a CORS issue. Fallback: opening in a new tab.', error);
+        console.error('Download with proxy failed. Fallback: opening in a new tab.', error);
         alert('Could not download the image directly. Opening in a new tab for you to save manually.');
         window.open(entry.googlePhotosUrl, '_blank');
     }
