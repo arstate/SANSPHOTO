@@ -239,6 +239,9 @@ const App: React.FC = () => {
                     throw new Error(`Failed to fetch image ${template.imageUrl}: Status ${response.status}`);
                 }
                 const blob = await response.blob();
+                if (!blob.type.startsWith('image/')) {
+                  throw new Error(`Fetched content is not an image. Type: ${blob.type}`);
+                }
                 await storeImageInCache(template.imageUrl, blob);
                 
                 // Only increment and update progress on success
