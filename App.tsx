@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import WelcomeScreen from './components/WelcomeScreen';
 import TemplateSelection from './components/TemplateSelection';
@@ -199,49 +200,74 @@ const App: React.FC = () => {
   }, []);
 
   const cacheAllTemplates = useCallback(async (templatesToCache: Template[], sessionId: number) => {
-      if (templatesToCache.length === 0) return;
-      if (sessionId !== cachingSessionRef.current) return;
+    if (templatesToCache.length === 0) return;
+    if (sessionId !== cachingSessionRef.current) return;
 
-      setIsCaching(true);
-      setCachingProgress(0);
+    setIsCaching(true);
+    setCachingProgress(0);
 
-      for (let i = 0; i < templatesToCache.length; i++) {
-          if (sessionId !== cachingSessionRef.current) {
-              console.log('Caching process dibatalkan karena perubahan tenant.');
-              return;
-          }
-          const template = templatesToCache[i];
-          if (!template.imageUrl) continue;
+    let templatesToProcess = [...templatesToCache];
+    let totalSuccessCount = 0;
+    const totalTemplates = templatesToCache.length;
 
-          try {
-              const isCached = await getCachedImage(template.imageUrl);
-              if (!isCached) {
-                  let fetchUrl = template.imageUrl;
-                  if (template.imageUrl.startsWith('http')) {
-                      fetchUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(template.imageUrl)}`;
-                  }
-                  const response = await fetch(fetchUrl);
-                  if (response.ok) {
-                      const blob = await response.blob();
-                      await storeImageInCache(template.imageUrl, blob);
-                  } else {
-                      console.error(`Gagal melakukan pra-cache gambar ${template.imageUrl}: Status ${response.status}`);
-                  }
-              }
-          } catch (error) {
-              console.error(`Gagal melakukan pra-cache gambar ${template.imageUrl}`, error);
-          }
-          if (sessionId === cachingSessionRef.current) {
-            setCachingProgress(((i + 1) / templatesToCache.length) * 100);
-          }
-      }
-      if (sessionId === cachingSessionRef.current) {
+    // Optimize by checking for already cached images first
+    const cacheCheckPromises = templatesToProcess.map(t => getCachedImage(t.imageUrl));
+    const initiallyCachedResults = await Promise.all(cacheCheckPromises);
+    
+    const templatesNeedingCache = templatesToProcess.filter((_, index) => !initiallyCachedResults[index]);
+    totalSuccessCount = totalTemplates - templatesNeedingCache.length;
+    templatesToProcess = templatesNeedingCache;
+
+    if (totalTemplates > 0) {
+        setCachingProgress((totalSuccessCount / totalTemplates) * 100);
+    }
+
+    // Loop until all templates that need caching are processed
+    while (templatesToProcess.length > 0 && sessionId === cachingSessionRef.current) {
+        const failedThisRound: Template[] = [];
+
+        await Promise.all(templatesToProcess.map(async (template) => {
+            if (!template.imageUrl) return;
+
+            try {
+                let fetchUrl = template.imageUrl;
+                if (template.imageUrl.startsWith('http')) {
+                    fetchUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(template.imageUrl)}`;
+                }
+                const response = await fetch(fetchUrl);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch image ${template.imageUrl}: Status ${response.status}`);
+                }
+                const blob = await response.blob();
+                await storeImageInCache(template.imageUrl, blob);
+                
+                // Only increment and update progress on success
+                totalSuccessCount++;
+                if (sessionId === cachingSessionRef.current) {
+                    setCachingProgress((totalSuccessCount / totalTemplates) * 100);
+                }
+            } catch (error) {
+                console.error(`Failed to pre-cache image ${template.imageUrl}`, error);
+                failedThisRound.push(template);
+            }
+        }));
+        
+        templatesToProcess = failedThisRound;
+
+        if (templatesToProcess.length > 0 && sessionId === cachingSessionRef.current) {
+            console.log(`Retrying ${templatesToProcess.length} failed templates in 3 seconds...`);
+            await new Promise(resolve => setTimeout(resolve, 3000));
+        }
+    }
+    
+    // Final check if session is still valid before hiding the caching UI
+    if (sessionId === cachingSessionRef.current) {
         setTimeout(() => {
-          if (sessionId === cachingSessionRef.current) {
-            setIsCaching(false);
-          }
+            if (sessionId === cachingSessionRef.current) {
+                setIsCaching(false);
+            }
         }, 1500);
-      }
+    }
   }, []);
 
   useEffect(() => {
