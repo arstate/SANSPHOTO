@@ -94,6 +94,17 @@ const DEFAULT_SETTINGS: Settings = {
   reviewSliderMaxDescriptionLength: 150,
   isReviewForFreebieEnabled: false,
   reviewFreebieTakesCount: 1,
+  ratingScreenTitle: 'Bagaimana pengalaman Anda?',
+  ratingScreenSubtitle: 'Ulasan Anda membantu kami menjadi lebih baik!',
+  ratingScreenFreebieTitle: '⭐ PENAWARAN SPESIAL! ⭐',
+  ratingScreenFreebieDescription: 'Berikan ulasan 5 bintang untuk mendapatkan {count} sesi foto tambahan gratis!',
+  ratingScreenNameLabel: 'Nama Anda',
+  ratingScreenNamePlaceholder: 'contoh: Budi',
+  ratingScreenRatingLabel: 'Peringkat Anda',
+  ratingScreenCommentLabel: 'Komentar',
+  ratingScreenCommentPlaceholder: 'Ceritakan pendapat Anda...',
+  ratingScreenSubmitButtonText: 'Kirim Ulasan',
+  ratingScreenSkipButtonText: 'Lewati untuk sekarang',
 };
 
 const DEFAULT_TEMPLATE_DATA: Omit<Template, 'id'> = {
@@ -680,7 +691,7 @@ const App: React.FC = () => {
       case AppState.EDIT_TEMPLATE_LAYOUT: if (!isAdminLoggedIn || !selectedTemplate) { setAppState(AppState.WELCOME); return null; } return <EditTemplateScreen template={selectedTemplate} onSave={handleTemplateLayoutSave} onCancel={handleEditLayoutCancel} />;
       case AppState.CAPTURE: if (!selectedTemplate) { setAppState(AppState.WELCOME); return null; } return <CaptureScreen template={selectedTemplate} countdownDuration={settings.countdownDuration} flashEffectEnabled={settings.flashEffectEnabled} onCaptureComplete={handleCaptureComplete} onRetakeComplete={handleRetakeComplete} retakeForIndex={retakingPhotoIndex} onProgressUpdate={handleCaptureProgressUpdate} existingImages={capturedImages} />;
       case AppState.RETAKE_PREVIEW: if (!selectedTemplate) { setAppState(AppState.WELCOME); return null; } return <RetakePreviewScreen images={capturedImages} template={selectedTemplate} onStartRetake={handleStartRetake} onDone={handleFinishRetakePreview} retakesUsed={retakesUsed} maxRetakes={settings.maxRetakes ?? 0} />;
-      case AppState.RATING: if (!selectedEvent || !currentSessionKey || currentSessionKey.hasBeenReviewed) { setAppState(AppState.PREVIEW); return null; } return <RatingScreen eventName={selectedEvent.name} onSubmit={handleSaveReview} onSkip={handleSkipReview} maxDescriptionLength={settings.reviewSliderMaxDescriptionLength ?? 150} isReviewForFreebieEnabled={settings.isReviewForFreebieEnabled ?? false} reviewFreebieTakesCount={settings.reviewFreebieTakesCount ?? 1} />;
+      case AppState.RATING: if (!selectedEvent || !currentSessionKey || currentSessionKey.hasBeenReviewed) { setAppState(AppState.PREVIEW); return null; } return <RatingScreen eventName={selectedEvent.name} onSubmit={handleSaveReview} onSkip={handleSkipReview} settings={settings} />;
       case AppState.PREVIEW: if (!selectedTemplate || !currentSessionKey) { setAppState(AppState.WELCOME); return null; } return <PreviewScreen images={capturedImages} onRestart={handleSessionEnd} onBack={handleBack} template={selectedTemplate} onSaveHistory={handleSaveHistoryFromSession} event={selectedEvent} currentTake={currentTakeCount} maxTakes={currentSessionKey.maxTakes} onNextTake={handleStartNextTake} isDownloadButtonEnabled={settings.isDownloadButtonEnabled ?? true} isAutoDownloadEnabled={settings.isAutoDownloadEnabled ?? true} printSettings={{ isEnabled: settings.isPrintButtonEnabled ?? true, paperSize: settings.printPaperSize ?? '4x6', colorMode: settings.printColorMode ?? 'color', isCopyInputEnabled: settings.isPrintCopyInputEnabled ?? true, maxCopies: settings.printMaxCopies ?? 5, }} />;
       default: return <WelcomeScreen onStart={handleStartSession} onSettingsClick={handleGoToSettings} onViewHistory={handleViewHistory} onViewOnlineHistory={handleViewOnlineHistory} isAdminLoggedIn={isAdminLoggedIn} isCaching={isCaching} cachingProgress={cachingProgress} onAdminLoginClick={handleOpenAdminLogin} onAdminLogoutClick={handleAdminLogout} isLoading={isSessionLoading} settings={settings} reviews={reviews} />;
     }

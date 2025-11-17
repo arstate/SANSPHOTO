@@ -83,6 +83,18 @@ export interface Settings {
   reviewSliderMaxDescriptionLength?: number;
   isReviewForFreebieEnabled?: boolean;
   reviewFreebieTakesCount?: number;
+  // Rating Screen Customization
+  ratingScreenTitle?: string;
+  ratingScreenSubtitle?: string;
+  ratingScreenFreebieTitle?: string;
+  ratingScreenFreebieDescription?: string; // e.g., "Give a 5-star review for {count} free takes!"
+  ratingScreenNameLabel?: string;
+  ratingScreenNamePlaceholder?: string;
+  ratingScreenRatingLabel?: string;
+  ratingScreenCommentLabel?: string;
+  ratingScreenCommentPlaceholder?: string;
+  ratingScreenSubmitButtonText?: string;
+  ratingScreenSkipButtonText?: string;
 }
 
 export interface Template {

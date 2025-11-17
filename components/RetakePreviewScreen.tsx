@@ -27,10 +27,10 @@ const RetakePreviewScreen: React.FC<RetakePreviewScreenProps> = ({
   
   const numericMaxRetakes = Number(maxRetakes);
   const canRetake = retakesUsed < numericMaxRetakes;
-  // Fix: Use `Array.from()` to correctly convert a Set to a number array. The spread
-  // operator (`[...new Set()]`) can cause TypeScript to incorrectly infer the type as
-  // `unknown[]`, leading to errors in subsequent operations like `sort`.
-  const uniqueInputIds: number[] = Array.from(new Set(template.photoSlots.map(s => s.inputId))).sort((a, b) => a - b);
+  // FIX: Explicitly type `new Set<number>()` to ensure TypeScript correctly infers the array type as `number[]`.
+  // This prevents type errors in the sort function and when assigning to `uniqueInputIds`.
+  // Also removed a duplicate variable declaration.
+  const uniqueInputIds: number[] = Array.from(new Set<number>(template.photoSlots.map(s => s.inputId))).sort((a, b) => a - b);
 
   const drawCanvas = useCallback(async () => {
     setIsLoading(true);

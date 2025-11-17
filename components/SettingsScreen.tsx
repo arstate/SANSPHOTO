@@ -68,7 +68,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const [activeCategory, setActiveCategory] = useState<SettingsCategory>('general');
   const isLight = settings.theme === 'light';
 
-  const handleSettingsInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleSettingsInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
     
     let finalValue: string | number | boolean = value;
@@ -569,6 +569,14 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                         <span className="text-sm font-medium text-[var(--color-text-secondary)]">Enable Shadow</span>
                         <div className="relative"><input type="checkbox" id="isOnlineHistoryButtonShadowEnabled" name="isOnlineHistoryButtonShadowEnabled" checked={settings.isOnlineHistoryButtonShadowEnabled ?? true} onChange={handleSettingsInputChange} className="sr-only peer" /><div className="w-11 h-6 bg-[var(--color-bg-tertiary)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--color-accent-primary)]"></div></div>
                     </label>
+                     <label htmlFor="isOnlineHistoryButtonFillEnabled" className="flex items-center justify-between cursor-pointer">
+                        <span className="text-sm font-medium text-[var(--color-text-secondary)]">Enable Fill</span>
+                        <div className="relative"><input type="checkbox" id="isOnlineHistoryButtonFillEnabled" name="isOnlineHistoryButtonFillEnabled" checked={settings.isOnlineHistoryButtonFillEnabled ?? false} onChange={handleSettingsInputChange} className="sr-only peer" /><div className="w-11 h-6 bg-[var(--color-bg-tertiary)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--color-accent-primary)]"></div></div>
+                    </label>
+                    <label htmlFor="isOnlineHistoryButtonStrokeEnabled" className="flex items-center justify-between cursor-pointer">
+                        <span className="text-sm font-medium text-[var(--color-text-secondary)]">Enable Stroke</span>
+                        <div className="relative"><input type="checkbox" id="isOnlineHistoryButtonStrokeEnabled" name="isOnlineHistoryButtonStrokeEnabled" checked={settings.isOnlineHistoryButtonStrokeEnabled ?? true} onChange={handleSettingsInputChange} className="sr-only peer" /><div className="w-11 h-6 bg-[var(--color-bg-tertiary)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--color-accent-primary)]"></div></div>
+                    </label>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 border-t border-[var(--color-border-primary)] pt-4">
@@ -877,6 +885,58 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                   />
               </div>
             </div>
+            
+            {/* Rating Screen Text Customization */}
+            <div className="p-6 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] text-left space-y-4">
+                <h3 className="text-xl font-bold text-[var(--color-text-accent)]">Rating Screen Text Customization</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-[var(--color-border-primary)] pt-4">
+                    <div>
+                        <label htmlFor="ratingScreenTitle" className="block text-sm font-medium text-[var(--color-text-secondary)]">Title</label>
+                        <input type="text" id="ratingScreenTitle" name="ratingScreenTitle" value={settings.ratingScreenTitle || ''} onChange={handleSettingsInputChange} className="mt-1 block w-full input-style"/>
+                    </div>
+                    <div>
+                        <label htmlFor="ratingScreenSubtitle" className="block text-sm font-medium text-[var(--color-text-secondary)]">Subtitle</label>
+                        <input type="text" id="ratingScreenSubtitle" name="ratingScreenSubtitle" value={settings.ratingScreenSubtitle || ''} onChange={handleSettingsInputChange} className="mt-1 block w-full input-style"/>
+                    </div>
+                    <div>
+                        <label htmlFor="ratingScreenFreebieTitle" className="block text-sm font-medium text-[var(--color-text-secondary)]">Freebie Offer Title</label>
+                        <input type="text" id="ratingScreenFreebieTitle" name="ratingScreenFreebieTitle" value={settings.ratingScreenFreebieTitle || ''} onChange={handleSettingsInputChange} className="mt-1 block w-full input-style"/>
+                    </div>
+                    <div>
+                        <label htmlFor="ratingScreenFreebieDescription" className="block text-sm font-medium text-[var(--color-text-secondary)]">Freebie Offer Description</label>
+                        <input type="text" id="ratingScreenFreebieDescription" name="ratingScreenFreebieDescription" value={settings.ratingScreenFreebieDescription || ''} onChange={handleSettingsInputChange} className="mt-1 block w-full input-style"/>
+                        <p className="text-xs text-[var(--color-text-muted)] mt-1">Use {'{count}'} as a placeholder for the number.</p>
+                    </div>
+                    <div>
+                        <label htmlFor="ratingScreenNameLabel" className="block text-sm font-medium text-[var(--color-text-secondary)]">"Your Name" Label</label>
+                        <input type="text" id="ratingScreenNameLabel" name="ratingScreenNameLabel" value={settings.ratingScreenNameLabel || ''} onChange={handleSettingsInputChange} className="mt-1 block w-full input-style"/>
+                    </div>
+                    <div>
+                        <label htmlFor="ratingScreenNamePlaceholder" className="block text-sm font-medium text-[var(--color-text-secondary)]">Name Field Placeholder</label>
+                        <input type="text" id="ratingScreenNamePlaceholder" name="ratingScreenNamePlaceholder" value={settings.ratingScreenNamePlaceholder || ''} onChange={handleSettingsInputChange} className="mt-1 block w-full input-style"/>
+                    </div>
+                     <div>
+                        <label htmlFor="ratingScreenRatingLabel" className="block text-sm font-medium text-[var(--color-text-secondary)]">"Your Rating" Label</label>
+                        <input type="text" id="ratingScreenRatingLabel" name="ratingScreenRatingLabel" value={settings.ratingScreenRatingLabel || ''} onChange={handleSettingsInputChange} className="mt-1 block w-full input-style"/>
+                    </div>
+                    <div>
+                        <label htmlFor="ratingScreenCommentLabel" className="block text-sm font-medium text-[var(--color-text-secondary)]">"Comments" Label</label>
+                        <input type="text" id="ratingScreenCommentLabel" name="ratingScreenCommentLabel" value={settings.ratingScreenCommentLabel || ''} onChange={handleSettingsInputChange} className="mt-1 block w-full input-style"/>
+                    </div>
+                     <div className="col-span-1 sm:col-span-2">
+                        <label htmlFor="ratingScreenCommentPlaceholder" className="block text-sm font-medium text-[var(--color-text-secondary)]">Comments Field Placeholder</label>
+                        <textarea id="ratingScreenCommentPlaceholder" name="ratingScreenCommentPlaceholder" value={settings.ratingScreenCommentPlaceholder || ''} onChange={handleSettingsInputChange} rows={2} className="mt-1 block w-full input-style resize-none scrollbar-thin"></textarea>
+                    </div>
+                     <div>
+                        <label htmlFor="ratingScreenSubmitButtonText" className="block text-sm font-medium text-[var(--color-text-secondary)]">Submit Button Text</label>
+                        <input type="text" id="ratingScreenSubmitButtonText" name="ratingScreenSubmitButtonText" value={settings.ratingScreenSubmitButtonText || ''} onChange={handleSettingsInputChange} className="mt-1 block w-full input-style"/>
+                    </div>
+                    <div>
+                        <label htmlFor="ratingScreenSkipButtonText" className="block text-sm font-medium text-[var(--color-text-secondary)]">Skip Button Text</label>
+                        <input type="text" id="ratingScreenSkipButtonText" name="ratingScreenSkipButtonText" value={settings.ratingScreenSkipButtonText || ''} onChange={handleSettingsInputChange} className="mt-1 block w-full input-style"/>
+                    </div>
+                </div>
+            </div>
           </div>
         );
       case 'master':
@@ -966,7 +1026,24 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 {renderContent()}
             </main>
         </div>
-
+        <style>{`
+            .input-style {
+                background-color: var(--color-bg-tertiary);
+                border: 1px solid var(--color-border-secondary);
+                border-radius: 0.375rem;
+                box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+                padding: 0.5rem 0.75rem;
+                color: var(--color-text-primary);
+            }
+            .input-style:focus {
+                outline: none;
+                --tw-ring-color: var(--color-border-focus);
+                --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);
+                --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color);
+                box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);
+                border-color: var(--color-border-focus);
+            }
+        `}</style>
       </div>
     </>
   );
