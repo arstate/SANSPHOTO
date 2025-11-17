@@ -5,7 +5,7 @@ import { AddIcon } from './icons/AddIcon';
 import { EditIcon } from './icons/EditIcon';
 import { TrashIcon } from './icons/TrashIcon';
 import { Template } from '../types';
-import { getCachedImage } from '../utils/db';
+import { getCachedImage, storeImageInCache } from '../utils/db';
 
 interface TemplateSelectionProps {
   templates: Template[];
@@ -18,47 +18,56 @@ interface TemplateSelectionProps {
   onDelete: (templateId: string) => void;
 }
 
-const getProxiedUrl = (url: string) => {
-    if (!url || !url.startsWith('http')) {
-        return url;
-    }
-    // Gunakan api.allorigins.win untuk melewati masalah CORS.
-    return `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
-};
-
 const ImageFromCache: React.FC<{ src: string; alt: string; className: string; }> = ({ src, alt, className }) => {
   const [imageSrc, setImageSrc] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [status, setStatus] = useState<'loading' | 'loaded' | 'error'>('loading');
 
   useEffect(() => {
     let isMounted = true;
     let objectUrl: string | null = null;
 
     const loadImage = async () => {
-      setIsLoading(true);
-      setImageSrc(null);
+      setStatus('loading');
       if (!src) {
-        if (isMounted) setIsLoading(false);
+        if (isMounted) setStatus('error');
         return;
       }
       
       try {
+        // 1. Coba cache
         const cachedBlob = await getCachedImage(src);
-        if (isMounted) {
-            if (cachedBlob) {
-              objectUrl = URL.createObjectURL(cachedBlob);
-              setImageSrc(objectUrl);
-            } else {
-              // Fallback to network if not in cache
-              setImageSrc(getProxiedUrl(src));
-            }
+        if (isMounted && cachedBlob) {
+            objectUrl = URL.createObjectURL(cachedBlob);
+            setImageSrc(objectUrl);
+            setStatus('loaded');
+            return;
         }
+
+        // 2. Jika tidak ada di cache, ambil dari jaringan
+        let fetchUrl = src;
+        if (src.startsWith('http')) {
+            fetchUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(src)}`;
+        }
+        
+        const response = await fetch(fetchUrl);
+        if (!response.ok) {
+          throw new Error(`Network fetch failed with status: ${response.status}`);
+        }
+        const networkBlob = await response.blob();
+        
+        if (isMounted) {
+            // 3. Simpan di cache untuk penggunaan berikutnya
+            await storeImageInCache(src, networkBlob);
+            
+            // 4. Tampilkan gambar
+            objectUrl = URL.createObjectURL(networkBlob);
+            setImageSrc(objectUrl);
+            setStatus('loaded');
+        }
+
       } catch (error) {
-        console.error("Error loading image:", error);
-        // Fallback in case of DB error
-        if (isMounted) setImageSrc(getProxiedUrl(src));
-      } finally {
-        if (isMounted) setIsLoading(false);
+        console.error(`Gagal memuat gambar ${src}:`, error);
+        if (isMounted) setStatus('error');
       }
     };
 
@@ -72,12 +81,17 @@ const ImageFromCache: React.FC<{ src: string; alt: string; className: string; }>
     };
   }, [src]);
 
-  if (isLoading) {
+  if (status === 'loading') {
     return <div className={`bg-[var(--color-bg-tertiary)] animate-pulse ${className}`}></div>;
   }
   
-  if (!imageSrc) {
-    return <div className={`bg-[var(--color-bg-secondary)] flex items-center justify-center text-xs text-[var(--color-text-muted)] ${className}`}>Image not available</div>;
+  if (status === 'error' || !imageSrc) {
+    return (
+        <div className={`bg-[var(--color-bg-secondary)] flex flex-col items-center justify-center text-center text-xs text-red-400 p-2 ${className}`}>
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            <span>Gagal memuat</span>
+        </div>
+    );
   }
 
   return <img src={imageSrc} alt={alt} className={className} loading="lazy" />;

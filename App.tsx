@@ -1,6 +1,7 @@
 
 
 
+
 import React, { useState, useCallback, useEffect } from 'react';
 import WelcomeScreen from './components/WelcomeScreen';
 import TemplateSelection from './components/TemplateSelection';
@@ -32,7 +33,7 @@ import TenantEditModal from './components/TenantEditModal';
 
 import { AppState, PhotoSlot, Settings, Template, Event, HistoryEntry, SessionKey, OnlineHistoryEntry, Review, Tenant } from './types';
 import { db, ref, onValue, off, set, push, update, remove, firebaseObjectToArray, query, orderByChild, equalTo, get } from './firebase';
-import { getAllHistoryEntries, addHistoryEntry, deleteHistoryEntry, cacheImage } from './utils/db';
+import { getAllHistoryEntries, addHistoryEntry, deleteHistoryEntry, getCachedImage, storeImageInCache } from './utils/db';
 import { FullscreenIcon } from './components/icons/FullscreenIcon';
 import useFullscreenLock from './hooks/useFullscreenLock';
 
@@ -205,7 +206,27 @@ const App: React.FC = () => {
       setCachingProgress(0);
 
       for (let i = 0; i < templatesToCache.length; i++) {
-          await cacheImage(templatesToCache[i].imageUrl);
+          const template = templatesToCache[i];
+          if (!template.imageUrl) continue;
+
+          try {
+              const isCached = await getCachedImage(template.imageUrl);
+              if (!isCached) {
+                  let fetchUrl = template.imageUrl;
+                  if (template.imageUrl.startsWith('http')) {
+                      fetchUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(template.imageUrl)}`;
+                  }
+                  const response = await fetch(fetchUrl);
+                  if (response.ok) {
+                      const blob = await response.blob();
+                      await storeImageInCache(template.imageUrl, blob);
+                  } else {
+                      console.error(`Gagal melakukan pra-cache gambar ${template.imageUrl}: Status ${response.status}`);
+                  }
+              }
+          } catch (error) {
+              console.error(`Gagal melakukan pra-cache gambar ${template.imageUrl}`, error);
+          }
           setCachingProgress(((i + 1) / templatesToCache.length) * 100);
       }
       setTimeout(() => setIsCaching(false), 1500);

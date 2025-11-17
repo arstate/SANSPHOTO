@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { DownloadIcon } from './icons/DownloadIcon';
 import { PrintIcon } from './icons/PrintIcon';
@@ -5,7 +6,7 @@ import { CheckIcon } from './icons/CheckIcon';
 import { BackIcon } from './icons/BackIcon';
 import { RestartIcon } from './icons/RestartIcon';
 import { Template, Event, Settings } from '../types';
-import { getCachedImage } from '../utils/db';
+import { getCachedImage, storeImageInCache } from '../utils/db';
 
 type PrintSettings = {
   isEnabled: boolean;
@@ -83,23 +84,18 @@ const PrintModal: React.FC<PrintModalProps> = ({ isOpen, onClose, onConfirm, ima
   );
 };
 
-// Helper function that prioritizes cache
+// Helper function that prioritizes cache and caches on miss
 const loadImage = (src: string): Promise<HTMLImageElement> => {
   return new Promise(async (resolve, reject) => {
     const img = new Image();
-    // Penting untuk mengatur crossOrigin untuk gambar yang diambil dari proxy CORS
     img.crossOrigin = 'anonymous';
     img.onload = () => {
-        // Hapus object URL setelah gambar dimuat untuk menghemat memori
         if (img.src.startsWith('blob:')) {
             URL.revokeObjectURL(img.src);
         }
         resolve(img);
     };
-    img.onerror = (e) => {
-        console.error(`Gagal memuat gambar dari src: ${src.substring(0, 100)}...`, e);
-        reject(new Error('Gagal memuat gambar.'));
-    };
+    img.onerror = (e) => reject(new Error(`Gagal memuat gambar dari src: ${src.substring(0, 100)}...`));
 
     // 1. Langsung muat jika ini adalah URL data (misalnya, foto yang baru diambil)
     if (src.startsWith('data:')) {
@@ -111,13 +107,11 @@ const loadImage = (src: string): Promise<HTMLImageElement> => {
       // 2. Coba muat dari cache IndexedDB
       const cachedBlob = await getCachedImage(src);
       if (cachedBlob) {
-        const objectURL = URL.createObjectURL(cachedBlob);
-        img.src = objectURL;
+        img.src = URL.createObjectURL(cachedBlob);
         return;
       }
 
       // 3. Fallback: ambil dari jaringan jika tidak ada di cache
-      console.warn(`Gambar tidak ditemukan di cache, mengambil dari jaringan: ${src}`);
       let fetchUrl = src;
       if (src.startsWith('http')) {
           fetchUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(src)}`;
@@ -127,8 +121,13 @@ const loadImage = (src: string): Promise<HTMLImageElement> => {
       if (!response.ok) {
         throw new Error(`Gagal mengambil gambar. Status: ${response.status}`);
       }
-      const blob = await response.blob();
-      img.src = URL.createObjectURL(blob);
+      const networkBlob = await response.blob();
+      
+      // 4. Simpan blob yang baru diambil di cache
+      await storeImageInCache(src, networkBlob);
+      
+      // 5. Muat gambar dari blob yang baru diambil
+      img.src = URL.createObjectURL(networkBlob);
 
     } catch (error) {
       reject(error);

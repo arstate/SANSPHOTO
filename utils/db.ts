@@ -91,42 +91,20 @@ export async function deleteHistoryEntry(id: string): Promise<void> {
 
 // --- Fungsi Cache Gambar ---
 
-// Mengambil gambar, mengubahnya menjadi blob, dan menyimpannya di IndexedDB.
-export async function cacheImage(url: string): Promise<void> {
-  if (!url || url.startsWith('data:') || url.startsWith('blob:')) return;
-
+// Menyimpan blob gambar ke IndexedDB dengan URL sebagai kuncinya.
+export async function storeImageInCache(url: string, blob: Blob): Promise<void> {
+  if (!url || !blob) return;
   try {
     const db = await openDB();
-    const existingBlob = await getCachedImage(url);
-    if (existingBlob) {
-      // Hapus log ini agar tidak terlalu berisik di konsol
-      // console.log(`Gambar dari ${url} sudah di-cache.`);
-      return;
-    }
-    
-    let fetchUrl = url;
-    if (url.startsWith('http')) {
-        // Gunakan api.allorigins.win untuk melewati masalah CORS.
-        fetchUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
-    }
-
-    console.log(`Menyimpan gambar dari ${url} ke cache...`);
-    const response = await fetch(fetchUrl);
-    if (!response.ok) {
-      throw new Error(`Gagal mengambil gambar. Status: ${response.status}`);
-    }
-    const blob = await response.blob();
-    
     const transaction = db.transaction(IMAGE_CACHE_STORE_NAME, 'readwrite');
     const store = transaction.objectStore(IMAGE_CACHE_STORE_NAME);
-    // Penting: Gunakan URL asli sebagai kunci, bukan URL proxy.
+    // Gunakan URL asli sebagai kunci.
     store.put(blob, url);
-
   } catch (error) {
-    console.error(`Gagal menyimpan gambar dari ${url} ke cache:`, error);
-    // Jangan menolak promise agar aplikasi dapat melanjutkan dengan fallback.
+    console.error(`Gagal menyimpan blob untuk ${url} ke cache:`, error);
   }
 }
+
 
 // Mengambil blob gambar dari IndexedDB.
 export async function getCachedImage(url: string): Promise<Blob | null> {
