@@ -1,31 +1,53 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { OnlineHistoryEntry } from '../types';
 import { BackIcon } from './icons/BackIcon';
-import { AddIcon } from './icons/AddIcon';
-import { TrashIcon } from './icons/TrashIcon';
 import { DownloadIcon } from './icons/DownloadIcon';
 
 interface OnlineHistoryScreenProps {
-  history: OnlineHistoryEntry[];
-  isAdminLoggedIn: boolean;
   onBack: () => void;
-  onAdd: () => void;
-  onDelete: (id: string) => void;
 }
 
-const OnlineHistoryScreen: React.FC<OnlineHistoryScreenProps> = ({ history, isAdminLoggedIn, onBack, onAdd, onDelete }) => {
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxRFNQJ004jSbmT9B6ePRu9DmSoxKdcb_lcF1BWG-rF3z5F1HgG1m6rVZGzwFhhHPV3uw/exec';
 
+const OnlineHistoryScreen: React.FC<OnlineHistoryScreenProps> = ({ onBack }) => {
+  const [photos, setPhotos] = useState<OnlineHistoryEntry[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchHistory = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const response = await fetch(SCRIPT_URL);
+        if (!response.ok) {
+          throw new Error(`Gagal mengambil data: ${response.statusText}`);
+        }
+        const data: OnlineHistoryEntry[] = await response.json();
+        // Urutkan berdasarkan waktu, terbaru lebih dulu
+        const sortedData = data.sort((a, b) => new Date(b.waktu).getTime() - new Date(a.waktu).getTime());
+        setPhotos(sortedData);
+      } catch (err) {
+        console.error("Error fetching online history:", err);
+        setError("Tidak dapat memuat histori online. Silakan coba lagi nanti.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchHistory();
+  }, []);
+  
   const handleDownload = async (entry: OnlineHistoryEntry) => {
     try {
-        // Coba ambil langsung tanpa proxy, sesuai permintaan.
-        const response = await fetch(entry.googlePhotosUrl);
+        const response = await fetch(entry.url);
         if (!response.ok) throw new Error('Network response was not ok.');
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.style.display = 'none';
         a.href = url;
-        a.download = `sans-photo-online-${entry.timestamp}.jpg`;
+        a.download = entry.nama || `sans-photo-online-${new Date(entry.waktu).getTime()}.jpg`;
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
@@ -33,9 +55,62 @@ const OnlineHistoryScreen: React.FC<OnlineHistoryScreenProps> = ({ history, isAd
     } catch (error) {
         console.error('Direct download failed. This is likely a CORS issue. Fallback: opening in a new tab.', error);
         alert('Could not download the image directly. Opening in a new tab for you to save manually.');
-        window.open(entry.googlePhotosUrl, '_blank');
+        window.open(entry.url, '_blank');
     }
   };
+
+  const renderContent = () => {
+    if (isLoading) {
+      return (
+        <div className="flex flex-col items-center justify-center h-full text-center text-[var(--color-text-muted)]">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--color-text-accent)] mb-4"></div>
+          <p>Memuat galeri...</p>
+        </div>
+      );
+    }
+
+    if (error) {
+      return (
+        <div className="flex flex-col items-center justify-center h-full text-center text-red-400">
+          <p className="font-bold">Oops! Terjadi kesalahan.</p>
+          <p>{error}</p>
+        </div>
+      );
+    }
+
+    if (photos.length === 0) {
+      return (
+        <div className="flex flex-col items-center justify-center h-full text-center text-[var(--color-text-muted)]">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          <h3 className="text-xl font-bold text-[var(--color-text-primary)]">Belum Ada Foto</h3>
+          <p>Histori online masih kosong. Cek kembali nanti!</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+        {photos.map(entry => (
+          <div key={entry.nama} className="group relative bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)] rounded-lg overflow-hidden aspect-w-2 aspect-h-3">
+            <img src={entry.url} alt={entry.nama} className="w-full h-full object-cover transition-transform group-hover:scale-105" loading="lazy" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            
+            <div className="absolute bottom-2 left-2 right-2 flex items-center justify-center gap-4 opacity-0 group-hover:opacity-100 transition-opacity">
+               <button
+                    onClick={() => handleDownload(entry)}
+                    className="bg-green-500/80 hover:bg-green-500 text-white font-bold p-3 rounded-full transition-transform transform hover:scale-110"
+                    aria-label="Download Photo"
+                >
+                    <DownloadIcon />
+                </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="relative flex flex-col w-full h-full bg-[var(--color-bg-primary)]">
@@ -50,61 +125,10 @@ const OnlineHistoryScreen: React.FC<OnlineHistoryScreenProps> = ({ history, isAd
           </button>
         </div>
         <h2 className="text-4xl font-bebas tracking-wider text-[var(--color-text-primary)]">Online History</h2>
-        {isAdminLoggedIn && (
-            <div className="absolute top-4 right-4">
-                <button
-                    onClick={onAdd}
-                    className="bg-[var(--color-positive)] hover:bg-[var(--color-positive-hover)] text-[var(--color-positive-text)] font-bold p-3 rounded-full transition-colors flex items-center gap-2"
-                    aria-label="Add Photos"
-                >
-                    <AddIcon />
-                </button>
-            </div>
-        )}
       </header>
       
       <main className="flex-grow overflow-y-auto scrollbar-thin p-4">
-        {history.length > 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-            {history.map(entry => (
-              <div key={entry.id} className="group relative bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)] rounded-lg overflow-hidden aspect-w-2 aspect-h-3">
-                <img src={entry.googlePhotosUrl} alt={`Online history item ${entry.id}`} className="w-full h-full object-cover transition-transform group-hover:scale-105" loading="lazy" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                
-                <div className="absolute bottom-2 left-2 right-2 flex items-center justify-center gap-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                   <button
-                        onClick={() => handleDownload(entry)}
-                        className="bg-green-500/80 hover:bg-green-500 text-white font-bold p-3 rounded-full transition-transform transform hover:scale-110"
-                        aria-label="Download Photo"
-                    >
-                        <DownloadIcon />
-                    </button>
-                   {isAdminLoggedIn && (
-                     <button
-                        onClick={() => {
-                            if (window.confirm('Are you sure you want to delete this photo from the online history?')) {
-                                onDelete(entry.id);
-                            }
-                        }}
-                        className="bg-red-600/80 hover:bg-red-600 text-white font-bold p-3 rounded-full transition-transform transform hover:scale-110"
-                        aria-label="Delete History Entry"
-                    >
-                        <TrashIcon />
-                    </button>
-                   )}
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center h-full text-center text-[var(--color-text-muted)]">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-            <h3 className="text-xl font-bold text-[var(--color-text-primary)]">No Photos Yet</h3>
-            <p>The online history is empty. Check back later!</p>
-          </div>
-        )}
+        {renderContent()}
       </main>
     </div>
   );

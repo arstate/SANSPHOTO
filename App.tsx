@@ -1,4 +1,7 @@
 
+
+
+
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import WelcomeScreen from './components/WelcomeScreen';
 import TemplateSelection from './components/TemplateSelection';
@@ -16,7 +19,6 @@ import AssignTemplatesModal from './components/AssignTemplatesModal';
 import EventQrCodeModal from './components/EventQrCodeModal';
 import HistoryScreen from './components/HistoryScreen';
 import OnlineHistoryScreen from './components/OnlineHistoryScreen';
-import AddOnlineHistoryModal from './components/AddOnlineHistoryModal';
 import PinInputModal from './components/PinInputModal';
 import KeyCodeScreen from './components/KeyCodeScreen';
 import ManageSessionsScreen from './components/ManageSessionsScreen';
@@ -28,7 +30,7 @@ import TenantLoginModal from './components/TenantLoginModal';
 import TenantNotFoundScreen from './components/TenantNotFoundScreen';
 import TenantEditModal from './components/TenantEditModal';
 
-import { AppState, PhotoSlot, Settings, Template, Event, HistoryEntry, SessionKey, OnlineHistoryEntry, Review, Tenant } from './types';
+import { AppState, PhotoSlot, Settings, Template, Event, HistoryEntry, SessionKey, Review, Tenant } from './types';
 import { db, ref, onValue, off, set, push, update, remove, firebaseObjectToArray, query, orderByChild, equalTo, get } from './firebase';
 import { getAllHistoryEntries, addHistoryEntry, deleteHistoryEntry, getCachedImage, storeImageInCache } from './utils/db';
 import { FullscreenIcon } from './components/icons/FullscreenIcon';
@@ -123,8 +125,6 @@ const App: React.FC = () => {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isTenantLoginModalOpen, setIsTenantLoginModalOpen] = useState(false);
   const [isPinModalOpen, setIsPinModalOpen] = useState(false);
-  const [isAddOnlineHistoryModalOpen, setIsAddOnlineHistoryModalOpen] = useState(false);
-  const [isSavingOnlineHistory, setIsSavingOnlineHistory] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
@@ -135,7 +135,6 @@ const App: React.FC = () => {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
-  const [onlineHistory, setOnlineHistory] = useState<OnlineHistoryEntry[]>([]);
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [sessionKeys, setSessionKeys] = useState<SessionKey[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -292,7 +291,6 @@ const App: React.FC = () => {
     const templatesRef = ref(db, `${dataPath}/templates`);
     const eventsRef = ref(db, `${dataPath}/events`);
     const sessionKeysRef = ref(db, `${dataPath}/sessionKeys`);
-    const onlineHistoryRef = ref(db, `${dataPath}/onlineHistory`);
     const reviewsRef = ref(db, `${dataPath}/reviews`);
 
     const settingsListener = onValue(settingsRef, (snapshot) => {
@@ -312,7 +310,6 @@ const App: React.FC = () => {
     });
     const eventsListener = onValue(eventsRef, (snapshot) => setEvents(firebaseObjectToArray<Event>(snapshot.val())));
     const sessionKeysListener = onValue(sessionKeysRef, (snapshot) => setSessionKeys(firebaseObjectToArray<SessionKey>(snapshot.val())));
-    const onlineHistoryListener = onValue(onlineHistoryRef, (snapshot) => setOnlineHistory(firebaseObjectToArray<OnlineHistoryEntry>(snapshot.val()).sort((a, b) => b.timestamp - a.timestamp)));
     const reviewsListener = onValue(reviewsRef, (snapshot) => setReviews(firebaseObjectToArray<Review>(snapshot.val()).sort((a, b) => b.timestamp - a.timestamp)));
 
     return () => {
@@ -320,7 +317,6 @@ const App: React.FC = () => {
       off(templatesRef, 'value', templatesListener);
       off(eventsRef, 'value', eventsListener);
       off(sessionKeysRef, 'value', sessionKeysListener);
-      off(onlineHistoryRef, 'value', onlineHistoryListener);
       off(reviewsRef, 'value', reviewsListener);
     };
   }, [currentTenantId, cacheAllTemplates]);
@@ -482,7 +478,7 @@ const App: React.FC = () => {
   // Event Management Handlers
   const handleAddEvent = useCallback((name: string) => {
     if (!currentTenantId) return;
-    const { id, ...dataToSave } = { id: '', name, isArchived: false, isQrCodeEnabled: false, qrCodeImageUrl: '' };
+    const { id, ...dataToSave } = { id: '', name, isArchived: false, isQrCodeEnabled: false, qrCodeImageUrl: '', templateOrder: [] };
     push(ref(db, `data/${currentTenantId}/events`), dataToSave);
   }, [currentTenantId]);
 
@@ -510,13 +506,22 @@ const App: React.FC = () => {
   const handleSaveTemplateAssignments = useCallback((eventId: string, assignedTemplateIds: string[]) => {
     if (!currentTenantId) return;
     const updates: Record<string, any> = {};
+    
+    // Save the new order to the event
+    updates[`/data/${currentTenantId}/events/${eventId}/templateOrder`] = assignedTemplateIds;
+
     templates.forEach(t => {
       if (assignedTemplateIds.includes(t.id)) {
-        if (t.eventId !== eventId) updates[`/data/${currentTenantId}/templates/${t.id}/eventId`] = eventId;
+        // If template is in the new list, but not assigned to this event yet, assign it
+        if (t.eventId !== eventId) {
+          updates[`/data/${currentTenantId}/templates/${t.id}/eventId`] = eventId;
+        }
       } else if (t.eventId === eventId) {
+        // If template was for this event but is not in the new list, unassign it
         updates[`/data/${currentTenantId}/templates/${t.id}/eventId`] = null;
       }
     });
+
     update(ref(db), updates);
     setAssigningTemplatesEvent(null);
   }, [templates, currentTenantId]);
@@ -541,25 +546,6 @@ const App: React.FC = () => {
           await remove(ref(db, `data/${currentTenantId}/sessionKeys/${keyId}`));
       }
   }, [currentTenantId]);
-
-  // Online History Handlers
-  const handleAddOnlineHistory = useCallback(async (urls: string[]) => {
-    if (!currentTenantId) return;
-    setIsSavingOnlineHistory(true);
-    try {
-        for (const url of urls) {
-            await push(ref(db, `data/${currentTenantId}/onlineHistory`), { googlePhotosUrl: url, timestamp: Date.now() });
-        }
-    } catch (error) { console.error("Error adding to online history:", error); } 
-    finally {
-        setIsSavingOnlineHistory(false);
-        setIsAddOnlineHistoryModalOpen(false);
-    }
-  }, [currentTenantId]);
-
-  const handleDeleteOnlineHistoryEntry = useCallback(async (entryId: string) => {
-    if (currentTenantId) await remove(ref(db, `data/${currentTenantId}/onlineHistory/${entryId}`));
-  }, [currentTenantId]);
   
   // Review Handlers
   const handleSaveReview = useCallback(async (reviewData: Omit<Review, 'id' | 'timestamp' | 'eventId' | 'eventName'>) => {
@@ -570,6 +556,7 @@ const App: React.FC = () => {
       
       const updates: Partial<SessionKey> = { hasBeenReviewed: true };
       if (settings.isReviewForFreebieEnabled && reviewData.rating === 5) {
+        // FIX: Explicitly convert to numbers to ensure numeric addition, as values from Firebase might be strings at runtime.
         updates.maxTakes = currentSessionKey.maxTakes + (settings.reviewFreebieTakesCount || 1);
       }
       await update(ref(db, `data/${currentTenantId}/sessionKeys/${currentSessionKey.id}`), updates);
@@ -750,20 +737,34 @@ const App: React.FC = () => {
         return <WelcomeScreen onStart={handleStartSession} onSettingsClick={handleGoToSettings} onViewHistory={handleViewHistory} onViewOnlineHistory={handleViewOnlineHistory} isAdminLoggedIn={isAdminLoggedIn} isCaching={isCaching} cachingProgress={cachingProgress} onAdminLoginClick={handleOpenAdminLogin} onAdminLogoutClick={handleAdminLogout} isLoading={isSessionLoading} settings={settings} reviews={reviews} />;
       case AppState.KEY_CODE_ENTRY: return <KeyCodeScreen onKeyCodeSubmit={handleKeyCodeSubmit} onBack={handleBack} error={keyCodeError} isLoading={isSessionLoading} />;
       case AppState.EVENT_SELECTION: return <EventSelectionScreen events={events.filter(e => !e.isArchived)} onSelect={handleEventSelect} onBack={handleBack} />;
-      case AppState.TEMPLATE_SELECTION: return <TemplateSelection templates={templates.filter(t => isAdminLoggedIn ? true : t.eventId === selectedEventId)} onSelect={handleTemplateSelect} onBack={handleBack} isAdminLoggedIn={isAdminLoggedIn} onAddTemplate={handleStartAddTemplate} onEditMetadata={handleStartEditTemplateMetadata} onEditLayout={handleStartEditLayout} onDelete={handleDeleteTemplate} />;
+      case AppState.TEMPLATE_SELECTION:
+        const eventTemplates = templates.filter(t => isAdminLoggedIn ? true : t.eventId === selectedEventId);
+        let sortedTemplates = eventTemplates;
+        if (selectedEvent?.templateOrder) {
+            const orderMap = new Map(selectedEvent.templateOrder.map((id, index) => [id, index]));
+            sortedTemplates = [...eventTemplates].sort((a, b) => {
+                const indexA = orderMap.get(a.id);
+                const indexB = orderMap.get(b.id);
+                if (indexA !== undefined && indexB !== undefined) return indexA - indexB;
+                if (indexA !== undefined) return -1; // a is ordered, b is not
+                if (indexB !== undefined) return 1; // b is ordered, a is not
+                return a.name.localeCompare(b.name); // neither are ordered, sort by name
+            });
+        }
+        return <TemplateSelection templates={sortedTemplates} onSelect={handleTemplateSelect} onBack={handleBack} isAdminLoggedIn={isAdminLoggedIn} onAddTemplate={handleStartAddTemplate} onEditMetadata={handleStartEditTemplateMetadata} onEditLayout={handleStartEditLayout} onDelete={handleDeleteTemplate} />;
       case AppState.SETTINGS: return <SettingsScreen settings={settings} onSettingsChange={handleSettingsChange} onManageTemplates={handleManageTemplates} onManageEvents={handleManageEvents} onManageSessions={handleManageSessions} onManageReviews={handleManageReviews} onViewHistory={handleViewHistory} onBack={handleBack} isMasterAdmin={isMasterAdmin} onManageTenants={handleManageTenants} />;
       case AppState.MANAGE_TENANTS: if (!isMasterAdmin) { setAppState(AppState.WELCOME); return null; } return <ManageTenantsScreen tenants={tenants} onBack={handleBack} onAddTenant={handleAddTenant} onUpdateTenant={handleUpdateTenant} onDeleteTenant={handleDeleteTenant} />;
       case AppState.MANAGE_EVENTS: return <ManageEventsScreen events={events} onBack={handleBack} onAddEvent={handleAddEvent} onRenameEvent={handleStartRenameEvent} onDeleteEvent={handleDeleteEvent} onToggleArchive={handleToggleArchiveEvent} onAssignTemplates={handleStartAssigningTemplates} onQrCodeSettings={handleStartEditQrCode} />;
       case AppState.MANAGE_SESSIONS: if (!isAdminLoggedIn) { setAppState(AppState.WELCOME); return null; } return <ManageSessionsScreen sessionKeys={sessionKeys} onBack={handleBack} onAddKey={handleAddSessionKey} onDeleteKey={handleDeleteSessionKey} />;
       case AppState.MANAGE_REVIEWS: if (!isAdminLoggedIn) { setAppState(AppState.WELCOME); return null; } return <ManageReviewsScreen reviews={reviews} onBack={handleBack} onDelete={handleDeleteReview} />;
       case AppState.HISTORY: if (!isAdminLoggedIn) { setAppState(AppState.WELCOME); return null; } return <HistoryScreen history={history} events={events} onDelete={deleteHistoryEntry} onBack={handleBack} />;
-      case AppState.ONLINE_HISTORY: return <OnlineHistoryScreen history={onlineHistory} isAdminLoggedIn={isAdminLoggedIn} onBack={handleBack} onAdd={() => setIsAddOnlineHistoryModalOpen(true)} onDelete={handleDeleteOnlineHistoryEntry} />;
+      case AppState.ONLINE_HISTORY: return <OnlineHistoryScreen onBack={handleBack} />;
       case AppState.EDIT_TEMPLATE_METADATA: if (!isAdminLoggedIn || !editingTemplate) { setAppState(AppState.WELCOME); return null; } return <TemplateMetadataModal template={editingTemplate} onSave={handleSaveTemplateMetadata} onClose={handleCancelEditTemplateMetadata} />;
       case AppState.EDIT_TEMPLATE_LAYOUT: if (!isAdminLoggedIn || !selectedTemplate) { setAppState(AppState.WELCOME); return null; } return <EditTemplateScreen template={selectedTemplate} onSave={handleTemplateLayoutSave} onCancel={handleEditLayoutCancel} />;
       case AppState.CAPTURE: if (!selectedTemplate) { setAppState(AppState.WELCOME); return null; } return <CaptureScreen template={selectedTemplate} countdownDuration={settings.countdownDuration} flashEffectEnabled={settings.flashEffectEnabled} onCaptureComplete={handleCaptureComplete} onRetakeComplete={handleRetakeComplete} retakeForIndex={retakingPhotoIndex} onProgressUpdate={handleCaptureProgressUpdate} existingImages={capturedImages} />;
       case AppState.RETAKE_PREVIEW: if (!selectedTemplate) { setAppState(AppState.WELCOME); return null; } return <RetakePreviewScreen images={capturedImages} template={selectedTemplate} onStartRetake={handleStartRetake} onDone={handleFinishRetakePreview} retakesUsed={retakesUsed} maxRetakes={settings.maxRetakes ?? 0} />;
       case AppState.RATING: if (!selectedEvent || !currentSessionKey || currentSessionKey.hasBeenReviewed) { setAppState(AppState.PREVIEW); return null; } return <RatingScreen eventName={selectedEvent.name} onSubmit={handleSaveReview} onSkip={handleSkipReview} settings={settings} />;
-      case AppState.PREVIEW: if (!selectedTemplate || !currentSessionKey) { setAppState(AppState.WELCOME); return null; } return <PreviewScreen images={capturedImages} onRestart={handleSessionEnd} onBack={handleBack} template={selectedTemplate} onSaveHistory={handleSaveHistoryFromSession} event={selectedEvent} currentTake={currentTakeCount} maxTakes={currentSessionKey.maxTakes} onNextTake={handleStartNextTake} isDownloadButtonEnabled={settings.isDownloadButtonEnabled ?? true} isAutoDownloadEnabled={settings.isAutoDownloadEnabled ?? true} printSettings={{ isEnabled: settings.isPrintButtonEnabled ?? true, paperSize: settings.printPaperSize ?? '4x6', colorMode: settings.printColorMode ?? 'color', isCopyInputEnabled: settings.isPrintCopyInputEnabled ?? true, maxCopies: settings.printMaxCopies ?? 5, }} />;
+      case AppState.PREVIEW: if (!selectedTemplate || !currentSessionKey) { setAppState(AppState.WELCOME); return null; } return <PreviewScreen images={capturedImages} onRestart={handleSessionEnd} onBack={handleBack} template={selectedTemplate} onSaveHistory={handleSaveHistoryFromSession} event={selectedEvent} currentTake={currentTakeCount} maxTakes={currentSessionKey.maxTakes} onNextTake={handleStartNextTake} isDownloadButtonEnabled={settings.isDownloadButtonEnabled ?? true} isAutoDownloadEnabled={settings.isAutoDownloadEnabled ?? true} printSettings={{ isEnabled: settings.isPrintButtonEnabled ?? true, paperSize: settings.printPaperSize ?? '4x6', colorMode: settings.printColorMode ?? 'color', isCopyInputEnabled: settings.isPrintCopyInputEnabled ?? true, maxCopies: settings.printMaxCopies ?? 5, }} isMasterAdmin={isMasterAdmin} />;
       default: return <WelcomeScreen onStart={handleStartSession} onSettingsClick={handleGoToSettings} onViewHistory={handleViewHistory} onViewOnlineHistory={handleViewOnlineHistory} isAdminLoggedIn={isAdminLoggedIn} isCaching={isCaching} cachingProgress={cachingProgress} onAdminLoginClick={handleOpenAdminLogin} onAdminLogoutClick={handleAdminLogout} isLoading={isSessionLoading} settings={settings} reviews={reviews} />;
     }
   };
@@ -784,7 +785,6 @@ const App: React.FC = () => {
       {editingEvent && <RenameEventModal event={editingEvent} onSave={handleSaveRenameEvent} onClose={handleCancelRenameEvent} />}
       {assigningTemplatesEvent && <AssignTemplatesModal event={assigningTemplatesEvent} allTemplates={templates} onSave={handleSaveTemplateAssignments} onClose={handleCancelAssigningTemplates} />}
       {editingEventQr && <EventQrCodeModal event={editingEventQr} onSave={handleSaveQrCodeSettings} onClose={handleCancelEditQrCode} />}
-      {isAddOnlineHistoryModalOpen && <AddOnlineHistoryModal onClose={() => setIsAddOnlineHistoryModalOpen(false)} onSave={handleAddOnlineHistory} isSaving={isSavingOnlineHistory} />}
       {appState === AppState.EDIT_TEMPLATE_METADATA && editingTemplate && <TemplateMetadataModal template={editingTemplate} onSave={handleSaveTemplateMetadata} onClose={handleCancelEditTemplateMetadata} />}
       
       <main className="w-full h-full p-4 flex flex-col items-center justify-center">

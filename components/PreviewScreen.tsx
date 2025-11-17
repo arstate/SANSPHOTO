@@ -1,4 +1,5 @@
 
+
 import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { DownloadIcon } from './icons/DownloadIcon';
 import { PrintIcon } from './icons/PrintIcon';
@@ -7,6 +8,9 @@ import { BackIcon } from './icons/BackIcon';
 import { RestartIcon } from './icons/RestartIcon';
 import { Template, Event, Settings } from '../types';
 import { getCachedImage, storeImageInCache } from '../utils/db';
+import { UploadingIcon } from './icons/UploadingIcon';
+
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxRFNQJ004jSbmT9B6ePRu9DmSoxKdcb_lcF1BWG-rF3z5F1HgG1m6rVZGzwFhhHPV3uw/exec';
 
 type PrintSettings = {
   isEnabled: boolean;
@@ -28,6 +32,7 @@ interface PreviewScreenProps {
   isDownloadButtonEnabled: boolean;
   isAutoDownloadEnabled: boolean;
   printSettings: PrintSettings;
+  isMasterAdmin: boolean;
 }
 
 interface PrintModalProps {
@@ -138,7 +143,7 @@ const loadImage = (src: string): Promise<HTMLImageElement> => {
 
 const PreviewScreen: React.FC<PreviewScreenProps> = ({ 
     images, onRestart, onBack, template, onSaveHistory, event,
-    currentTake, maxTakes, onNextTake, isDownloadButtonEnabled, isAutoDownloadEnabled, printSettings
+    currentTake, maxTakes, onNextTake, isDownloadButtonEnabled, isAutoDownloadEnabled, printSettings, isMasterAdmin
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const finalImageRef = useRef<HTMLImageElement>(null);
@@ -147,6 +152,7 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
 
   const isLastTake = currentTake >= maxTakes;
   const isLandscape = template.orientation === 'landscape';
@@ -272,6 +278,34 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
     setIsPrintModalOpen(false);
   }, [printSettings, template]);
 
+  const uploadToGoogleDrive = useCallback(async (imageDataUrl: string) => {
+      setUploadStatus('uploading');
+      try {
+          const base64Data = imageDataUrl.split(',')[1];
+          const filename = `sans-photo-${Date.now()}.png`;
+          const payload = JSON.stringify({
+              foto: base64Data,
+              nama: filename
+          });
+
+          const response = await fetch(SCRIPT_URL, {
+              method: 'POST',
+              mode: 'no-cors', // Diperlukan untuk permintaan sederhana ke Google Apps Script
+              redirect: 'follow',
+              body: payload,
+          });
+          
+          // Dengan mode 'no-cors', kita tidak bisa memeriksa status response.
+          // Kita anggap berhasil jika fetch tidak melempar error.
+          setUploadStatus('success');
+          console.log("Upload request sent to Google Drive.");
+
+      } catch (error) {
+          console.error("Error uploading to Google Drive:", error);
+          setUploadStatus('error');
+      }
+  }, []);
+
   const drawCanvas = useCallback(async () => {
     setIsLoading(true);
     setErrorMsg(null);
@@ -361,6 +395,10 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
           historySavedRef.current = true;
       }
 
+      if (isMasterAdmin) {
+          uploadToGoogleDrive(finalImageDataUrl);
+      }
+
       if (isAutoDownloadEnabled && !downloadTriggeredRef.current) {
           handleDownload(finalImageDataUrl);
           downloadTriggeredRef.current = true;
@@ -372,7 +410,7 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
       setErrorMsg("Tidak dapat menghasilkan gambar akhir. Templat mungkin tidak tersedia atau ada masalah jaringan.");
       setIsLoading(false);
     }
-  }, [images, template, onSaveHistory, handleDownload, TEMPLATE_WIDTH, TEMPLATE_HEIGHT, isAutoDownloadEnabled]);
+  }, [images, template, onSaveHistory, handleDownload, TEMPLATE_WIDTH, TEMPLATE_HEIGHT, isAutoDownloadEnabled, isMasterAdmin, uploadToGoogleDrive]);
 
   useEffect(() => {
     // Reset refs for each new preview
@@ -380,6 +418,36 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
     downloadTriggeredRef.current = false;
     drawCanvas();
   }, [drawCanvas]);
+  
+  const UploadStatusIndicator: React.FC = () => {
+    if (uploadStatus === 'idle') return null;
+
+    let text, colorClass, icon;
+    switch (uploadStatus) {
+      case 'uploading':
+        text = "Mengupload ke Histori Online...";
+        colorClass = "text-blue-300";
+        icon = <UploadingIcon />;
+        break;
+      case 'success':
+        text = "Berhasil diupload!";
+        colorClass = "text-green-400";
+        icon = <CheckIcon />;
+        break;
+      case 'error':
+        text = "Gagal mengupload.";
+        colorClass = "text-red-400";
+        icon = <RestartIcon />; // Ganti dengan ikon error jika ada
+        break;
+    }
+
+    return (
+      <div className={`w-full flex items-center justify-center gap-2 p-2 mt-4 rounded-lg bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)] text-sm ${colorClass}`}>
+        {icon}
+        <span>{text}</span>
+      </div>
+    );
+  };
 
   return (
     <>
@@ -473,6 +541,8 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
                 </button>
               )}
             </div>
+
+            {isMasterAdmin && <UploadStatusIndicator />}
 
             {event?.isQrCodeEnabled && event.qrCodeImageUrl && (
                 <div className="p-4 bg-[var(--color-bg-secondary)] rounded-lg text-center">

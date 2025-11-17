@@ -1,4 +1,5 @@
 
+
 export enum AppState {
   WELCOME,
   KEY_CODE_ENTRY,
@@ -114,6 +115,7 @@ export interface Event {
   isArchived: boolean;
   qrCodeImageUrl?: string;
   isQrCodeEnabled?: boolean;
+  templateOrder?: string[]; // Menyimpan urutan ID template
 }
 
 export interface HistoryEntry {
@@ -125,9 +127,9 @@ export interface HistoryEntry {
 }
 
 export interface OnlineHistoryEntry {
-  id: string;
-  googlePhotosUrl: string;
-  timestamp: number;
+  nama: string;
+  url: string;
+  waktu: string;
 }
 
 export type SessionKeyStatus = 'available' | 'in_progress' | 'completed';
