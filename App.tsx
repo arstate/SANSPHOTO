@@ -472,7 +472,7 @@ const App: React.FC = () => {
     if (!selectedTemplate || !currentTenantId) return;
     update(ref(db, `data/${currentTenantId}/templates/${selectedTemplate.id}`), { photoSlots: newSlots });
     setSelectedTemplate(null);
-    setAppState(AppState.SETTINGS);
+    setAppState(AppState.TEMPLATE_SELECTION);
   }, [selectedTemplate, currentTenantId]);
   
   const handleDeleteTemplate = useCallback((templateId: string) => {
@@ -710,7 +710,7 @@ const App: React.FC = () => {
   const handleStartEditTemplateMetadata = useCallback((template: Template) => { setEditingTemplate(template); setAppState(AppState.EDIT_TEMPLATE_METADATA); }, []);
   const handleCancelEditTemplateMetadata = useCallback(() => { setEditingTemplate(null); setAppState(AppState.SETTINGS); }, []);
   const handleStartEditLayout = useCallback((template: Template) => { setSelectedTemplate(template); setAppState(AppState.EDIT_TEMPLATE_LAYOUT); }, []);
-  const handleEditLayoutCancel = useCallback(() => { setSelectedTemplate(null); setAppState(AppState.SETTINGS); }, []);
+  const handleEditLayoutCancel = useCallback(() => { setSelectedTemplate(null); setAppState(AppState.TEMPLATE_SELECTION); }, []);
   const handleStartRenameEvent = useCallback((event: Event) => setEditingEvent(event), []);
   const handleCancelRenameEvent = useCallback(() => setEditingEvent(null), []);
   const handleStartAssigningTemplates = useCallback((event: Event) => setAssigningTemplatesEvent(event), []);
