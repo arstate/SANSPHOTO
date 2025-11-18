@@ -2,6 +2,8 @@
 
 
 
+
+
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import WelcomeScreen from './components/WelcomeScreen';
 import TemplateSelection from './components/TemplateSelection';
@@ -585,6 +587,38 @@ const App: React.FC = () => {
       }
   }, [currentTenantId]);
   
+  const handleDeleteAllSessionKeys = useCallback(async () => {
+    if (!currentTenantId || !window.confirm("Are you sure you want to delete ALL session codes? This cannot be undone.")) return;
+    try {
+        await remove(ref(db, `data/${currentTenantId}/sessionKeys`));
+    } catch (error) {
+        console.error("Error deleting all session keys:", error);
+        alert("Failed to delete all keys.");
+    }
+  }, [currentTenantId]);
+
+  const handleDeleteFreeplaySessionKeys = useCallback(async () => {
+    if (!currentTenantId || !window.confirm("Are you sure you want to delete all 'FREEPLAY' session codes?")) return;
+    
+    const freeplayKeys = sessionKeys.filter(key => key.code === 'FREEPLAY');
+    if (freeplayKeys.length === 0) {
+        alert("No 'FREEPLAY' keys found to delete.");
+        return;
+    }
+
+    const updates: Record<string, null> = {};
+    freeplayKeys.forEach(key => {
+        updates[`/data/${currentTenantId}/sessionKeys/${key.id}`] = null;
+    });
+
+    try {
+        await update(ref(db), updates);
+    } catch (error) {
+        console.error("Error deleting freeplay session keys:", error);
+        alert("Failed to delete freeplay keys.");
+    }
+  }, [currentTenantId, sessionKeys]);
+
   // Review Handlers
   const handleSaveReview = useCallback(async (reviewData: Omit<Review, 'id' | 'timestamp' | 'eventId' | 'eventName'>) => {
       const event = events.find(e => e.id === selectedEventId);
@@ -594,8 +628,9 @@ const App: React.FC = () => {
       
       const updates: Partial<SessionKey> = { hasBeenReviewed: true };
       if (settings.isReviewForFreebieEnabled && reviewData.rating === 5) {
-        // FIX: Ensure the right-hand side of the addition is a number.
-        // `settings.reviewFreebieTakesCount` can be undefined, so provide a default value using the nullish coalescing operator.
+        // FIX: The value of `settings.reviewFreebieTakesCount` can be undefined, leading to a TypeError
+        // during an arithmetic operation. Using the nullish coalescing operator provides a default value (e.g., 1)
+        // to ensure the operation is always performed on numbers.
         const currentMaxTakes = currentSessionKey.maxTakes;
         const reviewFreebieTakesCount = settings.reviewFreebieTakesCount ?? 1;
         updates.maxTakes = currentMaxTakes + reviewFreebieTakesCount;
@@ -843,7 +878,7 @@ const App: React.FC = () => {
       case AppState.SETTINGS: return <SettingsScreen settings={settings} onSettingsChange={handleSettingsChange} onManageTemplates={handleManageTemplates} onManageEvents={handleManageEvents} onManageSessions={handleManageSessions} onManageReviews={handleManageReviews} onViewHistory={handleViewHistory} onBack={handleBack} isMasterAdmin={isMasterAdmin} onManageTenants={handleManageTenants} />;
       case AppState.MANAGE_TENANTS: if (!isMasterAdmin) { setAppState(AppState.WELCOME); return null; } return <ManageTenantsScreen tenants={tenants} onBack={handleBack} onAddTenant={handleAddTenant} onUpdateTenant={handleUpdateTenant} onDeleteTenant={handleDeleteTenant} />;
       case AppState.MANAGE_EVENTS: return <ManageEventsScreen events={events} onBack={handleBack} onAddEvent={handleAddEvent} onRenameEvent={handleStartRenameEvent} onDeleteEvent={handleDeleteEvent} onToggleArchive={handleToggleArchiveEvent} onAssignTemplates={handleStartAssigningTemplates} onQrCodeSettings={handleStartEditQrCode} />;
-      case AppState.MANAGE_SESSIONS: if (!isAdminLoggedIn) { setAppState(AppState.WELCOME); return null; } return <ManageSessionsScreen sessionKeys={sessionKeys} onBack={handleBack} onAddKey={handleAddSessionKey} onDeleteKey={handleDeleteSessionKey} />;
+      case AppState.MANAGE_SESSIONS: if (!isAdminLoggedIn) { setAppState(AppState.WELCOME); return null; } return <ManageSessionsScreen sessionKeys={sessionKeys} onBack={handleBack} onAddKey={handleAddSessionKey} onDeleteKey={handleDeleteSessionKey} onDeleteAllKeys={handleDeleteAllSessionKeys} onDeleteFreeplayKeys={handleDeleteFreeplaySessionKeys} />;
       case AppState.MANAGE_REVIEWS: if (!isAdminLoggedIn) { setAppState(AppState.WELCOME); return null; } return <ManageReviewsScreen reviews={reviews} onBack={handleBack} onDelete={handleDeleteReview} />;
       case AppState.HISTORY: if (!isAdminLoggedIn) { setAppState(AppState.WELCOME); return null; } return <HistoryScreen history={history} events={events} onDelete={deleteHistoryEntry} onBack={handleBack} />;
       case AppState.ONLINE_HISTORY: return <OnlineHistoryScreen onBack={handleBack} />;

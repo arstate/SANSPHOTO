@@ -3,12 +3,17 @@ import { SessionKey, SessionKeyStatus } from '../types';
 import { BackIcon } from './icons/BackIcon';
 import { AddIcon } from './icons/AddIcon';
 import { TrashIcon } from './icons/TrashIcon';
+import { CopyIcon } from './icons/CopyIcon';
+import { CheckIcon } from './icons/CheckIcon';
+
 
 interface ManageSessionsScreenProps {
   sessionKeys: SessionKey[];
   onBack: () => void;
   onAddKey: (maxTakes: number) => void;
   onDeleteKey: (keyId: string) => void;
+  onDeleteAllKeys: () => void;
+  onDeleteFreeplayKeys: () => void;
 }
 
 const getStatusClass = (status: SessionKeyStatus) => {
@@ -20,13 +25,32 @@ const getStatusClass = (status: SessionKeyStatus) => {
     }
 }
 
-const ManageSessionsScreen: React.FC<ManageSessionsScreenProps> = ({ sessionKeys, onBack, onAddKey, onDeleteKey }) => {
+const ManageSessionsScreen: React.FC<ManageSessionsScreenProps> = ({ sessionKeys, onBack, onAddKey, onDeleteKey, onDeleteAllKeys, onDeleteFreeplayKeys }) => {
   const [maxTakes, setMaxTakes] = useState(1);
+  const [copySuccessId, setCopySuccessId] = useState<string | null>(null);
+  const [allCopied, setAllCopied] = useState(false);
 
   const handleAddKey = (e: React.FormEvent) => {
     e.preventDefault();
     if (maxTakes > 0) {
       onAddKey(maxTakes);
+    }
+  };
+
+  const handleCopy = (code: string, id: string) => {
+    navigator.clipboard.writeText(code);
+    setCopySuccessId(id);
+    setTimeout(() => setCopySuccessId(null), 2000);
+  };
+
+  const handleCopyAll = () => {
+    const availableKeys = sessionKeys.filter(k => k.status === 'available').map(k => k.code).join('\n');
+    if (availableKeys) {
+        navigator.clipboard.writeText(availableKeys);
+        setAllCopied(true);
+        setTimeout(() => setAllCopied(false), 2000);
+    } else {
+        alert('No available codes to copy.');
     }
   };
   
@@ -78,6 +102,23 @@ const ManageSessionsScreen: React.FC<ManageSessionsScreenProps> = ({ sessionKeys
               </form>
           </div>
           
+           {/* Bulk Actions */}
+          <div className="shrink-0 p-4 bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)] rounded-lg mb-6">
+            <h3 className="text-2xl font-bebas tracking-wider text-[var(--color-text-accent)] mb-4">Bulk Actions</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              <button onClick={handleCopyAll} className={`font-bold py-2 px-4 rounded-md transition-colors ${allCopied ? 'bg-green-600 text-white' : 'bg-[var(--color-info)] hover:bg-[var(--color-info-hover)] text-[var(--color-info-text)]'}`}>
+                {allCopied ? 'Copied!' : 'Copy All Available'}
+              </button>
+              <button onClick={onDeleteFreeplayKeys} className="font-bold py-2 px-4 rounded-md bg-[var(--color-negative)]/80 hover:bg-[var(--color-negative)] text-[var(--color-negative-text)]">
+                Delete All Freeplay
+              </button>
+              <button onClick={onDeleteAllKeys} className="font-bold py-2 px-4 rounded-md bg-[var(--color-negative)] hover:bg-[var(--color-negative-hover)] text-[var(--color-negative-text)]">
+                Delete All Codes
+              </button>
+            </div>
+          </div>
+
+
           {/* Session Keys List */}
           <div className="flex-grow overflow-y-auto scrollbar-thin pr-2">
               <div className="space-y-3">
@@ -85,7 +126,13 @@ const ManageSessionsScreen: React.FC<ManageSessionsScreenProps> = ({ sessionKeys
                       <div key={key.id} className={`p-4 rounded-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border ${getStatusClass(key.status)}`}>
                           <div className="flex-grow">
                               <div className="flex items-center gap-4 mb-2 sm:mb-0">
-                                  <span className="font-mono text-3xl font-bold tracking-widest text-[var(--color-text-accent)] bg-[var(--color-bg-primary)]/50 px-4 py-2 rounded-md">{key.code}</span>
+                                  <span 
+                                    className="font-mono text-3xl font-bold tracking-widest text-[var(--color-text-accent)] bg-[var(--color-bg-primary)]/50 px-4 py-2 rounded-md cursor-pointer hover:bg-[var(--color-bg-primary)] transition-colors"
+                                    onClick={() => handleCopy(key.code, key.id)}
+                                    title="Click to copy"
+                                  >
+                                    {key.code}
+                                  </span>
                                   <div>
                                       <p className="font-bold text-[var(--color-text-primary)]">Takes: {key.takesUsed} / {key.maxTakes}</p>
                                       <p className="text-xs text-[var(--color-text-muted)]">Created: {new Date(key.createdAt).toLocaleString()}</p>
@@ -99,10 +146,13 @@ const ManageSessionsScreen: React.FC<ManageSessionsScreenProps> = ({ sessionKeys
                               )}
                           </div>
 
-                          <div className="flex items-center gap-2 self-end sm:self-center">
-                              <span className={`px-3 py-1 text-sm font-bold rounded-full bg-opacity-80`}>
+                          <div className="flex items-center gap-1 self-end sm:self-center">
+                              <span className={`px-3 py-1 text-xs sm:text-sm font-bold rounded-full bg-opacity-80`}>
                                 {(key.status || 'unknown').replace('_', ' ')}
                               </span>
+                              <button onClick={() => handleCopy(key.code, key.id)} className="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] p-2" aria-label="Copy Code">
+                                {copySuccessId === key.id ? <CheckIcon/> : <CopyIcon />}
+                              </button>
                               <button onClick={() => onDeleteKey(key.id)} className="text-[var(--color-text-muted)] hover:text-[var(--color-negative)] p-2" aria-label="Delete Key">
                                   <TrashIcon />
                               </button>
