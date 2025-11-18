@@ -4,6 +4,10 @@
 
 
 
+
+
+
+
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import WelcomeScreen from './components/WelcomeScreen';
 import TemplateSelection from './components/TemplateSelection';
@@ -574,9 +578,15 @@ const App: React.FC = () => {
   // Session Key Handlers
   const handleAddSessionKey = useCallback(async (maxTakes: number) => {
       if (!currentTenantId) return;
-      let newCode;
-      do { newCode = Math.random().toString(36).substring(2, 6).toUpperCase(); } 
-      while (sessionKeys.some(key => key.code === newCode));
+      const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      let newCode = '';
+      do {
+        newCode = '';
+        for (let i = 0; i < 4; i++) {
+          newCode += characters.charAt(Math.floor(Math.random() * characters.length));
+        }
+      } while (sessionKeys.some(key => key.code === newCode));
+
       const newKey: Omit<SessionKey, 'id'> = { code: newCode, maxTakes, takesUsed: 0, status: 'available', createdAt: Date.now(), hasBeenReviewed: false };
       await push(ref(db, `data/${currentTenantId}/sessionKeys`), newKey);
   }, [sessionKeys, currentTenantId]);
@@ -628,10 +638,9 @@ const App: React.FC = () => {
       
       const updates: Partial<SessionKey> = { hasBeenReviewed: true };
       if (settings.isReviewForFreebieEnabled && reviewData.rating === 5) {
-        // FIX: The value of `settings.reviewFreebieTakesCount` can be undefined, leading to a TypeError
-        // during an arithmetic operation. Using the nullish coalescing operator provides a default value (e.g., 1)
-        // to ensure the operation is always performed on numbers.
         const currentMaxTakes = currentSessionKey.maxTakes;
+        // FIX: The value of `settings.reviewFreebieTakesCount` could be undefined, causing a TypeError.
+        // Using the nullish coalescing operator provides a default value to ensure the operation is valid.
         const reviewFreebieTakesCount = settings.reviewFreebieTakesCount ?? 1;
         updates.maxTakes = currentMaxTakes + reviewFreebieTakesCount;
       }
