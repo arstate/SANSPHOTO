@@ -8,6 +8,8 @@
 
 
 
+
+
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import WelcomeScreen from './components/WelcomeScreen';
 import TemplateSelection from './components/TemplateSelection';
@@ -873,7 +875,7 @@ const App: React.FC = () => {
         const eventTemplates = templates.filter(t => isAdminLoggedIn ? true : t.eventId === selectedEventId);
         let sortedTemplates = eventTemplates;
         if (selectedEvent?.templateOrder) {
-            const orderMap = new Map(selectedEvent.templateOrder.map((id, index) => [id, index]));
+            const orderMap = new Map(selectedEvent.templateOrder.map((id, index) => [id, index] as [string, number]));
             sortedTemplates = [...eventTemplates].sort((a, b) => {
                 const indexA = orderMap.get(a.id);
                 const indexB = orderMap.get(b.id);

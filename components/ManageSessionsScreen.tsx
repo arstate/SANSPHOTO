@@ -5,7 +5,10 @@ import { AddIcon } from './icons/AddIcon';
 import { TrashIcon } from './icons/TrashIcon';
 import { CopyIcon } from './icons/CopyIcon';
 import { CheckIcon } from './icons/CheckIcon';
+import { QrCodeIcon } from './icons/QrCodeIcon';
 
+// Declare QRCode global from CDN
+declare const QRCode: any;
 
 interface ManageSessionsScreenProps {
   sessionKeys: SessionKey[];
@@ -52,6 +55,32 @@ const ManageSessionsScreen: React.FC<ManageSessionsScreenProps> = ({ sessionKeys
     } else {
         alert('No available codes to copy.');
     }
+  };
+
+  const handleDownloadQr = (code: string) => {
+      if (typeof QRCode === 'undefined') {
+          alert('QR Code library not loaded.');
+          return;
+      }
+
+      // Generate QR code to a temporary canvas
+      const canvas = document.createElement('canvas');
+      QRCode.toCanvas(canvas, code, { width: 1000, margin: 2 }, function (error: any) {
+        if (error) {
+            console.error(error);
+            alert('Error generating QR Code');
+            return;
+        }
+        
+        // Convert to data URL and download
+        const imageUrl = canvas.toDataURL('image/png');
+        const link = document.createElement('a');
+        link.href = imageUrl;
+        link.download = `session-qr-${code}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      });
   };
   
   const sortedKeys = useMemo(() => {
@@ -150,6 +179,9 @@ const ManageSessionsScreen: React.FC<ManageSessionsScreenProps> = ({ sessionKeys
                               <span className={`px-3 py-1 text-xs sm:text-sm font-bold rounded-full bg-opacity-80`}>
                                 {(key.status || 'unknown').replace('_', ' ')}
                               </span>
+                              <button onClick={() => handleDownloadQr(key.code)} className="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] p-2" aria-label="Download QR">
+                                <QrCodeIcon />
+                              </button>
                               <button onClick={() => handleCopy(key.code, key.id)} className="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] p-2" aria-label="Copy Code">
                                 {copySuccessId === key.id ? <CheckIcon/> : <CopyIcon />}
                               </button>
