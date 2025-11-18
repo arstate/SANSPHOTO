@@ -592,12 +592,10 @@ const App: React.FC = () => {
       
       const updates: Partial<SessionKey> = { hasBeenReviewed: true };
       if (settings.isReviewForFreebieEnabled && reviewData.rating === 5) {
-        // FIX: The values for maxTakes and reviewFreebieTakesCount can be of incorrect types when retrieved from Firebase.
-        // Coercing them to numbers with fallbacks prevents runtime errors during the arithmetic operation.
-        // Fix: Explicitly create number variables before addition to satisfy the type checker.
-        const currentMaxTakesAsNumber = Number(currentSessionKey.maxTakes || 0);
-        const reviewFreebieTakesCountAsNumber = Number(settings.reviewFreebieTakesCount || 1);
-        updates.maxTakes = currentMaxTakesAsNumber + reviewFreebieTakesCountAsNumber;
+        // Fix: Ensure values are numbers before performing addition. Values from Firebase might not have the expected type at runtime.
+        const currentMaxTakes = Number(currentSessionKey.maxTakes ?? 0);
+        const reviewFreebieTakesCount = Number(settings.reviewFreebieTakesCount ?? 1);
+        updates.maxTakes = currentMaxTakes + reviewFreebieTakesCount;
       }
       await update(ref(db, `data/${currentTenantId}/sessionKeys/${currentSessionKey.id}`), updates);
       setCurrentSessionKey(prev => prev ? { ...prev, ...updates } : null);
