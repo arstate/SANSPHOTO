@@ -39,28 +39,27 @@ const CaptureScreen: React.FC<CaptureScreenProps> = ({
   }, [photoIndex, totalPhotos, onProgressUpdate, isRetakeMode]);
 
   const aspectRatio = useMemo(() => {
-    // For retakes, retakeForIndex is the 0-based index. inputId is 1-based.
+    // Untuk retake, retakeForIndex adalah indeks berbasis 0. inputId berbasis 1.
     const currentInputId = isRetakeMode ? (retakeForIndex ?? 0) + 1 : photoIndex + 1;
     const slotForCurrentPhoto = template.photoSlots.find(slot => slot.inputId === currentInputId);
 
     if (slotForCurrentPhoto && slotForCurrentPhoto.width > 0 && slotForCurrentPhoto.height > 0) {
-        const rotation = slotForCurrentPhoto.rotation || 0;
+        // Memastikan rotasi adalah angka
+        const rotation = Number(slotForCurrentPhoto.rotation || 0);
         
-        // For rotations of 90 or 270 degrees, the effective width and height are swapped.
-        // This ensures the camera preview's aspect ratio matches the visual orientation of the slot.
-        // A modulo check handles various rotation values like -90, 270, 450, etc.
-        const isSideways = Math.abs(rotation) % 180 !== 0;
+        // Untuk rotasi 90 atau 270 derajat, lebar dan tinggi visual ditukar.
+        // Logika ini menyesuaikan rasio aspek pratinjau kamera agar sesuai dengan slot yang diputar.
+        const isRotatedSideways = Math.abs(rotation) % 180 === 90;
         
-        if (isSideways) {
-            // Return height / width for sideways slots
+        if (isRotatedSideways) {
+            // Gunakan tinggi/lebar untuk slot yang diputar ke samping
             return `${slotForCurrentPhoto.height} / ${slotForCurrentPhoto.width}`;
-        } else {
-            // Return width / height for upright or upside-down slots
-            return `${slotForCurrentPhoto.width} / ${slotForCurrentPhoto.height}`;
         }
+        // Gunakan lebar/tinggi untuk slot tegak atau terbalik
+        return `${slotForCurrentPhoto.width} / ${slotForCurrentPhoto.height}`;
     }
     
-    // Fallback to a standard 16:9 aspect ratio if slot is not found or has no dimensions
+    // Fallback jika slot tidak ditemukan
     return '16 / 9';
   }, [photoIndex, template.photoSlots, isRetakeMode, retakeForIndex]);
 

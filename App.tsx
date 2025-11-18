@@ -1,5 +1,7 @@
 
 
+
+
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import WelcomeScreen from './components/WelcomeScreen';
 import TemplateSelection from './components/TemplateSelection';
@@ -592,9 +594,10 @@ const App: React.FC = () => {
       
       const updates: Partial<SessionKey> = { hasBeenReviewed: true };
       if (settings.isReviewForFreebieEnabled && reviewData.rating === 5) {
-        // Fix: Ensure values are numbers before performing addition. Values from Firebase might not have the expected type at runtime.
-        const currentMaxTakes = Number(currentSessionKey.maxTakes ?? 0);
-        const reviewFreebieTakesCount = Number(settings.reviewFreebieTakesCount ?? 1);
+        // FIX: Ensure the right-hand side of the addition is a number.
+        // `settings.reviewFreebieTakesCount` can be undefined, so provide a default value using the nullish coalescing operator.
+        const currentMaxTakes = currentSessionKey.maxTakes;
+        const reviewFreebieTakesCount = settings.reviewFreebieTakesCount ?? 1;
         updates.maxTakes = currentMaxTakes + reviewFreebieTakesCount;
       }
       await update(ref(db, `data/${currentTenantId}/sessionKeys/${currentSessionKey.id}`), updates);
