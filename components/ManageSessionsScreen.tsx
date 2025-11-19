@@ -16,7 +16,7 @@ declare const QRCode: any;
 interface ManageSessionsScreenProps {
   sessionKeys: SessionKey[];
   onBack: () => void;
-  onAddKey: (maxTakes: number) => void;
+  onAddKey: (maxTakes: number, isUnlimited?: boolean) => void;
   onDeleteKey: (keyId: string) => void;
   onDeleteAllKeys: () => void;
   onDeleteFreeplayKeys: () => void;
@@ -122,7 +122,8 @@ const QrPreviewModal: React.FC<QrPreviewModalProps> = ({ sessionKey, onClose }) 
     );
 }
 
-const getStatusClass = (status: SessionKeyStatus) => {
+const getStatusClass = (status: SessionKeyStatus, isUnlimited?: boolean) => {
+    if (isUnlimited) return 'bg-purple-600/30 text-purple-300 border-purple-500 shadow-purple-500/20 shadow-md';
     switch (status) {
         case 'available': return 'bg-green-600/30 text-green-300 border-green-500';
         case 'in_progress': return 'bg-yellow-600/30 text-yellow-300 border-yellow-500';
@@ -133,6 +134,7 @@ const getStatusClass = (status: SessionKeyStatus) => {
 
 const ManageSessionsScreen: React.FC<ManageSessionsScreenProps> = ({ sessionKeys, onBack, onAddKey, onDeleteKey, onDeleteAllKeys, onDeleteFreeplayKeys }) => {
   const [maxTakes, setMaxTakes] = useState(1);
+  const [isUnlimited, setIsUnlimited] = useState(false);
   const [copySuccessId, setCopySuccessId] = useState<string | null>(null);
   const [allCopied, setAllCopied] = useState(false);
   const [selectedQrKey, setSelectedQrKey] = useState<SessionKey | null>(null);
@@ -140,7 +142,7 @@ const ManageSessionsScreen: React.FC<ManageSessionsScreenProps> = ({ sessionKeys
   const handleAddKey = (e: React.FormEvent) => {
     e.preventDefault();
     if (maxTakes > 0) {
-      onAddKey(maxTakes);
+      onAddKey(maxTakes, isUnlimited);
     }
   };
 
@@ -151,7 +153,7 @@ const ManageSessionsScreen: React.FC<ManageSessionsScreenProps> = ({ sessionKeys
   };
 
   const handleCopyAll = () => {
-    const availableKeys = sessionKeys.filter(k => k.status === 'available').map(k => k.code).join('\n');
+    const availableKeys = sessionKeys.filter(k => k.status === 'available' || k.isUnlimited).map(k => k.code).join('\n');
     if (availableKeys) {
         navigator.clipboard.writeText(availableKeys);
         setAllCopied(true);
@@ -162,7 +164,13 @@ const ManageSessionsScreen: React.FC<ManageSessionsScreenProps> = ({ sessionKeys
   };
   
   const sortedKeys = useMemo(() => {
-    return [...sessionKeys].sort((a, b) => {
+    // Filter out keys that were auto-generated from unlimited keys to keep the list clean
+    const displayKeys = sessionKeys.filter(k => !k.isGenerated);
+
+    return [...displayKeys].sort((a, b) => {
+        // Unlimited keys first
+        if (a.isUnlimited && !b.isUnlimited) return -1;
+        if (!a.isUnlimited && b.isUnlimited) return 1;
         // Prioritaskan sesi 'in_progress' di atas
         if (a.status === 'in_progress' && b.status !== 'in_progress') return -1;
         if (a.status !== 'in_progress' && b.status === 'in_progress') return 1;
@@ -195,21 +203,42 @@ const ManageSessionsScreen: React.FC<ManageSessionsScreenProps> = ({ sessionKeys
           {/* Add New Key Form */}
           <div className="shrink-0 p-4 bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)] rounded-lg mb-6">
               <h3 className="text-2xl font-bebas tracking-wider text-[var(--color-text-accent)] mb-4">Generate New Code</h3>
-              <form onSubmit={handleAddKey} className="flex flex-col sm:flex-row items-center gap-4">
-                  <div className="flex-grow w-full">
-                      <label htmlFor="maxTakes" className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">Number of Takes</label>
-                      <input
-                          type="number"
-                          id="maxTakes"
-                          value={maxTakes}
-                          onChange={(e) => setMaxTakes(Math.max(1, parseInt(e.target.value, 10) || 1))}
-                          min="1"
-                          className="w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md py-2 px-3 text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-border-focus)]"
-                      />
+              <form onSubmit={handleAddKey} className="flex flex-col gap-4">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-end gap-4">
+                    <div className="flex-grow w-full">
+                        <label htmlFor="maxTakes" className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">Number of Takes</label>
+                        <input
+                            type="number"
+                            id="maxTakes"
+                            value={maxTakes}
+                            onChange={(e) => setMaxTakes(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                            min="1"
+                            className="w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md py-2 px-3 text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-border-focus)]"
+                        />
+                    </div>
+                    
+                    <button type="submit" className="w-full sm:w-auto bg-[var(--color-positive)] hover:bg-[var(--color-positive-hover)] text-[var(--color-positive-text)] font-bold py-3 px-6 rounded-md flex items-center justify-center gap-2">
+                        <AddIcon /> Generate
+                    </button>
                   </div>
-                  <button type="submit" className="w-full sm:w-auto bg-[var(--color-positive)] hover:bg-[var(--color-positive-hover)] text-[var(--color-positive-text)] font-bold py-3 px-6 rounded-md flex items-center justify-center gap-2">
-                      <AddIcon /> Generate
-                  </button>
+                  <div className="flex items-center justify-between">
+                      <label htmlFor="isUnlimited" className="flex items-center gap-3 cursor-pointer group">
+                        <div className="relative">
+                            <input
+                                type="checkbox"
+                                id="isUnlimited"
+                                checked={isUnlimited}
+                                onChange={(e) => setIsUnlimited(e.target.checked)}
+                                className="sr-only peer"
+                            />
+                            <div className="w-11 h-6 bg-[var(--color-bg-tertiary)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--color-accent-primary)]"></div>
+                        </div>
+                        <div>
+                            <span className="block text-sm font-medium text-[var(--color-text-secondary)] group-hover:text-[var(--color-text-primary)] transition-colors">Unlimited / Multi-device Mode</span>
+                            <span className="text-xs text-[var(--color-text-muted)]">Code stays active until deleted. Allows simultaneous use on multiple devices.</span>
+                        </div>
+                      </label>
+                  </div>
               </form>
           </div>
           
@@ -234,7 +263,7 @@ const ManageSessionsScreen: React.FC<ManageSessionsScreenProps> = ({ sessionKeys
           <div className="flex-grow overflow-y-auto scrollbar-thin pr-2">
               <div className="space-y-3">
                   {sortedKeys.length > 0 ? sortedKeys.map(key => (
-                      <div key={key.id} className={`p-4 rounded-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border ${getStatusClass(key.status)}`}>
+                      <div key={key.id} className={`p-4 rounded-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border ${getStatusClass(key.status, key.isUnlimited)}`}>
                           <div className="flex-grow">
                               <div className="flex items-center gap-4 mb-2 sm:mb-0">
                                   <span 
@@ -245,11 +274,19 @@ const ManageSessionsScreen: React.FC<ManageSessionsScreenProps> = ({ sessionKeys
                                     {key.code}
                                   </span>
                                   <div>
-                                      <p className="font-bold text-[var(--color-text-primary)]">Takes: {key.takesUsed} / {key.maxTakes}</p>
-                                      <p className="text-xs text-[var(--color-text-muted)]">Created: {new Date(key.createdAt).toLocaleString()}</p>
+                                      <div className="flex items-center gap-2">
+                                        {key.isUnlimited ? (
+                                             <span className="px-2 py-0.5 bg-purple-500/20 text-purple-300 rounded text-xs font-bold border border-purple-500/30 uppercase">
+                                                Unlimited Code
+                                             </span>
+                                        ) : (
+                                            <p className="font-bold text-[var(--color-text-primary)]">Takes: {key.takesUsed} / {key.maxTakes}</p>
+                                        )}
+                                      </div>
+                                      <p className="text-xs text-[var(--color-text-muted)] mt-1">Created: {new Date(key.createdAt).toLocaleString()}</p>
                                   </div>
                               </div>
-                              {key.status === 'in_progress' && (
+                              {key.status === 'in_progress' && !key.isUnlimited && (
                                   <div className="mt-2 pt-2 border-t border-yellow-500/30">
                                       <p className="text-sm font-semibold text-yellow-200">{key.currentEventName || '...'}</p>
                                       <p className="text-sm text-yellow-100 animate-pulse">{key.progress || '...'}</p>
@@ -258,9 +295,11 @@ const ManageSessionsScreen: React.FC<ManageSessionsScreenProps> = ({ sessionKeys
                           </div>
 
                           <div className="flex items-center gap-1 self-end sm:self-center">
-                              <span className={`px-3 py-1 text-xs sm:text-sm font-bold rounded-full bg-opacity-80`}>
-                                {(key.status || 'unknown').replace('_', ' ')}
-                              </span>
+                              {!key.isUnlimited && (
+                                <span className={`px-3 py-1 text-xs sm:text-sm font-bold rounded-full bg-opacity-80`}>
+                                    {(key.status || 'unknown').replace('_', ' ')}
+                                </span>
+                              )}
                               <button onClick={() => setSelectedQrKey(key)} className="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] p-2" aria-label="View QR">
                                   <QrCodeIcon />
                               </button>

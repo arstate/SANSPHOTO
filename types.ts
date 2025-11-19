@@ -145,6 +145,9 @@ export interface SessionKey {
   progress?: string;
   currentEventName?: string;
   hasBeenReviewed?: boolean;
+  isUnlimited?: boolean; // New: Unlimited / Persistent mode
+  isGenerated?: boolean; // New: Generated from an unlimited key
+  originalCode?: string; // New: Reference to original code if generated
 }
 
 export interface Review {

@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import WelcomeScreen from './components/WelcomeScreen';
 import TemplateSelection from './components/TemplateSelection';
@@ -448,15 +449,39 @@ const App: React.FC = () => {
         const keyId = Object.keys(data)[0];
         const sessionKey: SessionKey = { id: keyId, ...data[keyId] };
 
-        if (sessionKey.status !== 'available') {
-            setKeyCodeError(`Kode ini telah ${sessionKey.status === 'completed' ? 'digunakan' : 'sedang berjalan'}.`);
-            setIsSessionLoading(false);
-            return;
+        if (sessionKey.isUnlimited) {
+           // Create a NEW generated session based on this unlimited key
+           const newSessionData: Omit<SessionKey, 'id'> = {
+             code: `${sessionKey.code}-${Date.now()}`, // Unique internal code, user doesn't see this
+             originalCode: sessionKey.code,
+             maxTakes: sessionKey.maxTakes,
+             takesUsed: 1,
+             status: 'in_progress',
+             createdAt: Date.now(),
+             progress: 'Memilih Event',
+             hasBeenReviewed: false,
+             isGenerated: true
+           };
+           const newKeyRef = await push(ref(db, `data/${currentTenantId}/sessionKeys`), newSessionData);
+           if (newKeyRef.key) {
+              setCurrentSessionKey({ id: newKeyRef.key, ...newSessionData });
+              setCurrentTakeCount(1);
+              setAppState(AppState.EVENT_SELECTION);
+           } else {
+             setKeyCodeError("Gagal membuat sesi baru.");
+           }
+        } else {
+          // Standard One-Time Key Logic
+          if (sessionKey.status !== 'available') {
+              setKeyCodeError(`Kode ini telah ${sessionKey.status === 'completed' ? 'digunakan' : 'sedang berjalan'}.`);
+              setIsSessionLoading(false);
+              return;
+          }
+          setCurrentSessionKey(sessionKey);
+          setCurrentTakeCount(1);
+          await update(ref(db, `data/${currentTenantId}/sessionKeys/${sessionKey.id}`), { status: 'in_progress', takesUsed: 1 });
+          setAppState(AppState.EVENT_SELECTION);
         }
-        setCurrentSessionKey(sessionKey);
-        setCurrentTakeCount(1);
-        await update(ref(db, `data/${currentTenantId}/sessionKeys/${sessionKey.id}`), { status: 'in_progress', takesUsed: 1 });
-        setAppState(AppState.EVENT_SELECTION);
     } catch (error) {
         console.error("Error validating session key:", error);
         setKeyCodeError("Terjadi kesalahan. Coba lagi.");
@@ -566,7 +591,7 @@ const App: React.FC = () => {
   }, [currentTenantId]);
   
   // Session Key Handlers
-  const handleAddSessionKey = useCallback(async (maxTakes: number) => {
+  const handleAddSessionKey = useCallback(async (maxTakes: number, isUnlimited?: boolean) => {
       if (!currentTenantId) return;
       const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
       let newCode = '';
@@ -577,7 +602,15 @@ const App: React.FC = () => {
         }
       } while (sessionKeys.some(key => key.code === newCode));
 
-      const newKey: Omit<SessionKey, 'id'> = { code: newCode, maxTakes, takesUsed: 0, status: 'available', createdAt: Date.now(), hasBeenReviewed: false };
+      const newKey: Omit<SessionKey, 'id'> = { 
+        code: newCode, 
+        maxTakes, 
+        takesUsed: 0, 
+        status: 'available', 
+        createdAt: Date.now(), 
+        hasBeenReviewed: false,
+        isUnlimited: !!isUnlimited 
+      };
       await push(ref(db, `data/${currentTenantId}/sessionKeys`), newKey);
   }, [sessionKeys, currentTenantId]);
 
@@ -696,7 +729,9 @@ const App: React.FC = () => {
 
   const handleSessionEnd = useCallback(() => {
     if (currentSessionKey && currentTenantId) {
-        if (currentSessionKey.code === 'FREEPLAY') {
+        // If session was 'unlimited' derived, we don't delete it, but marking as completed is fine.
+        // If session was FREEPLAY, we delete it.
+        if (currentSessionKey.code.startsWith('FREEPLAY')) { // Check startsWith in case we append ID later for uniqueness
             remove(ref(db, `data/${currentTenantId}/sessionKeys/${currentSessionKey.id}`));
         } else {
             update(ref(db, `data/${currentTenantId}/sessionKeys/${currentSessionKey.id}`), { status: 'completed', progress: null, currentEventName: null });
@@ -714,8 +749,14 @@ const App: React.FC = () => {
 
   const handleCancelSession = useCallback(() => {
       if (currentSessionKey && currentTenantId) {
-          if (currentSessionKey.code === 'FREEPLAY') {
+        // If isGenerated, we can just delete it on cancel to clean up? Or mark as available?
+        // If it's a standard one-time key, mark available.
+        // If Freeplay, delete.
+          if (currentSessionKey.code.startsWith('FREEPLAY')) {
               remove(ref(db, `data/${currentTenantId}/sessionKeys/${currentSessionKey.id}`));
+          } else if (currentSessionKey.isGenerated) {
+             // Optionally delete generated sessions on cancel to avoid clutter
+             remove(ref(db, `data/${currentTenantId}/sessionKeys/${currentSessionKey.id}`));
           } else {
               update(ref(db, `data/${currentTenantId}/sessionKeys/${currentSessionKey.id}`), { status: 'available', takesUsed: 0, progress: null, currentEventName: null });
           }
@@ -841,7 +882,14 @@ const App: React.FC = () => {
     decideNextStepAfterCapture();
   }, [handleUploadToDrive, decideNextStepAfterCapture]);
   const handleStartNextTake = useCallback(() => { if (!currentSessionKey || currentTakeCount >= currentSessionKey.maxTakes) return; const nextTake = currentTakeCount + 1; setCurrentTakeCount(nextTake); if(currentTenantId) update(ref(db, `data/${currentTenantId}/sessionKeys/${currentSessionKey.id}`), { takesUsed: nextTake }); setCapturedImages([]); setSelectedTemplate(null); setRetakesUsed(0); setRetakingPhotoIndex(null); setAppState(AppState.TEMPLATE_SELECTION); }, [currentSessionKey, currentTakeCount, currentTenantId]);
-  const handleSaveHistoryFromSession = useCallback(async (imageDataUrl: string) => { const event = events.find(e => e.id === selectedEventId); if (!event) return; const timestamp = Date.now(); const newEntry: HistoryEntry = { id: String(timestamp), eventId: event.id, eventName: event.name, imageDataUrl, timestamp: timestamp }; await addHistoryEntry(newEntry); setHistory(prev => [newEntry, ...prev].sort((a,b) => Number(b.timestamp) - Number(a.timestamp))); }, [events, selectedEventId]);
+  const handleSaveHistoryFromSession = useCallback(async (imageDataUrl: string) => {
+    const event = events.find(e => e.id === selectedEventId);
+    if (!event) return;
+    const timestamp = Date.now();
+    const newEntry: HistoryEntry = { id: String(timestamp), eventId: event.id, eventName: event.name, imageDataUrl, timestamp: timestamp };
+    await addHistoryEntry(newEntry);
+    setHistory(prev => [newEntry, ...prev].sort((a,b) => b.timestamp - a.timestamp));
+  }, [events, selectedEventId]);
 
   const renderContent = () => {
     if (tenantNotFound) return <TenantNotFoundScreen />;
