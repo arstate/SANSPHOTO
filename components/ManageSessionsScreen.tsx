@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { SessionKey, SessionKeyStatus } from '../types';
 import { BackIcon } from './icons/BackIcon';
@@ -5,7 +6,12 @@ import { AddIcon } from './icons/AddIcon';
 import { TrashIcon } from './icons/TrashIcon';
 import { CopyIcon } from './icons/CopyIcon';
 import { CheckIcon } from './icons/CheckIcon';
+import { QrCodeIcon } from './icons/QrCodeIcon';
+import { CloseIcon } from './icons/CloseIcon';
+import { DownloadIcon } from './icons/DownloadIcon';
 
+// Declare QRCode global from CDN
+declare const QRCode: any;
 
 interface ManageSessionsScreenProps {
   sessionKeys: SessionKey[];
@@ -14,6 +20,106 @@ interface ManageSessionsScreenProps {
   onDeleteKey: (keyId: string) => void;
   onDeleteAllKeys: () => void;
   onDeleteFreeplayKeys: () => void;
+}
+
+interface QrPreviewModalProps {
+  sessionKey: SessionKey;
+  onClose: () => void;
+}
+
+const QrPreviewModal: React.FC<QrPreviewModalProps> = ({ sessionKey, onClose }) => {
+    const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+    const canvasRef = React.useRef<HTMLCanvasElement>(null);
+
+    React.useEffect(() => {
+        if (typeof QRCode !== 'undefined') {
+            QRCode.toDataURL(sessionKey.code, { width: 500, margin: 2, color: { dark: '#000000', light: '#ffffff' } }, (err: any, url: string) => {
+                if (!err) setQrDataUrl(url);
+            });
+        }
+    }, [sessionKey.code]);
+
+    const handleDownload = () => {
+        if (!qrDataUrl) return;
+
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const width = 600;
+        const height = 800;
+        
+        if (ctx) {
+            canvas.width = width;
+            canvas.height = height;
+
+            // 1. White Background
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, width, height);
+
+            // 2. Header Text: SANS PHOTO
+            ctx.fillStyle = '#000000';
+            ctx.font = 'bold 80px "Bebas Neue", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('SANS PHOTO', width / 2, 120);
+
+            // 3. Draw QR Code
+            const qrImg = new Image();
+            qrImg.onload = () => {
+                const qrSize = 400;
+                const qrX = (width - qrSize) / 2;
+                const qrY = 180;
+                ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
+
+                // 4. Session Code Label
+                ctx.font = '40px "Poppins", sans-serif';
+                ctx.fillStyle = '#555555';
+                ctx.fillText('Session Code', width / 2, 650);
+
+                // 5. Session Code Value
+                ctx.font = 'bold 60px "Courier New", monospace';
+                ctx.fillStyle = '#000000';
+                ctx.fillText(sessionKey.code, width / 2, 720);
+
+                // 6. Download
+                const finalUrl = canvas.toDataURL('image/png');
+                const link = document.createElement('a');
+                link.href = finalUrl;
+                link.download = `SANS-PHOTO-SESSION-${sessionKey.code}.png`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            };
+            qrImg.src = qrDataUrl;
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4" onClick={onClose}>
+            <div className="bg-[var(--color-bg-secondary)] rounded-xl shadow-2xl p-6 w-full max-w-md border border-[var(--color-border-primary)] relative flex flex-col items-center" onClick={e => e.stopPropagation()}>
+                <button onClick={onClose} className="absolute top-4 right-4 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]">
+                    <CloseIcon />
+                </button>
+                
+                <h3 className="text-3xl font-bebas text-[var(--color-text-primary)] mb-1">Session QR</h3>
+                <p className="text-[var(--color-text-accent)] font-mono text-2xl font-bold tracking-widest mb-6">{sessionKey.code}</p>
+
+                <div className="bg-white p-4 rounded-lg mb-6">
+                   {qrDataUrl ? (
+                       <img src={qrDataUrl} alt="QR Code" className="w-64 h-64" />
+                   ) : (
+                       <div className="w-64 h-64 flex items-center justify-center text-black">Generating...</div>
+                   )}
+                </div>
+
+                <button 
+                    onClick={handleDownload}
+                    disabled={!qrDataUrl}
+                    className="w-full bg-[var(--color-positive)] hover:bg-[var(--color-positive-hover)] text-[var(--color-positive-text)] font-bold py-3 px-6 rounded-full text-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    <DownloadIcon /> Download PNG
+                </button>
+            </div>
+        </div>
+    );
 }
 
 const getStatusClass = (status: SessionKeyStatus) => {
@@ -29,6 +135,7 @@ const ManageSessionsScreen: React.FC<ManageSessionsScreenProps> = ({ sessionKeys
   const [maxTakes, setMaxTakes] = useState(1);
   const [copySuccessId, setCopySuccessId] = useState<string | null>(null);
   const [allCopied, setAllCopied] = useState(false);
+  const [selectedQrKey, setSelectedQrKey] = useState<SessionKey | null>(null);
 
   const handleAddKey = (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,6 +172,10 @@ const ManageSessionsScreen: React.FC<ManageSessionsScreenProps> = ({ sessionKeys
   }, [sessionKeys]);
 
   return (
+    <>
+    {selectedQrKey && (
+        <QrPreviewModal sessionKey={selectedQrKey} onClose={() => setSelectedQrKey(null)} />
+    )}
     <div className="relative flex flex-col w-full h-full">
       <div className="absolute top-4 left-4 z-10">
         <button
@@ -150,6 +261,9 @@ const ManageSessionsScreen: React.FC<ManageSessionsScreenProps> = ({ sessionKeys
                               <span className={`px-3 py-1 text-xs sm:text-sm font-bold rounded-full bg-opacity-80`}>
                                 {(key.status || 'unknown').replace('_', ' ')}
                               </span>
+                              <button onClick={() => setSelectedQrKey(key)} className="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] p-2" aria-label="View QR">
+                                  <QrCodeIcon />
+                              </button>
                               <button onClick={() => handleCopy(key.code, key.id)} className="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] p-2" aria-label="Copy Code">
                                 {copySuccessId === key.id ? <CheckIcon/> : <CopyIcon />}
                               </button>
@@ -163,6 +277,7 @@ const ManageSessionsScreen: React.FC<ManageSessionsScreenProps> = ({ sessionKeys
           </div>
       </main>
     </div>
+    </>
   );
 };
 
