@@ -1,9 +1,7 @@
 
-import React, { useState, useEffect } from 'react';
-import { Tenant } from '../types';
 
-// Declare Html5Qrcode global from CDN
-declare const Html5Qrcode: any;
+import React, { useState } from 'react';
+import { Tenant } from '../types';
 
 interface LoginModalProps {
   tenants: Tenant[];
@@ -15,68 +13,6 @@ const LoginModal: React.FC<LoginModalProps> = ({ tenants, onLogin, onClose }) =>
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  
-  // Scanner logic
-  const scannerContainerId = "login-reader";
-
-  useEffect(() => {
-    if (typeof Html5Qrcode === 'undefined') return;
-
-    let html5QrCode: any = null;
-
-    const startScanner = async () => {
-        try {
-            html5QrCode = new Html5Qrcode(scannerContainerId);
-            await html5QrCode.start(
-                { facingMode: "user" },
-                {
-                    fps: 10,
-                    qrbox: { width: 250, height: 250 },
-                    aspectRatio: 1.0
-                },
-                (decodedText: string) => {
-                    const cleanCode = decodedText.trim();
-                    // Format QR Admin: SANS_ADMIN:username:password
-                    if (cleanCode.startsWith('SANS_ADMIN:')) {
-                        const parts = cleanCode.split(':');
-                        if (parts.length === 3) {
-                            const qrUser = parts[1];
-                            const qrPass = parts[2];
-                            
-                            // Attempt login logic
-                            if (qrUser === 'admin' && qrPass === '12345') {
-                                html5QrCode.pause();
-                                onLogin(); // Master login
-                                return;
-                            }
-
-                            // Check tenant login
-                            const matchedTenant = tenants.find(
-                                t => t.isActive && t.username === qrUser && t.password === qrPass
-                            );
-
-                            if (matchedTenant) {
-                                html5QrCode.pause();
-                                onLogin(matchedTenant);
-                            }
-                        }
-                    }
-                },
-                () => {} // Ignore errors
-            );
-        } catch (err) {
-            console.error("Error starting login scanner", err);
-        }
-    };
-
-    startScanner();
-
-    return () => {
-        if (html5QrCode) {
-            html5QrCode.stop().then(() => html5QrCode.clear()).catch((err: any) => console.error(err));
-        }
-    };
-  }, [tenants, onLogin]);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -108,16 +44,6 @@ const LoginModal: React.FC<LoginModalProps> = ({ tenants, onLogin, onClose }) =>
       className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50"
       onClick={onClose}
     >
-      {/* Hidden Scanner Container */}
-      <div className="fixed inset-0 z-[-1] opacity-0 pointer-events-none overflow-hidden">
-         <div id={scannerContainerId} className="w-full h-full"></div>
-      </div>
-      <style>{`
-        #${scannerContainerId} video {
-            transform: scaleX(1) !important; 
-        }
-      `}</style>
-
       <div 
         className="bg-[var(--color-bg-secondary)] rounded-lg shadow-xl p-8 w-full max-w-sm border border-[var(--color-border-primary)]"
         onClick={(e) => e.stopPropagation()}
@@ -155,9 +81,6 @@ const LoginModal: React.FC<LoginModalProps> = ({ tenants, onLogin, onClose }) =>
               Cancel
             </button>
           </div>
-          <p className="text-center text-xs text-[var(--color-text-muted)] mt-4">
-              Or scan your Admin QR Code
-          </p>
         </form>
       </div>
     </div>

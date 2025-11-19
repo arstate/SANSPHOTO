@@ -64,8 +64,7 @@ export async function getAllHistoryEntries(): Promise<HistoryEntry[]> {
 
     request.onsuccess = () => {
       // Sort descending by timestamp
-      const result = request.result as HistoryEntry[];
-      const sortedResult = result ? result.sort((a, b) => b.timestamp - a.timestamp) : [];
+      const sortedResult = request.result.sort((a, b) => b.timestamp - a.timestamp);
       resolve(sortedResult);
     };
     request.onerror = () => {
