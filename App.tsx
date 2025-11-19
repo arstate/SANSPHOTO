@@ -841,7 +841,20 @@ const App: React.FC = () => {
     decideNextStepAfterCapture();
   }, [handleUploadToDrive, decideNextStepAfterCapture]);
   const handleStartNextTake = useCallback(() => { if (!currentSessionKey || currentTakeCount >= currentSessionKey.maxTakes) return; const nextTake = currentTakeCount + 1; setCurrentTakeCount(nextTake); if(currentTenantId) update(ref(db, `data/${currentTenantId}/sessionKeys/${currentSessionKey.id}`), { takesUsed: nextTake }); setCapturedImages([]); setSelectedTemplate(null); setRetakesUsed(0); setRetakingPhotoIndex(null); setAppState(AppState.TEMPLATE_SELECTION); }, [currentSessionKey, currentTakeCount, currentTenantId]);
-  const handleSaveHistoryFromSession = useCallback(async (imageDataUrl: string) => { const event = events.find(e => e.id === selectedEventId); if (!event) return; const timestamp = Date.now(); const newEntry: HistoryEntry = { id: String(timestamp), eventId: event.id, eventName: event.name, imageDataUrl, timestamp: timestamp }; await addHistoryEntry(newEntry); setHistory(prev => [newEntry, ...prev].sort((a,b) => Number(b.timestamp) - Number(a.timestamp))); }, [events, selectedEventId]);
+  const handleSaveHistoryFromSession = useCallback(async (imageDataUrl: string) => {
+    const event = events.find(e => e.id === selectedEventId);
+    if (!event) return;
+    const timestamp = Date.now();
+    const newEntry: HistoryEntry = {
+      id: String(timestamp),
+      eventId: event.id,
+      eventName: event.name,
+      imageDataUrl,
+      timestamp: timestamp
+    };
+    await addHistoryEntry(newEntry);
+    setHistory(prev => [newEntry, ...prev].sort((a, b) => b.timestamp - a.timestamp));
+  }, [events, selectedEventId]);
 
   const renderContent = () => {
     if (tenantNotFound) return <TenantNotFoundScreen />;

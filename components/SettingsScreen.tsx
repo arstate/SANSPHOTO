@@ -1,6 +1,5 @@
 
-
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Settings } from '../types';
 import { BackIcon } from './icons/BackIcon';
 import { KeyIcon } from './icons/KeyIcon';
@@ -12,6 +11,12 @@ import { EyeIcon } from './icons/EyeIcon';
 import { FolderIcon } from './icons/FolderIcon';
 import { ReviewsIcon } from './icons/ReviewsIcon';
 import { UsersIcon } from './icons/UsersIcon';
+import { QrCodeIcon } from './icons/QrCodeIcon';
+import { CloseIcon } from './icons/CloseIcon';
+import { DownloadIcon } from './icons/DownloadIcon';
+
+// Declare QRCode global
+declare const QRCode: any;
 
 interface SettingsScreenProps {
     settings: Settings;
@@ -59,12 +64,67 @@ const CategoryButton: React.FC<{
   </button>
 );
 
+const MasterLoginQrModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
+    const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+    // Format: SANS_ADMIN:username:password
+    const qrValue = "SANS_ADMIN:admin:12345";
+
+    useEffect(() => {
+        if (typeof QRCode !== 'undefined') {
+            QRCode.toDataURL(qrValue, { width: 500, margin: 2, color: { dark: '#000000', light: '#ffffff' } }, (err: any, url: string) => {
+                if (!err) setQrDataUrl(url);
+            });
+        }
+    }, []);
+
+    const handleDownload = () => {
+        if (!qrDataUrl) return;
+        const link = document.createElement('a');
+        link.href = qrDataUrl;
+        link.download = `MASTER-ADMIN-LOGIN-QR.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4" onClick={onClose}>
+            <div className="bg-[var(--color-bg-secondary)] rounded-xl shadow-2xl p-6 w-full max-w-md border border-[var(--color-border-primary)] relative flex flex-col items-center" onClick={e => e.stopPropagation()}>
+                <button onClick={onClose} className="absolute top-4 right-4 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]">
+                    <CloseIcon />
+                </button>
+                
+                <h3 className="text-3xl font-bebas text-[var(--color-text-primary)] mb-4">Master Login QR</h3>
+                <p className="text-center text-[var(--color-text-muted)] mb-4 text-sm">
+                    Scan this code on the login screen to instantly log in as Master Admin.
+                </p>
+
+                <div className="bg-white p-4 rounded-lg mb-6">
+                   {qrDataUrl ? (
+                       <img src={qrDataUrl} alt="QR Code" className="w-64 h-64" />
+                   ) : (
+                       <div className="w-64 h-64 flex items-center justify-center text-black">Generating...</div>
+                   )}
+                </div>
+
+                <button 
+                    onClick={handleDownload}
+                    disabled={!qrDataUrl}
+                    className="w-full bg-[var(--color-positive)] hover:bg-[var(--color-positive-hover)] text-[var(--color-positive-text)] font-bold py-3 px-6 rounded-full text-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    <DownloadIcon /> Download PNG
+                </button>
+            </div>
+        </div>
+    );
+};
 
 const SettingsScreen: React.FC<SettingsScreenProps> = ({ 
     settings, onSettingsChange, onManageTemplates, onManageEvents, onManageSessions, onManageReviews, onViewHistory, onBack,
     isMasterAdmin, onManageTenants
 }) => {
   const [isGuideOpen, setIsGuideOpen] = useState(false);
+  const [isMasterQrOpen, setIsMasterQrOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState<SettingsCategory>('general');
   const isLight = settings.theme === 'light';
 
@@ -781,7 +841,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
               {/* Template Settings */}
               <div className="p-6 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] text-left">
                 <h3 className="text-xl font-bold mb-4 text-[var(--color-text-accent)]">Template Library</h3>
-                <p className="text-[var(--color-text-muted)] mb-4">
+                <p className="text--[var(--color-text-muted)] mb-4">
                   Add, edit, or delete photobooth templates from your global library.
                 </p>
                 <button
@@ -945,13 +1005,22 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
             <div className={`p-6 rounded-lg border text-left ${isLight ? 'bg-purple-100 border-purple-300' : 'bg-purple-900/20 border-purple-700'}`}>
               <h3 className={`text-xl font-bold ${isLight ? 'text-purple-800' : 'text-purple-300'}`}>Master Admin Area</h3>
               <p className={`${isLight ? 'text-purple-600' : 'text-purple-200/80'} mb-4`}>Manage tenant admins who use your photobooth platform.</p>
-              <button
-                onClick={onManageTenants}
-                className="w-full bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-[var(--color-accent-primary-text)] font-bold py-3 px-6 rounded-full text-lg transition-transform transform hover:scale-105 flex items-center justify-center gap-2"
-              >
-                <UsersIcon />
-                Manage Admins
-              </button>
+              <div className="flex flex-col gap-3">
+                <button
+                    onClick={onManageTenants}
+                    className="w-full bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-[var(--color-accent-primary-text)] font-bold py-3 px-6 rounded-full text-lg transition-transform transform hover:scale-105 flex items-center justify-center gap-2"
+                >
+                    <UsersIcon />
+                    Manage Admins
+                </button>
+                <button
+                    onClick={() => setIsMasterQrOpen(true)}
+                    className="w-full bg-[var(--color-info)] hover:bg-[var(--color-info-hover)] text-[var(--color-info-text)] font-bold py-3 px-6 rounded-full text-lg transition-transform transform hover:scale-105 flex items-center justify-center gap-2"
+                >
+                    <QrCodeIcon />
+                    View Master Login QR
+                </button>
+              </div>
             </div>
           </div>
         ) : null;
@@ -963,6 +1032,8 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
   return (
     <>
       {isGuideOpen && <KioskGuide onClose={() => setIsGuideOpen(false)} />}
+      {isMasterQrOpen && <MasterLoginQrModal onClose={() => setIsMasterQrOpen(false)} />}
+      
       <div className="relative flex flex-col items-center w-full h-full">
         <div className="absolute top-4 left-4 z-10">
           <button 
