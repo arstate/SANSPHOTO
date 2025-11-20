@@ -114,7 +114,7 @@ export interface Event {
   id: string;
   name: string;
   isArchived: boolean;
-  qrCodeImageUrl?: string;
+  qrCodeValue?: string; // Changed from qrCodeImageUrl: Stores the link/text content
   isQrCodeEnabled?: boolean;
   templateOrder?: string[]; // Menyimpan urutan ID template
 }

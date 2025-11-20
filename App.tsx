@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import WelcomeScreen from './components/WelcomeScreen';
 import TemplateSelection from './components/TemplateSelection';
@@ -537,7 +536,7 @@ const App: React.FC = () => {
   // Event Management Handlers
   const handleAddEvent = useCallback((name: string) => {
     if (!currentTenantId) return;
-    const { id, ...dataToSave } = { id: '', name, isArchived: false, isQrCodeEnabled: false, qrCodeImageUrl: '', templateOrder: [] };
+    const { id, ...dataToSave } = { id: '', name, isArchived: false, isQrCodeEnabled: false, qrCodeValue: '', templateOrder: [] };
     push(ref(db, `data/${currentTenantId}/events`), dataToSave);
   }, [currentTenantId]);
 
@@ -585,7 +584,7 @@ const App: React.FC = () => {
     setAssigningTemplatesEvent(null);
   }, [templates, currentTenantId]);
 
-  const handleSaveQrCodeSettings = useCallback((eventId: string, settings: { qrCodeImageUrl?: string, isQrCodeEnabled?: boolean}) => {
+  const handleSaveQrCodeSettings = useCallback((eventId: string, settings: { qrCodeValue?: string, isQrCodeEnabled?: boolean}) => {
       if (currentTenantId) update(ref(db, `data/${currentTenantId}/events/${eventId}`), settings);
       setEditingEventQr(null);
   }, [currentTenantId]);
@@ -608,7 +607,7 @@ const App: React.FC = () => {
         takesUsed: 0, 
         status: 'available', 
         createdAt: Date.now(), 
-        hasBeenReviewed: false,
+        hasBeenReviewed: false, 
         isUnlimited: !!isUnlimited 
       };
       await push(ref(db, `data/${currentTenantId}/sessionKeys`), newKey);
@@ -888,7 +887,7 @@ const App: React.FC = () => {
     const timestamp = Date.now();
     const newEntry: HistoryEntry = { id: String(timestamp), eventId: event.id, eventName: event.name, imageDataUrl, timestamp: timestamp };
     await addHistoryEntry(newEntry);
-    setHistory(prev => [newEntry, ...prev].sort((a,b) => b.timestamp - a.timestamp));
+    setHistory(prev => [newEntry, ...prev].sort((a,b) => Number(b.timestamp) - Number(a.timestamp)));
   }, [events, selectedEventId]);
 
   const renderContent = () => {

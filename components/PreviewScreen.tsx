@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { DownloadIcon } from './icons/DownloadIcon';
 import { PrintIcon } from './icons/PrintIcon';
@@ -6,6 +7,9 @@ import { BackIcon } from './icons/BackIcon';
 import { RestartIcon } from './icons/RestartIcon';
 import { Template, Event, Settings } from '../types';
 import { getCachedImage, storeImageInCache } from '../utils/db';
+
+// Declare QRCode global from CDN
+declare const QRCode: any;
 
 type PrintSettings = {
   isEnabled: boolean;
@@ -147,11 +151,27 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
+  const [generatedQrUrl, setGeneratedQrUrl] = useState<string | null>(null);
 
   const isLastTake = currentTake >= maxTakes;
   const isLandscape = template.orientation === 'landscape';
   const TEMPLATE_WIDTH = isLandscape ? 1800 : 1200;
   const TEMPLATE_HEIGHT = isLandscape ? 1200 : 1800;
+
+  // Generate QR Code if enabled and value exists
+  useEffect(() => {
+    if (event?.isQrCodeEnabled && event.qrCodeValue && typeof QRCode !== 'undefined') {
+        try {
+            QRCode.toDataURL(event.qrCodeValue, { width: 300, margin: 2, color: { dark: '#000000', light: '#ffffff' } }, (err: any, url: string) => {
+                if (!err) setGeneratedQrUrl(url);
+            });
+        } catch (e) {
+            console.error("Error generating QR", e);
+        }
+    } else {
+        setGeneratedQrUrl(null);
+    }
+  }, [event]);
 
   const handleDownload = useCallback((imageDataUrl?: string) => {
     const url = imageDataUrl || canvasRef.current?.toDataURL('image/png');
@@ -479,10 +499,10 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
               )}
             </div>
 
-            {event?.isQrCodeEnabled && event.qrCodeImageUrl && (
+            {event?.isQrCodeEnabled && generatedQrUrl && (
                 <div className="p-4 bg-[var(--color-bg-secondary)] rounded-lg text-center">
-                    <p className="text-sm text-[var(--color-text-secondary)] mb-2">Pindai untuk mengunduh ke ponsel Anda</p>
-                    <img src={event.qrCodeImageUrl} alt="Kode QR" className="w-64 h-64 mx-auto rounded-md" />
+                    <p className="text-sm text-[var(--color-text-secondary)] mb-2">Pindai untuk tautan cepat</p>
+                    <img src={generatedQrUrl} alt="Kode QR" className="w-64 h-64 mx-auto rounded-md border-4 border-white" />
                 </div>
             )}
         </div>
