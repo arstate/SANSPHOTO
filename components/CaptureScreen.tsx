@@ -1,3 +1,5 @@
+
+
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { CameraIcon } from './icons/CameraIcon';
 import { Template } from '../types';
@@ -13,11 +15,12 @@ interface CaptureScreenProps {
   existingImages?: string[];
   cameraSourceType?: 'default' | 'ip_camera';
   ipCameraUrl?: string;
+  ipCameraUseProxy?: boolean;
 }
 
 const CaptureScreen: React.FC<CaptureScreenProps> = ({ 
   onCaptureComplete, onRetakeComplete, retakeForIndex, template, countdownDuration, flashEffectEnabled, onProgressUpdate, existingImages,
-  cameraSourceType = 'default', ipCameraUrl
+  cameraSourceType = 'default', ipCameraUrl, ipCameraUseProxy
 }) => {
   const [photoIndex, setPhotoIndex] = useState(0);
   const [countdown, setCountdown] = useState<number | null>(null);
@@ -69,6 +72,18 @@ const CaptureScreen: React.FC<CaptureScreenProps> = ({
     return '16 / 9';
   }, [photoIndex, template.photoSlots, isRetakeMode, retakeForIndex]);
 
+  // Proxy logic: If proxy enabled, wrap the URL
+  const finalIpCameraUrl = useMemo(() => {
+    if (!isIpCamera || !ipCameraUrl) return '';
+    if (ipCameraUseProxy) {
+        // Use a standard CORS proxy wrapper. 
+        // corsproxy.io is a common public one. 
+        // Alternatives: 'https://api.allorigins.win/raw?url=' or self-hosted.
+        return `https://corsproxy.io/?${encodeURIComponent(ipCameraUrl)}`;
+    }
+    return ipCameraUrl;
+  }, [isIpCamera, ipCameraUrl, ipCameraUseProxy]);
+
   useEffect(() => {
     let stream: MediaStream | null = null;
     
@@ -77,8 +92,12 @@ const CaptureScreen: React.FC<CaptureScreenProps> = ({
         // We can optionally check if the image loads.
         const img = new Image();
         img.onload = () => setCameraError(null);
-        img.onerror = () => setCameraError("Failed to load IP Camera stream. Check URL and Network.");
-        img.src = ipCameraUrl;
+        img.onerror = () => {
+             // Don't set error immediately on first load fail for streams, sometimes it takes a moment
+             // But we can log it.
+             console.warn("Stream might be failing to load or needs proxy.");
+        };
+        img.src = finalIpCameraUrl;
         return;
     }
 
@@ -106,7 +125,7 @@ const CaptureScreen: React.FC<CaptureScreenProps> = ({
     return () => {
       stream?.getTracks().forEach(track => track.stop());
     };
-  }, [isIpCamera, ipCameraUrl]);
+  }, [isIpCamera, finalIpCameraUrl]);
 
   const takePicture = useCallback(() => {
     const canvas = canvasRef.current;
@@ -116,9 +135,18 @@ const CaptureScreen: React.FC<CaptureScreenProps> = ({
       if (context) {
         if (isIpCamera && ipCamImgRef.current) {
             const img = ipCamImgRef.current;
+            // Ensure we draw the natural size of the image
             canvas.width = img.naturalWidth || 640;
             canvas.height = img.naturalHeight || 480;
-            context.drawImage(img, 0, 0, canvas.width, canvas.height);
+            
+            // Try/Catch block for tainted canvas issues (CORS)
+            try {
+                context.drawImage(img, 0, 0, canvas.width, canvas.height);
+            } catch (e) {
+                console.error("Canvas tainted by cross-origin data", e);
+                setCameraError("Security Error: Unable to capture image due to CORS. Please enable the Proxy setting in Admin > Camera Source.");
+                return;
+            }
         } else if (!isIpCamera && videoRef.current) {
             const video = videoRef.current;
             canvas.width = video.videoWidth;
@@ -178,9 +206,10 @@ const CaptureScreen: React.FC<CaptureScreenProps> = ({
             <h2 className="text-2xl font-bold text-red-300">Camera Error</h2>
             <p className="mt-2 text-red-200">{cameraError}</p>
              {isIpCamera && (
-                <p className="mt-4 text-sm text-red-300 bg-black/30 p-2 rounded">
-                    URL: {ipCameraUrl}
-                </p>
+                <div className="mt-4 text-sm text-red-300 bg-black/30 p-2 rounded break-all max-w-md">
+                    <p>URL: {finalIpCameraUrl}</p>
+                    {ipCameraUseProxy && <p className="text-xs text-yellow-300 mt-1">(Proxy Enabled)</p>}
+                </div>
             )}
         </div>
     );
@@ -203,7 +232,7 @@ const CaptureScreen: React.FC<CaptureScreenProps> = ({
               {isIpCamera ? (
                  <img
                     ref={ipCamImgRef}
-                    src={ipCameraUrl}
+                    src={finalIpCameraUrl}
                     crossOrigin="anonymous"
                     alt="IP Camera Stream"
                     className="w-full h-full object-cover transform -scale-x-100"

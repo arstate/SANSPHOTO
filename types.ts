@@ -36,6 +36,7 @@ export interface Settings {
   // Camera Settings
   cameraSourceType?: 'default' | 'ip_camera';
   ipCameraUrl?: string;
+  ipCameraUseProxy?: boolean; // New setting for proxy
   
   isPinLockEnabled?: boolean;
   fullscreenPin?: string;

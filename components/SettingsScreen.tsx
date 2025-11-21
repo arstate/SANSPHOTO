@@ -1,5 +1,6 @@
 
 
+
 import React, { useState } from 'react';
 import { Settings } from '../types';
 import { BackIcon } from './icons/BackIcon';
@@ -221,20 +222,41 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 </div>
 
                 {settings.cameraSourceType === 'ip_camera' && (
-                    <div className="mt-4 animate-fade-in">
-                        <label htmlFor="ipCameraUrl" className="block text-sm font-medium text-[var(--color-text-secondary)]">HTTP Stream URL</label>
-                        <p className="text-xs text-[var(--color-text-muted)] mb-2">e.g., http://192.168.1.24:8081 or http://192.168.1.24:8081/video</p>
-                        <input
-                            type="url"
-                            id="ipCameraUrl"
-                            name="ipCameraUrl"
-                            value={settings.ipCameraUrl || ''}
-                            onChange={handleSettingsInputChange}
-                            placeholder="http://192.168.1..."
-                            className="mt-1 block w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md shadow-sm py-2 px-3 text-[var(--color-text-primary)] focus:outline-none focus:ring-[var(--color-border-focus)] focus:border-[var(--color-border-focus)] sm:text-sm font-mono"
-                        />
-                         <p className="text-xs text-yellow-500 mt-2">
-                            Note: If the camera server is on a different network or doesn't support CORS, the preview might load but capturing to canvas (saving photo) might fail due to browser security policies (Tainted Canvas). Ensure your camera server sends 'Access-Control-Allow-Origin: *' headers or use a proxy.
+                    <div className="mt-4 animate-fade-in space-y-4">
+                        <div>
+                            <label htmlFor="ipCameraUrl" className="block text-sm font-medium text-[var(--color-text-secondary)]">HTTP Stream URL</label>
+                            <p className="text-xs text-[var(--color-text-muted)] mb-2">e.g., http://192.168.1.24:8081 or http://192.168.1.24:8081/video</p>
+                            <input
+                                type="url"
+                                id="ipCameraUrl"
+                                name="ipCameraUrl"
+                                value={settings.ipCameraUrl || ''}
+                                onChange={handleSettingsInputChange}
+                                placeholder="http://192.168.1..."
+                                className="mt-1 block w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md shadow-sm py-2 px-3 text-[var(--color-text-primary)] focus:outline-none focus:ring-[var(--color-border-focus)] focus:border-[var(--color-border-focus)] sm:text-sm font-mono"
+                            />
+                        </div>
+
+                        <label htmlFor="ipCameraUseProxy" className="flex items-center justify-between cursor-pointer p-2 bg-[var(--color-bg-tertiary)]/50 rounded border border-[var(--color-border-secondary)]">
+                            <div>
+                                <span className="block text-sm font-medium text-[var(--color-text-secondary)]">Enable CORS Proxy</span>
+                                <p className="text-xs text-[var(--color-text-muted)]">Wraps the URL in a public proxy to bypass CORS/Mixed-Content issues.</p>
+                            </div>
+                            <div className="relative">
+                                <input
+                                    type="checkbox"
+                                    id="ipCameraUseProxy"
+                                    name="ipCameraUseProxy"
+                                    checked={settings.ipCameraUseProxy || false}
+                                    onChange={handleSettingsInputChange}
+                                    className="sr-only peer"
+                                />
+                                <div className="w-11 h-6 bg-[var(--color-bg-tertiary)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--color-accent-primary)]"></div>
+                            </div>
+                        </label>
+
+                        <p className="text-xs text-yellow-500 mt-2">
+                            Note: If the camera server is on a different network or doesn't support CORS, the preview might load but capturing to canvas (saving photo) might fail due to browser security policies (Tainted Canvas). Enable the Proxy option above if you encounter issues.
                         </p>
                     </div>
                 )}
