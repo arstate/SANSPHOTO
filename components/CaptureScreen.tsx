@@ -11,10 +11,13 @@ interface CaptureScreenProps {
   flashEffectEnabled: boolean;
   onProgressUpdate?: (current: number, total: number) => void;
   existingImages?: string[];
+  cameraSourceType?: 'default' | 'ip_camera';
+  ipCameraUrl?: string;
 }
 
 const CaptureScreen: React.FC<CaptureScreenProps> = ({ 
-  onCaptureComplete, onRetakeComplete, retakeForIndex, template, countdownDuration, flashEffectEnabled, onProgressUpdate, existingImages
+  onCaptureComplete, onRetakeComplete, retakeForIndex, template, countdownDuration, flashEffectEnabled, onProgressUpdate, existingImages,
+  cameraSourceType = 'default', ipCameraUrl
 }) => {
   const [photoIndex, setPhotoIndex] = useState(0);
   const [countdown, setCountdown] = useState<number | null>(null);
@@ -22,12 +25,15 @@ const CaptureScreen: React.FC<CaptureScreenProps> = ({
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [showFlash, setShowFlash] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const ipCamImgRef = useRef<HTMLImageElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const isRetakeMode = retakeForIndex !== null;
   const isLandscape = template.orientation === 'landscape';
   const TEMPLATE_WIDTH = isLandscape ? 1800 : 1200;
   const TEMPLATE_HEIGHT = isLandscape ? 1200 : 1800;
+  
+  const isIpCamera = cameraSourceType === 'ip_camera' && !!ipCameraUrl;
 
   const totalPhotos = useMemo(() => isRetakeMode ? 1 : [...new Set(template.photoSlots.map(slot => slot.inputId))].length, [template.photoSlots, isRetakeMode]);
 
@@ -65,6 +71,17 @@ const CaptureScreen: React.FC<CaptureScreenProps> = ({
 
   useEffect(() => {
     let stream: MediaStream | null = null;
+    
+    if (isIpCamera) {
+        // For IP Camera, we just rely on the <img src> tag.
+        // We can optionally check if the image loads.
+        const img = new Image();
+        img.onload = () => setCameraError(null);
+        img.onerror = () => setCameraError("Failed to load IP Camera stream. Check URL and Network.");
+        img.src = ipCameraUrl;
+        return;
+    }
+
     const setupCamera = async () => {
       try {
         stream = await navigator.mediaDevices.getUserMedia({ 
@@ -77,6 +94,7 @@ const CaptureScreen: React.FC<CaptureScreenProps> = ({
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
         }
+        setCameraError(null);
       } catch (err) {
         console.error("Error accessing camera:", err);
         setCameraError("Could not access the camera. Please check permissions and try again.");
@@ -88,17 +106,28 @@ const CaptureScreen: React.FC<CaptureScreenProps> = ({
     return () => {
       stream?.getTracks().forEach(track => track.stop());
     };
-  }, []);
+  }, [isIpCamera, ipCameraUrl]);
 
   const takePicture = useCallback(() => {
-    const video = videoRef.current;
     const canvas = canvasRef.current;
-    if (video && canvas) {
+    
+    if (canvas) {
       const context = canvas.getContext('2d');
       if (context) {
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        context.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
+        if (isIpCamera && ipCamImgRef.current) {
+            const img = ipCamImgRef.current;
+            canvas.width = img.naturalWidth || 640;
+            canvas.height = img.naturalHeight || 480;
+            context.drawImage(img, 0, 0, canvas.width, canvas.height);
+        } else if (!isIpCamera && videoRef.current) {
+            const video = videoRef.current;
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
+        } else {
+            return;
+        }
+
         const dataUrl = canvas.toDataURL('image/jpeg');
         
         if (isRetakeMode) {
@@ -116,7 +145,7 @@ const CaptureScreen: React.FC<CaptureScreenProps> = ({
         }
       }
     }
-  }, [images, onCaptureComplete, onRetakeComplete, photoIndex, totalPhotos, isRetakeMode]);
+  }, [images, onCaptureComplete, onRetakeComplete, photoIndex, totalPhotos, isRetakeMode, isIpCamera]);
 
   useEffect(() => {
     if (countdown !== null && countdown > 0) {
@@ -145,9 +174,14 @@ const CaptureScreen: React.FC<CaptureScreenProps> = ({
   
   if (cameraError) {
     return (
-        <div className="text-center p-8 bg-red-900/50 rounded-lg">
+        <div className="text-center p-8 bg-red-900/50 rounded-lg h-full flex flex-col items-center justify-center">
             <h2 className="text-2xl font-bold text-red-300">Camera Error</h2>
             <p className="mt-2 text-red-200">{cameraError}</p>
+             {isIpCamera && (
+                <p className="mt-4 text-sm text-red-300 bg-black/30 p-2 rounded">
+                    URL: {ipCameraUrl}
+                </p>
+            )}
         </div>
     );
   }
@@ -166,13 +200,23 @@ const CaptureScreen: React.FC<CaptureScreenProps> = ({
               className="relative max-w-full max-h-full bg-black rounded-lg overflow-hidden border-4 border-[var(--color-border-primary)] shadow-2xl shadow-[var(--color-accent-primary)]/20"
               style={{ aspectRatio: aspectRatio }}
             >
-              <video
-                ref={videoRef}
-                autoPlay
-                playsInline
-                muted
-                className="w-full h-full object-cover transform -scale-x-100"
-              />
+              {isIpCamera ? (
+                 <img
+                    ref={ipCamImgRef}
+                    src={ipCameraUrl}
+                    crossOrigin="anonymous"
+                    alt="IP Camera Stream"
+                    className="w-full h-full object-cover transform -scale-x-100"
+                 />
+              ) : (
+                <video
+                    ref={videoRef}
+                    autoPlay
+                    playsInline
+                    muted
+                    className="w-full h-full object-cover transform -scale-x-100"
+                />
+              )}
                 {countdown !== null && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 z-10">
                   <div className="text-9xl font-bebas text-white animate-ping">{countdown > 0 ? countdown : ''}</div>

@@ -33,6 +33,10 @@ export interface PhotoSlot {
 export interface Settings {
   countdownDuration: number;
   flashEffectEnabled: boolean;
+  // Camera Settings
+  cameraSourceType?: 'default' | 'ip_camera';
+  ipCameraUrl?: string;
+  
   isPinLockEnabled?: boolean;
   fullscreenPin?: string;
   isStrictKioskMode?: boolean;

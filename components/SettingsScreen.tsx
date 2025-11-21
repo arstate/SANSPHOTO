@@ -12,6 +12,7 @@ import { EyeIcon } from './icons/EyeIcon';
 import { FolderIcon } from './icons/FolderIcon';
 import { ReviewsIcon } from './icons/ReviewsIcon';
 import { UsersIcon } from './icons/UsersIcon';
+import { CameraIcon } from './icons/CameraIcon';
 
 interface SettingsScreenProps {
     settings: Settings;
@@ -184,6 +185,59 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                         className="mt-1 block w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md shadow-sm py-2 px-3 text-[var(--color-text-primary)] focus:outline-none focus:ring-[var(--color-border-focus)] focus:border-[var(--color-border-focus)] sm:text-sm"
                     />
                 </div>
+            </div>
+
+            {/* Camera Source Settings */}
+            <div className="p-6 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] text-left space-y-4">
+                <h3 className="text-xl font-bold text-[var(--color-text-accent)] flex items-center gap-2"><CameraIcon /> Camera Source</h3>
+                <p className="text-sm text-[var(--color-text-muted)]">Choose between the default device webcam or an external IP Camera stream.</p>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <label className={`flex flex-col items-center p-4 border-2 rounded-lg cursor-pointer transition-colors ${settings.cameraSourceType !== 'ip_camera' ? 'border-[var(--color-accent-primary)] bg-[var(--color-accent-primary)]/10' : 'border-[var(--color-border-secondary)] hover:border-[var(--color-border-primary)]'}`}>
+                        <input 
+                            type="radio" 
+                            name="cameraSourceType" 
+                            value="default" 
+                            checked={settings.cameraSourceType !== 'ip_camera'} 
+                            onChange={handleSettingsInputChange} 
+                            className="sr-only"
+                        />
+                        <span className="font-bold">Default Webcam</span>
+                        <span className="text-xs text-center text-[var(--color-text-muted)] mt-1">Uses browser API (getUserMedia)</span>
+                    </label>
+
+                    <label className={`flex flex-col items-center p-4 border-2 rounded-lg cursor-pointer transition-colors ${settings.cameraSourceType === 'ip_camera' ? 'border-[var(--color-accent-primary)] bg-[var(--color-accent-primary)]/10' : 'border-[var(--color-border-secondary)] hover:border-[var(--color-border-primary)]'}`}>
+                        <input 
+                            type="radio" 
+                            name="cameraSourceType" 
+                            value="ip_camera" 
+                            checked={settings.cameraSourceType === 'ip_camera'} 
+                            onChange={handleSettingsInputChange} 
+                            className="sr-only"
+                        />
+                        <span className="font-bold">IP Camera / Web Server</span>
+                        <span className="text-xs text-center text-[var(--color-text-muted)] mt-1">MJPEG Stream via HTTP/URL</span>
+                    </label>
+                </div>
+
+                {settings.cameraSourceType === 'ip_camera' && (
+                    <div className="mt-4 animate-fade-in">
+                        <label htmlFor="ipCameraUrl" className="block text-sm font-medium text-[var(--color-text-secondary)]">HTTP Stream URL</label>
+                        <p className="text-xs text-[var(--color-text-muted)] mb-2">e.g., http://192.168.1.24:8081 or http://192.168.1.24:8081/video</p>
+                        <input
+                            type="url"
+                            id="ipCameraUrl"
+                            name="ipCameraUrl"
+                            value={settings.ipCameraUrl || ''}
+                            onChange={handleSettingsInputChange}
+                            placeholder="http://192.168.1..."
+                            className="mt-1 block w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md shadow-sm py-2 px-3 text-[var(--color-text-primary)] focus:outline-none focus:ring-[var(--color-border-focus)] focus:border-[var(--color-border-focus)] sm:text-sm font-mono"
+                        />
+                         <p className="text-xs text-yellow-500 mt-2">
+                            Note: If the camera server is on a different network or doesn't support CORS, the preview might load but capturing to canvas (saving photo) might fail due to browser security policies (Tainted Canvas). Ensure your camera server sends 'Access-Control-Allow-Origin: *' headers or use a proxy.
+                        </p>
+                    </div>
+                )}
             </div>
 
             {/* Closed Mode Settings */}
