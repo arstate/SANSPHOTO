@@ -967,7 +967,7 @@ const App: React.FC = () => {
     await update(ref(db), updates);
   }, []);
 
-  const handleUploadToDrive = useCallback((imageDataUrl: string) => {
+  const handleUploadToDrive = useCallback((imageDataUrl: string, userName: string = 'guest') => {
     const uploadId = Date.now();
     setUploadInfo({ id: uploadId, progress: 0, status: 'uploading' });
 
@@ -987,7 +987,8 @@ const App: React.FC = () => {
 
     (async () => {
         try {
-            const filename = `sans-photo-${Date.now()}.png`;
+            const safeUserName = userName.replace(/[^a-zA-Z0-9]/g, '_');
+            const filename = `sans-photo-${Date.now()}-${safeUserName}.png`;
             const payload = JSON.stringify({ foto: imageDataUrl, nama: filename });
 
             await fetch(SCRIPT_URL_RETAKE, {
@@ -1040,9 +1041,9 @@ const App: React.FC = () => {
   const handleStartRetake = useCallback((photoIndex: number) => { if (settings.maxRetakes === undefined || retakesUsed >= settings.maxRetakes) return; setRetakesUsed(prev => prev + 1); setRetakingPhotoIndex(photoIndex); setAppState(AppState.CAPTURE); }, [retakesUsed, settings.maxRetakes]);
   const handleRetakeComplete = useCallback((newImage: string) => { if (retakingPhotoIndex === null) return; setCapturedImages(prev => { const newImages = [...prev]; newImages[retakingPhotoIndex] = newImage; return newImages; }); setRetakingPhotoIndex(null); setAppState(AppState.RETAKE_PREVIEW); }, [retakingPhotoIndex]);
   const handleFinishRetakePreview = useCallback((imageDataUrl: string) => {
-    handleUploadToDrive(imageDataUrl);
+    handleUploadToDrive(imageDataUrl, currentSessionKey?.userName || 'guest');
     decideNextStepAfterCapture();
-  }, [handleUploadToDrive, decideNextStepAfterCapture]);
+  }, [handleUploadToDrive, decideNextStepAfterCapture, currentSessionKey]);
   const handleStartNextTake = useCallback(() => { if (!currentSessionKey || currentTakeCount >= currentSessionKey.maxTakes) return; const nextTake = currentTakeCount + 1; setCurrentTakeCount(nextTake); if(currentTenantId) update(ref(db, `data/${currentTenantId}/sessionKeys/${currentSessionKey.id}`), { takesUsed: nextTake }); setCapturedImages([]); setSelectedTemplate(null); setRetakesUsed(0); setRetakingPhotoIndex(null); setAppState(AppState.TEMPLATE_SELECTION); }, [currentSessionKey, currentTakeCount, currentTenantId]);
   const handleSaveHistoryFromSession = useCallback(async (imageDataUrl: string) => {
     const event = events.find(e => e.id === selectedEventId);
@@ -1059,7 +1060,10 @@ const App: React.FC = () => {
     };
     await addHistoryEntry(newEntry);
     setHistory(prev => [newEntry, ...prev].sort((a,b) => Number(b.timestamp) - Number(a.timestamp)));
-  }, [events, selectedEventId, currentSessionKey]);
+    
+    // Trigger upload
+    handleUploadToDrive(imageDataUrl, currentSessionKey?.userName || 'guest');
+  }, [events, selectedEventId, currentSessionKey, handleUploadToDrive]);
 
   const renderContent = () => {
     if (tenantNotFound) return <TenantNotFoundScreen />;
