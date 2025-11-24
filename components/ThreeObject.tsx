@@ -39,18 +39,26 @@ export const ThreeObject: React.FC<ThreeObjectProps> = ({ objectData, className,
     const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
     
     // Adjust camera distance based on scale to keep object visible
-    camera.position.z = 6 / (objectData.scale || 1); 
+    // Note: We use a constant reference distance because we will scale the renderer size instead
+    camera.position.z = 6; 
     camera.position.y = 1;
     camera.position.x = 1;
     camera.lookAt(0, 0, 0);
 
-    // --- STANDARD RENDERER SETUP (No PBR overhead) ---
+    // --- STANDARD RENDERER SETUP ---
     const renderer = new THREE.WebGLRenderer({ 
         alpha: true, 
         antialias: true,
+        preserveDrawingBuffer: true // Helps with some mobile rendering artifacts
     });
-    renderer.setSize(300, 300); // Fixed size for the container
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Limit pixel ratio for performance
+    
+    // FIX: Set renderer size based on the actual display scale to prevent pixelation/blurriness
+    const baseSize = 300;
+    const scaleFactor = objectData.scale || 1;
+    const renderSize = baseSize * scaleFactor;
+    
+    renderer.setSize(renderSize, renderSize);
+    renderer.setPixelRatio(window.devicePixelRatio); // Use full device pixel ratio for sharpness
     
     // Standard shadow map
     renderer.shadowMap.enabled = true;
@@ -61,7 +69,7 @@ export const ThreeObject: React.FC<ThreeObjectProps> = ({ objectData, className,
     mountRef.current.appendChild(renderer.domElement);
 
     // --- LIGHTING (Standard) ---
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.8); // Slightly brighter ambient to reduce harsh dark cracks
     scene.add(ambientLight);
 
     const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
@@ -69,6 +77,7 @@ export const ThreeObject: React.FC<ThreeObjectProps> = ({ objectData, className,
     dirLight.castShadow = true;
     dirLight.shadow.mapSize.width = 1024;
     dirLight.shadow.mapSize.height = 1024;
+    dirLight.shadow.bias = -0.0005; // Reduce shadow acne
     scene.add(dirLight);
 
     // --- OBJECT GENERATION ---
@@ -134,15 +143,15 @@ export const ThreeObject: React.FC<ThreeObjectProps> = ({ objectData, className,
         mainGroup.add(viewfinder);
         
     } else if (objectData.type === 'custom-voxel' && parsedVoxels.length > 0) {
-        // --- CUSTOM VOXEL RENDERER (SIMPLIFIED / FLAT) ---
+        // --- CUSTOM VOXEL RENDERER ---
         
         const voxelGeometry = new THREE.BoxGeometry(1, 1, 1);
         
-        // Use MeshStandardMaterial with high roughness for a matte, blocky look (No PBR reflections)
+        // Use MeshStandardMaterial but with adjustments to look solid
         const voxelMaterial = new THREE.MeshStandardMaterial({ 
             color: 0xffffff,
-            roughness: 1.0,   // Totally matte
-            metalness: 0.0,   // No metallic shine
+            roughness: 0.8,
+            metalness: 0.1,
         }); 
         
         const count = parsedVoxels.length;
@@ -164,6 +173,8 @@ export const ThreeObject: React.FC<ThreeObjectProps> = ({ objectData, className,
         const centerZ = (minZ + maxZ) / 2;
 
         const maxDim = Math.max(maxX - minX, maxY - minY, maxZ - minZ) || 1;
+        
+        // Normalize scale to fit in view (approx unit size 3)
         const normalizeScale = 3 / maxDim;
 
         const dummy = new THREE.Object3D();
@@ -175,7 +186,8 @@ export const ThreeObject: React.FC<ThreeObjectProps> = ({ objectData, className,
                 (voxel.y - centerY) * normalizeScale, 
                 (voxel.z - centerZ) * normalizeScale
             );
-            dummy.scale.set(normalizeScale * 0.98, normalizeScale * 0.98, normalizeScale * 0.98); // Tiny gap for bevel look
+            // FIX: Increased scale to 1.01 (1% overlap) to completely seal gaps between voxels
+            dummy.scale.set(normalizeScale * 1.01, normalizeScale * 1.01, normalizeScale * 1.01); 
             dummy.updateMatrix();
             mesh.setMatrixAt(i, dummy.matrix);
             
