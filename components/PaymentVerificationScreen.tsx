@@ -185,9 +185,9 @@ const PaymentVerificationScreen: React.FC<PaymentVerificationScreenProps> = ({ t
             
             {/* Overlay Guide */}
             {!capturedImage && (
-                <div className="absolute inset-0 border-[2px] border-white/30 pointer-events-none flex items-start justify-center pt-24">
-                    <div className="w-3/4 h-1/5 border-2 border-white rounded-lg bg-white/10 flex items-center justify-center">
-                        <span className="text-white text-sm font-bold bg-black/50 px-2 rounded">Area Nominal</span>
+                <div className="absolute inset-0 border-[2px] border-white/30 pointer-events-none flex items-center justify-center">
+                    <div className="w-3/4 h-1/4 border-2 border-[var(--color-accent-primary)] rounded-lg bg-[var(--color-accent-primary)]/10 flex items-center justify-center">
+                        <span className="text-[var(--color-accent-primary)] text-sm font-bold bg-black/50 px-2 rounded">Area Nominal</span>
                     </div>
                 </div>
             )}

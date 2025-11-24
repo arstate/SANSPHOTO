@@ -1,3 +1,6 @@
+
+
+
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import WelcomeScreen from './components/WelcomeScreen';
 import TemplateSelection from './components/TemplateSelection';
@@ -349,12 +352,6 @@ const App: React.FC = () => {
     }
   }, [cacheImage]);
 
-  // Manual refresh function for History
-  const refreshHistory = useCallback(async () => {
-      const localHistory = await getAllHistoryEntries();
-      setHistory(localHistory);
-  }, []);
-
   useEffect(() => {
     if (!currentTenantId) return;
 
@@ -362,8 +359,11 @@ const App: React.FC = () => {
     const currentSessionId = cachingSessionRef.current;
     setIsCaching(false);
 
-    // Initial History Load
-    refreshHistory();
+    const loadHistory = async () => {
+        const localHistory = await getAllHistoryEntries();
+        setHistory(localHistory);
+    };
+    loadHistory();
 
     const dataPath = `data/${currentTenantId}`;
 
@@ -410,7 +410,7 @@ const App: React.FC = () => {
       off(reviewsRef, 'value', reviewsListener);
       off(paymentsRef, 'value', paymentsListener);
     };
-  }, [currentTenantId, cacheAllTemplates, cacheImage, refreshHistory]);
+  }, [currentTenantId, cacheAllTemplates, cacheImage]);
 
   useEffect(() => {
     document.documentElement.classList.toggle('light', settings.theme === 'light');
@@ -536,18 +536,6 @@ const App: React.FC = () => {
   const handlePaymentVerified = useCallback(async (proofHash: string) => {
     if (!currentTenantId || !currentPaymentId) return;
     
-    // Fetch Payment data directly to ensure we have the latest userName
-    // relying on 'payments' state array might fail due to race conditions
-    let userName = 'Guest';
-    try {
-        const snapshot = await get(ref(db, `data/${currentTenantId}/payments/${currentPaymentId}`));
-        if (snapshot.exists()) {
-            userName = snapshot.val().userName;
-        }
-    } catch (e) {
-        console.error("Error fetching payment details", e);
-    }
-
     // 1. Update Payment Status & Save Hash
     await update(ref(db, `data/${currentTenantId}/payments/${currentPaymentId}`), { 
         status: 'verified',
@@ -565,8 +553,6 @@ const App: React.FC = () => {
           createdAt: Date.now(), 
           progress: 'Memilih Event', 
           hasBeenReviewed: false,
-          userName: userName,
-          paymentId: currentPaymentId,
         };
         const newKeyRef = await push(ref(db, `data/${currentTenantId}/sessionKeys`), newKeyData);
         if (!newKeyRef.key) throw new Error("Could not get new session key.");
@@ -967,7 +953,7 @@ const App: React.FC = () => {
     await update(ref(db), updates);
   }, []);
 
-  const handleUploadToDrive = useCallback((imageDataUrl: string, userName: string = 'guest') => {
+  const handleUploadToDrive = useCallback((imageDataUrl: string) => {
     const uploadId = Date.now();
     setUploadInfo({ id: uploadId, progress: 0, status: 'uploading' });
 
@@ -987,8 +973,7 @@ const App: React.FC = () => {
 
     (async () => {
         try {
-            const safeUserName = userName.replace(/[^a-zA-Z0-9]/g, '_');
-            const filename = `sans-photo-${Date.now()}-${safeUserName}.png`;
+            const filename = `sans-photo-${Date.now()}.png`;
             const payload = JSON.stringify({ foto: imageDataUrl, nama: filename });
 
             await fetch(SCRIPT_URL_RETAKE, {
@@ -1041,29 +1026,18 @@ const App: React.FC = () => {
   const handleStartRetake = useCallback((photoIndex: number) => { if (settings.maxRetakes === undefined || retakesUsed >= settings.maxRetakes) return; setRetakesUsed(prev => prev + 1); setRetakingPhotoIndex(photoIndex); setAppState(AppState.CAPTURE); }, [retakesUsed, settings.maxRetakes]);
   const handleRetakeComplete = useCallback((newImage: string) => { if (retakingPhotoIndex === null) return; setCapturedImages(prev => { const newImages = [...prev]; newImages[retakingPhotoIndex] = newImage; return newImages; }); setRetakingPhotoIndex(null); setAppState(AppState.RETAKE_PREVIEW); }, [retakingPhotoIndex]);
   const handleFinishRetakePreview = useCallback((imageDataUrl: string) => {
-    handleUploadToDrive(imageDataUrl, currentSessionKey?.userName || 'guest');
+    handleUploadToDrive(imageDataUrl);
     decideNextStepAfterCapture();
-  }, [handleUploadToDrive, decideNextStepAfterCapture, currentSessionKey]);
+  }, [handleUploadToDrive, decideNextStepAfterCapture]);
   const handleStartNextTake = useCallback(() => { if (!currentSessionKey || currentTakeCount >= currentSessionKey.maxTakes) return; const nextTake = currentTakeCount + 1; setCurrentTakeCount(nextTake); if(currentTenantId) update(ref(db, `data/${currentTenantId}/sessionKeys/${currentSessionKey.id}`), { takesUsed: nextTake }); setCapturedImages([]); setSelectedTemplate(null); setRetakesUsed(0); setRetakingPhotoIndex(null); setAppState(AppState.TEMPLATE_SELECTION); }, [currentSessionKey, currentTakeCount, currentTenantId]);
   const handleSaveHistoryFromSession = useCallback(async (imageDataUrl: string) => {
     const event = events.find(e => e.id === selectedEventId);
     if (!event) return;
     const timestamp = Date.now();
-    const newEntry: HistoryEntry = { 
-      id: String(timestamp), 
-      eventId: event.id, 
-      eventName: event.name, 
-      imageDataUrl, 
-      timestamp: timestamp,
-      userName: currentSessionKey?.userName, // Link history to user if available
-      paymentId: currentSessionKey?.paymentId, // Link history to payment if available
-    };
+    const newEntry: HistoryEntry = { id: String(timestamp), eventId: event.id, eventName: event.name, imageDataUrl, timestamp: timestamp };
     await addHistoryEntry(newEntry);
     setHistory(prev => [newEntry, ...prev].sort((a,b) => Number(b.timestamp) - Number(a.timestamp)));
-    
-    // Trigger upload
-    handleUploadToDrive(imageDataUrl, currentSessionKey?.userName || 'guest');
-  }, [events, selectedEventId, currentSessionKey, handleUploadToDrive]);
+  }, [events, selectedEventId]);
 
   const renderContent = () => {
     if (tenantNotFound) return <TenantNotFoundScreen />;
@@ -1106,7 +1080,7 @@ const App: React.FC = () => {
             });
         }
         return <TemplateSelection templates={sortedTemplates} onSelect={handleTemplateSelect} onBack={handleBack} isAdminLoggedIn={isAdminLoggedIn} onAddTemplate={handleStartAddTemplate} onEditMetadata={handleStartEditTemplateMetadata} onEditLayout={handleStartEditLayout} onDelete={handleDeleteTemplate} />;
-      case AppState.SETTINGS: return <SettingsScreen settings={settings} onSettingsChange={handleSettingsChange} onManageTemplates={handleManageTemplates} onManageEvents={handleManageEvents} onManageSessions={handleManageSessions} onManageReviews={handleManageReviews} onViewHistory={handleViewHistory} onBack={handleBack} isMasterAdmin={isMasterAdmin} onManageTenants={handleManageTenants} payments={payments} history={history} onRefreshData={refreshHistory} />;
+      case AppState.SETTINGS: return <SettingsScreen settings={settings} onSettingsChange={handleSettingsChange} onManageTemplates={handleManageTemplates} onManageEvents={handleManageEvents} onManageSessions={handleManageSessions} onManageReviews={handleManageReviews} onViewHistory={handleViewHistory} onBack={handleBack} isMasterAdmin={isMasterAdmin} onManageTenants={handleManageTenants} payments={payments} />;
       case AppState.MANAGE_TENANTS: if (!isMasterAdmin) { setAppState(AppState.WELCOME); return null; } return <ManageTenantsScreen tenants={tenants} onBack={handleBack} onAddTenant={handleAddTenant} onUpdateTenant={handleUpdateTenant} onDeleteTenant={handleDeleteTenant} />;
       case AppState.MANAGE_EVENTS: return <ManageEventsScreen events={events} onBack={handleBack} onAddEvent={handleAddEvent} onRenameEvent={handleStartRenameEvent} onDeleteEvent={handleDeleteEvent} onToggleArchive={handleToggleArchiveEvent} onAssignTemplates={handleStartAssigningTemplates} onQrCodeSettings={handleStartEditQrCode} />;
       case AppState.MANAGE_SESSIONS: if (!isAdminLoggedIn) { setAppState(AppState.WELCOME); return null; } return <ManageSessionsScreen sessionKeys={sessionKeys} onBack={handleBack} onAddKey={handleAddSessionKey} onDeleteKey={handleDeleteSessionKey} onDeleteAllKeys={handleDeleteAllSessionKeys} onDeleteFreeplayKeys={handleDeleteFreeplaySessionKeys} />;
@@ -1118,7 +1092,7 @@ const App: React.FC = () => {
       case AppState.CAPTURE: if (!selectedTemplate) { setAppState(AppState.WELCOME); return null; } return <CaptureScreen template={selectedTemplate} countdownDuration={settings.countdownDuration} flashEffectEnabled={settings.flashEffectEnabled} cameraSourceType={settings.cameraSourceType} cameraDeviceId={settings.cameraDeviceId} ipCameraUrl={settings.ipCameraUrl} ipCameraUseProxy={settings.ipCameraUseProxy} onCaptureComplete={handleCaptureComplete} onRetakeComplete={handleRetakeComplete} retakeForIndex={retakingPhotoIndex} onProgressUpdate={handleCaptureProgressUpdate} existingImages={capturedImages} />;
       case AppState.RETAKE_PREVIEW: if (!selectedTemplate) { setAppState(AppState.WELCOME); return null; } return <RetakePreviewScreen images={capturedImages} template={selectedTemplate} onStartRetake={handleStartRetake} onDone={handleFinishRetakePreview} retakesUsed={retakesUsed} maxRetakes={settings.maxRetakes ?? 0} />;
       case AppState.RATING: if (!selectedEvent || !currentSessionKey || currentSessionKey.hasBeenReviewed) { setAppState(AppState.PREVIEW); return null; } return <RatingScreen eventName={selectedEvent.name} onSubmit={handleSaveReview} onSkip={handleSkipReview} settings={settings} />;
-      case AppState.PREVIEW: if (!selectedTemplate || !currentSessionKey) { setAppState(AppState.WELCOME); return null; } return <PreviewScreen images={capturedImages} onRestart={handleSessionEnd} onBack={handleBack} template={selectedTemplate} onSaveHistory={handleSaveHistoryFromSession} event={selectedEvent} currentTake={currentTakeCount} maxTakes={currentSessionKey.maxTakes} onNextTake={handleStartNextTake} isDownloadButtonEnabled={settings.isDownloadButtonEnabled ?? true} isAutoDownloadEnabled={settings.isAutoDownloadEnabled ?? true} printSettings={{ isEnabled: settings.isPrintButtonEnabled ?? true, paperSize: settings.printPaperSize ?? '4x6', colorMode: settings.printColorMode ?? 'color', isCopyInputEnabled: settings.isPrintCopyInputEnabled ?? true, maxCopies: settings.printMaxCopies ?? 5, }} userName={currentSessionKey.userName} />;
+      case AppState.PREVIEW: if (!selectedTemplate || !currentSessionKey) { setAppState(AppState.WELCOME); return null; } return <PreviewScreen images={capturedImages} onRestart={handleSessionEnd} onBack={handleBack} template={selectedTemplate} onSaveHistory={handleSaveHistoryFromSession} event={selectedEvent} currentTake={currentTakeCount} maxTakes={currentSessionKey.maxTakes} onNextTake={handleStartNextTake} isDownloadButtonEnabled={settings.isDownloadButtonEnabled ?? true} isAutoDownloadEnabled={settings.isAutoDownloadEnabled ?? true} printSettings={{ isEnabled: settings.isPrintButtonEnabled ?? true, paperSize: settings.printPaperSize ?? '4x6', colorMode: settings.printColorMode ?? 'color', isCopyInputEnabled: settings.isPrintCopyInputEnabled ?? true, maxCopies: settings.printMaxCopies ?? 5, }} />;
       default: return <WelcomeScreen onStart={handleStartSession} onSettingsClick={handleGoToSettings} onViewHistory={handleViewHistory} onViewOnlineHistory={handleViewOnlineHistory} isAdminLoggedIn={isAdminLoggedIn} isCaching={isCaching} cachingProgress={cachingProgress} onAdminLoginClick={handleOpenAdminLogin} onAdminLogoutClick={handleAdminLogout} isLoading={isSessionLoading} settings={settings} reviews={reviews} />;
     }
   };
