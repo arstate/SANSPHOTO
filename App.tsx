@@ -3,6 +3,8 @@
 
 
 
+
+
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import WelcomeScreen from './components/WelcomeScreen';
 import TemplateSelection from './components/TemplateSelection';
@@ -534,13 +536,28 @@ const App: React.FC = () => {
       setAppState(AppState.PAYMENT_VERIFICATION);
   }, []);
   
-  const handleScanSuccess = useCallback(async (proofImageUrl?: string) => {
+  const handleScanSuccess = useCallback(async (proofImageUrl?: string, imageHash?: string) => {
       if (!currentTenantId || !currentPaymentId) return;
       
+      // Check for Double Spend using Image Hash
+      if (imageHash) {
+          const duplicatePayment = payments.find(p => 
+              p.status === 'verified' && 
+              p.imageHash === imageHash
+          );
+          
+          if (duplicatePayment) {
+              alert("Bukti pembayaran ini sudah pernah digunakan sebelumnya! Harap gunakan bukti baru.");
+              setAppState(AppState.PAYMENT_VERIFICATION); // Stay on verification screen
+              return;
+          }
+      }
+
       // Update payment status
       await update(ref(db, `data/${currentTenantId}/payments/${currentPaymentId}`), { 
           status: 'verified',
-          proofImageUrl: proofImageUrl || '' 
+          proofImageUrl: proofImageUrl || '',
+          imageHash: imageHash || ''
       });
       
       // Find the payment entry to get the pricelist (maxTakes)
@@ -576,7 +593,7 @@ const App: React.FC = () => {
         setIsSessionLoading(false);
       }
 
-  }, [currentTenantId, currentPaymentId, priceLists]);
+  }, [currentTenantId, currentPaymentId, priceLists, payments]);
 
   const handleKeyCodeSubmit = useCallback(async (code: string) => {
     if (!currentTenantId) return;

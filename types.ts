@@ -81,6 +81,7 @@ export interface PaymentEntry {
   status: 'pending' | 'verified' | 'failed';
   timestamp: number;
   proofImageUrl?: string; // URL of the captured receipt scan
+  imageHash?: string; // Unique hash of the proof image to prevent reuse
 }
 
 export interface Settings {

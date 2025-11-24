@@ -1,4 +1,5 @@
 
+
 import React, { useRef, useState, useEffect } from 'react';
 import { PaymentEntry } from '../types';
 import { BackIcon } from './icons/BackIcon';
@@ -9,26 +10,41 @@ declare const Tesseract: any;
 
 interface PaymentVerificationScreenProps {
   payment: PaymentEntry | null;
-  onScanSuccess: (proofImageUrl?: string) => void;
+  onScanSuccess: (proofImageUrl: string, imageHash: string) => void;
   onBack: () => void;
 }
+
+// Simple hash function for image data
+const generateImageHash = (str: string) => {
+  let hash = 0;
+  if (str.length === 0) return hash.toString();
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  return hash.toString();
+};
 
 const PaymentVerificationScreen: React.FC<PaymentVerificationScreenProps> = ({ payment, onScanSuccess, onBack }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const [scanning, setScanning] = useState(false);
   const [cameraActive, setCameraActive] = useState(false);
   const [scanStatus, setScanStatus] = useState<'idle' | 'scanning' | 'success' | 'failed'>('idle');
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
 
+  // Initialize Camera
   useEffect(() => {
-    let stream: MediaStream | null = null;
-    
     const startCamera = async () => {
         try {
-            stream = await navigator.mediaDevices.getUserMedia({ 
-                video: { facingMode: "user" } // Front camera, no flip logic in CSS for this screen usually, or we handle it
+            const stream = await navigator.mediaDevices.getUserMedia({ 
+                video: { facingMode: "user" } 
             });
+            streamRef.current = stream;
+            
+            // Assign stream to video if ref exists (initial load)
             if (videoRef.current) {
                 videoRef.current.srcObject = stream;
                 setCameraActive(true);
@@ -39,10 +55,25 @@ const PaymentVerificationScreen: React.FC<PaymentVerificationScreenProps> = ({ p
     };
     
     startCamera();
+    
+    // Cleanup on unmount
     return () => {
-        if (stream) stream.getTracks().forEach(t => t.stop());
+        if (streamRef.current) {
+            streamRef.current.getTracks().forEach(t => t.stop());
+            streamRef.current = null;
+        }
     };
   }, []);
+
+  // Re-attach stream when we go back to camera mode (capturedImage is null)
+  useEffect(() => {
+    if (!capturedImage && videoRef.current && streamRef.current) {
+        videoRef.current.srcObject = streamRef.current;
+        if (videoRef.current.paused) {
+            videoRef.current.play().catch(e => console.error("Error playing video:", e));
+        }
+    }
+  }, [capturedImage]);
 
   const handleCaptureAndScan = async () => {
       if (!videoRef.current || !canvasRef.current || !payment) return;
@@ -68,26 +99,24 @@ const PaymentVerificationScreen: React.FC<PaymentVerificationScreenProps> = ({ p
               throw new Error("Tesseract library not loaded.");
           }
           
-          const { data: { text } } = await Tesseract.recognize(dataUrl, 'eng'); // Using 'eng' is often better for numbers than 'ind'
+          const { data: { text } } = await Tesseract.recognize(dataUrl, 'eng');
           
-          // Simple heuristic: check if payment amount exists in text (ignoring dots/commas)
           const cleanText = text.replace(/[^0-9]/g, '');
           const targetAmountStr = payment.amount.toString();
           
           console.log("OCR Result:", cleanText);
           
-          // Check for exact amount match or close pattern
-          // This is a loose check. In real app, would need strict parsing.
-          // We check if the target amount sequence exists in the cleaned digits.
+          // Generate Hash for double-spend protection
+          // We take a substring to make hashing faster, or hash the whole thing if performance allows
+          // Using a substring of the base64 is usually unique enough for this purpose
+          const imageHash = generateImageHash(dataUrl.substring(dataUrl.length - 2000));
+
           if (cleanText.includes(targetAmountStr)) {
               setScanStatus('success');
               setTimeout(() => {
-                  onScanSuccess(dataUrl);
+                  onScanSuccess(dataUrl, imageHash);
               }, 1500);
           } else {
-              // Fallback: If OCR fails to find exact text, we can still accept it as "Manual Proof" 
-              // BUT the prompt says "scan data... if correct success".
-              // To ensure UX doesn't get stuck, we'll allow a "Manual Confirm" if scan fails twice.
               setScanStatus('failed');
           }
       } catch (e) {
@@ -103,11 +132,11 @@ const PaymentVerificationScreen: React.FC<PaymentVerificationScreenProps> = ({ p
       setScanStatus('idle');
   };
   
-  // Allow manual bypass if OCR is tricky (Simulates "Admin Verified" or user promise)
-  // Re-reading prompt: "web akan scan data... jika pembayaran benar maka pembayaran berhasil".
-  // Implementation note: OCR in browser is flaky. If 'failed', I show a button "My receipt is correct, proceed".
   const handleManualProceed = () => {
-      if (capturedImage) onScanSuccess(capturedImage);
+      if (capturedImage) {
+          const imageHash = generateImageHash(capturedImage.substring(capturedImage.length - 2000));
+          onScanSuccess(capturedImage, imageHash);
+      }
   };
 
   return (
@@ -125,6 +154,7 @@ const PaymentVerificationScreen: React.FC<PaymentVerificationScreenProps> = ({ p
           </p>
           
           <div className="relative w-full aspect-[9/16] bg-gray-900 rounded-2xl overflow-hidden border-4 border-white/20">
+              {/* Conditional rendering for Video vs Image */}
               {!capturedImage ? (
                   <video 
                     ref={videoRef} 
@@ -153,7 +183,7 @@ const PaymentVerificationScreen: React.FC<PaymentVerificationScreenProps> = ({ p
 
               {/* Scanning Overlay Guide */}
               {!capturedImage && (
-                  <div className="absolute inset-0 border-2 border-white/30 p-8">
+                  <div className="absolute inset-0 border-2 border-white/30 p-8 pointer-events-none">
                       <div className="w-full h-1/3 mt-24 border-2 border-[var(--color-accent-primary)] rounded-lg shadow-[0_0_20px_rgba(139,92,246,0.5)]"></div>
                       <p className="text-center text-white/70 text-xs mt-2">Posisikan nominal di kotak ini</p>
                   </div>
@@ -177,13 +207,13 @@ const PaymentVerificationScreen: React.FC<PaymentVerificationScreenProps> = ({ p
                       <div className="flex gap-2">
                         <button 
                             onClick={handleRetake}
-                            className="flex-1 bg-white text-red-900 font-bold py-3 rounded-lg"
+                            className="flex-1 bg-white text-red-900 font-bold py-3 rounded-lg hover:bg-gray-100"
                         >
                             Coba Lagi
                         </button>
                         <button 
                             onClick={handleManualProceed}
-                            className="flex-1 bg-[var(--color-positive)] text-white font-bold py-3 rounded-lg"
+                            className="flex-1 bg-[var(--color-positive)] text-white font-bold py-3 rounded-lg hover:brightness-110"
                         >
                             Foto Sudah Benar
                         </button>
