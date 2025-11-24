@@ -1,5 +1,4 @@
 
-
 import React, { useRef, useEffect, useMemo } from 'react';
 import * as THREE from 'three';
 import { FloatingObject, VoxelPoint } from '../types';
@@ -38,88 +37,163 @@ export const ThreeObject: React.FC<ThreeObjectProps> = ({ objectData, className,
     const near = 0.1;
     const far = 1000;
     const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
-    camera.position.z = 5 / (objectData.scale || 1); // Adjust zoom based on scale to keep visual size roughly consistent initially
-    camera.position.y = 0.5;
-    camera.position.x = 0;
+    
+    // Adjust camera distance based on scale to keep object visible
+    camera.position.z = 6 / (objectData.scale || 1); 
+    camera.position.y = 1;
+    camera.position.x = 1;
     camera.lookAt(0, 0, 0);
 
-    // Set up renderer
-    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+    // --- HD RENDERER SETUP ---
+    const renderer = new THREE.WebGLRenderer({ 
+        alpha: true, 
+        antialias: true,
+        powerPreference: "high-performance"
+    });
     renderer.setSize(300, 300); // Fixed size for the container
-    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Limit pixel ratio for performance
+    
+    // Enable realistic lighting features
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Soft shadows
+    renderer.outputColorSpace = THREE.SRGBColorSpace; // Accurate colors
+    renderer.toneMapping = THREE.ACESFilmicToneMapping; // Cinematic lighting
+    renderer.toneMappingExposure = 1.2;
+
     mountRef.current.innerHTML = ''; // Clear previous canvas
     mountRef.current.appendChild(renderer.domElement);
 
-    // --- LIGHTING ---
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    // --- STUDIO LIGHTING SETUP (HD LOOK) ---
+    
+    // 1. Ambient Light (Base fill)
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
     scene.add(ambientLight);
 
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-    directionalLight.position.set(5, 5, 5);
-    scene.add(directionalLight);
+    // 2. Key Light (Main bright light sources with shadows)
+    const keyLight = new THREE.DirectionalLight(0xffffee, 2.5);
+    keyLight.position.set(5, 5, 5);
+    keyLight.castShadow = true;
+    keyLight.shadow.mapSize.width = 1024;
+    keyLight.shadow.mapSize.height = 1024;
+    keyLight.shadow.bias = -0.0001;
+    scene.add(keyLight);
+
+    // 3. Fill Light (Softer, cooler light from opposite side)
+    const fillLight = new THREE.DirectionalLight(0xddeeff, 1.0);
+    fillLight.position.set(-5, 2, 5);
+    scene.add(fillLight);
     
-    const backLight = new THREE.DirectionalLight(0xffffff, 0.3);
-    backLight.position.set(-5, -5, -5);
-    scene.add(backLight);
+    // 4. Rim Light (Backlight for edge definition/pop)
+    const rimLight = new THREE.SpotLight(0xffffff, 4.0);
+    rimLight.position.set(0, 5, -5);
+    rimLight.lookAt(0, 0, 0);
+    scene.add(rimLight);
 
     // --- OBJECT GENERATION ---
     const mainGroup = new THREE.Group();
 
     if (objectData.type === 'built-in-camera') {
         // --- BUILT-IN CAMERA MODEL ---
-        // Materials
-        const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.6, metalness: 0.2 });
-        const silverMaterial = new THREE.MeshStandardMaterial({ color: 0xcccccc, roughness: 0.3, metalness: 0.8 });
-        const blackMaterial = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.8, metalness: 0.1 });
-        const lensGlassMaterial = new THREE.MeshPhysicalMaterial({ color: 0x111133, metalness: 0.9, roughness: 0.1, transmission: 0.2, transparent: true });
-        const redButtonMaterial = new THREE.MeshStandardMaterial({ color: 0xaa0000 });
+        // Enhanced Materials
+        const bodyMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0x333333, 
+            roughness: 0.4, 
+            metalness: 0.3 
+        });
+        const silverMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0xeeeeee, 
+            roughness: 0.2, 
+            metalness: 0.7 
+        });
+        const blackMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0x111111, 
+            roughness: 0.3, 
+            metalness: 0.1 
+        });
+        const lensGlassMaterial = new THREE.MeshPhysicalMaterial({ 
+            color: 0x111133, 
+            metalness: 0.9, 
+            roughness: 0.0, 
+            transmission: 0.5, 
+            transparent: true,
+            thickness: 1.0
+        });
+        const redButtonMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0xdd0000,
+            roughness: 0.1,
+            metalness: 0.2
+        });
 
-        // Geometry & Mesh creation (Same as previous implementation)
+        const castAndReceive = (mesh: THREE.Mesh) => {
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+        };
+
         const body = new THREE.Mesh(new THREE.BoxGeometry(3, 1.8, 0.8), bodyMaterial);
+        castAndReceive(body);
         mainGroup.add(body);
 
         const topPlate = new THREE.Mesh(new THREE.BoxGeometry(3, 0.4, 0.8), silverMaterial);
         topPlate.position.y = 1.0; 
+        castAndReceive(topPlate);
         mainGroup.add(topPlate);
 
         const grip = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.7, 0.9), blackMaterial);
         grip.position.set(0.9, 0, 0.1);
+        castAndReceive(grip);
         mainGroup.add(grip);
 
         const lensBase = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.8, 0.3, 32), silverMaterial);
         lensBase.rotation.x = Math.PI / 2;
         lensBase.position.z = 0.55;
+        castAndReceive(lensBase);
         mainGroup.add(lensBase);
 
         const lensBarrel = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.6, 0.4, 32), blackMaterial);
         lensBarrel.rotation.x = Math.PI / 2;
         lensBarrel.position.z = 0.8;
+        castAndReceive(lensBarrel);
         mainGroup.add(lensBarrel);
         
         const lensGlass = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 0.1, 32), lensGlassMaterial);
         lensGlass.rotation.x = Math.PI / 2;
         lensGlass.position.z = 1.06;
-        mainGroup.add(lensGlass);
+        mainGroup.add(lensGlass); // Glass doesn't usually cast standard shadows well in simple setups
 
         const button = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.2, 16), redButtonMaterial);
         button.position.set(1.0, 1.3, 0);
+        castAndReceive(button);
         mainGroup.add(button);
 
         const flash = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.4, 0.2), new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0x333333 }));
         flash.position.set(0.2, 1.4, 0);
+        castAndReceive(flash);
         mainGroup.add(flash);
         
         const viewfinder = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.4, 0.85), blackMaterial);
         viewfinder.position.set(-0.5, 1.4, 0);
+        castAndReceive(viewfinder);
         mainGroup.add(viewfinder);
         
     } else if (objectData.type === 'custom-voxel' && parsedVoxels.length > 0) {
         // --- CUSTOM VOXEL RENDERER ---
+        
+        // Geometry optimization: Beveled box for better specular highlights on edges
+        // Note: BoxGeometry(w, h, d) -> RoundedBoxGeometry is not standard in core three.js, 
+        // so we stick to BoxGeometry but rely on lighting for edge definition.
         const voxelGeometry = new THREE.BoxGeometry(1, 1, 1);
-        const voxelMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff }); // Color will be set per instance
+        
+        // HD Material: High gloss plastic/ceramic look
+        const voxelMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0xffffff,
+            roughness: 0.2,  // Low roughness = Shiny
+            metalness: 0.1,  // Slight metalness for reflection, mostly dielectric (plastic)
+        }); 
         
         const count = parsedVoxels.length;
         const mesh = new THREE.InstancedMesh(voxelGeometry, voxelMaterial, count);
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
         
         // Calculate center to center the object
         let minX = Infinity, minY = Infinity, minZ = Infinity;
@@ -156,7 +230,7 @@ export const ThreeObject: React.FC<ThreeObjectProps> = ({ objectData, className,
         });
 
         mesh.instanceMatrix.needsUpdate = true;
-        mesh.instanceColor!.needsUpdate = true; // Non-null assertion since we know it exists for MeshStandardMaterial
+        mesh.instanceColor!.needsUpdate = true;
         
         mainGroup.add(mesh);
     }
@@ -176,8 +250,10 @@ export const ThreeObject: React.FC<ThreeObjectProps> = ({ objectData, className,
       if (objectData.isSpinning) {
           const speed = objectData.spinSpeed || 0.005;
           mainGroup.rotation.y += speed;
-          // Add a tiny bit of float
-          mainGroup.position.y = Math.sin(Date.now() * 0.001) * 0.1;
+          // Floating animation (Sine wave on Y axis)
+          mainGroup.position.y = Math.sin(Date.now() * 0.0015) * 0.15;
+          // Slight wobble on Z for realism
+          mainGroup.rotation.z = objectData.rotationZ + Math.sin(Date.now() * 0.001) * 0.05;
       }
 
       renderer.render(scene, camera);
@@ -192,9 +268,9 @@ export const ThreeObject: React.FC<ThreeObjectProps> = ({ objectData, className,
         mountRef.current.removeChild(renderer.domElement);
       }
       renderer.dispose();
-      // Dispose logic simplified for brevity, in prod should iterate scene children
+      scene.clear();
     };
-  }, [objectData, parsedVoxels]); // Re-run when objectData changes (except animation speed changes handled by re-render/ref check usually, but here strict effect)
+  }, [objectData, parsedVoxels]); 
 
   return (
     <div 
