@@ -3,9 +3,6 @@
 export enum AppState {
   WELCOME,
   KEY_CODE_ENTRY,
-  PRICE_SELECTION, // New: User selects package
-  PAYMENT_QRIS, // New: User sees QRIS
-  PAYMENT_VERIFICATION, // New: User scans receipt
   EVENT_SELECTION,
   TEMPLATE_SELECTION,
   SETTINGS,
@@ -64,32 +61,12 @@ export interface FloatingObject {
   spinSpeed: number; // 0.001 to 0.1
 }
 
-export interface PriceList {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  maxTakes: number; // How many photos allowed for this price
-}
-
-export interface PaymentEntry {
-  id: string;
-  userOrderName: string;
-  priceListId: string;
-  priceListName: string;
-  amount: number;
-  status: 'pending' | 'verified' | 'failed';
-  timestamp: number;
-  proofImageUrl?: string; // URL of the captured receipt scan
-  imageHash?: string; // Unique hash of the proof image to prevent reuse
-}
-
 export interface Settings {
   countdownDuration: number;
   flashEffectEnabled: boolean;
   // Camera Settings
   cameraSourceType?: 'default' | 'ip_camera';
-  cameraDeviceId?: string; 
+  cameraDeviceId?: string; // New: ID for specific device selection (USB/HDMI Capture)
   ipCameraUrl?: string;
   ipCameraUseProxy?: boolean;
   
@@ -98,11 +75,6 @@ export interface Settings {
   isStrictKioskMode?: boolean;
   isSessionCodeEnabled?: boolean;
   freePlayMaxTakes?: number;
-  
-  // Payment Settings
-  isPaymentEnabled?: boolean;
-  qrisImageUrl?: string;
-  
   theme?: 'light' | 'dark';
   welcomeTitle?: string;
   welcomeSubtitle?: string;
@@ -120,7 +92,7 @@ export interface Settings {
   isWelcomeTitleFontRandom?: boolean;
   isWelcomeSubtitleFontRandom?: boolean;
   
-  // Floating 3D Objects
+  // Floating 3D Objects (Replaces old single camera settings)
   floatingObjects?: FloatingObject[];
 
   startButtonText?: string;
@@ -158,7 +130,7 @@ export interface Settings {
   ratingScreenTitle?: string;
   ratingScreenSubtitle?: string;
   ratingScreenFreebieTitle?: string;
-  ratingScreenFreebieDescription?: string; 
+  ratingScreenFreebieDescription?: string; // e.g., "Give a 5-star review for {count} free takes!"
   ratingScreenNameLabel?: string;
   ratingScreenNamePlaceholder?: string;
   ratingScreenRatingLabel?: string;
@@ -176,16 +148,16 @@ export interface Template {
   heightMM: number;
   photoSlots: PhotoSlot[];
   orientation: 'portrait' | 'landscape';
-  eventId?: string; 
+  eventId?: string; // Link to an event
 }
 
 export interface Event {
   id: string;
   name: string;
   isArchived: boolean;
-  qrCodeValue?: string; 
+  qrCodeValue?: string; // Changed from qrCodeImageUrl: Stores the link/text content
   isQrCodeEnabled?: boolean;
-  templateOrder?: string[]; 
+  templateOrder?: string[]; // Menyimpan urutan ID template
 }
 
 export interface HistoryEntry {
@@ -214,9 +186,9 @@ export interface SessionKey {
   progress?: string;
   currentEventName?: string;
   hasBeenReviewed?: boolean;
-  isUnlimited?: boolean; 
-  isGenerated?: boolean; 
-  originalCode?: string; 
+  isUnlimited?: boolean; // New: Unlimited / Persistent mode
+  isGenerated?: boolean; // New: Generated from an unlimited key
+  originalCode?: string; // New: Reference to original code if generated
 }
 
 export interface Review {
@@ -224,7 +196,7 @@ export interface Review {
     eventId: string;
     eventName: string;
     userName: string;
-    rating: number; 
+    rating: number; // 1 to 5
     description: string;
     timestamp: number;
 }
@@ -232,8 +204,8 @@ export interface Review {
 export interface Tenant {
   id: string;
   username: string;
-  password?: string; 
-  path: string; 
+  password?: string; // NOTE: Storing plaintext passwords is not secure. This is for exercise purposes.
+  path: string; // The unique URL path for this tenant, e.g., "client-a"
   isActive: boolean;
   createdAt: number;
 }

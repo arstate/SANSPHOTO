@@ -1,6 +1,7 @@
 
 import React, { useRef, useEffect, useMemo } from 'react';
 import * as THREE from 'three';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { FloatingObject, VoxelPoint } from '../types';
 
 interface ThreeObjectProps {
@@ -58,70 +59,59 @@ export const ThreeObject: React.FC<ThreeObjectProps> = ({ objectData, className,
     renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Soft shadows
     renderer.outputColorSpace = THREE.SRGBColorSpace; // Accurate colors
     renderer.toneMapping = THREE.ACESFilmicToneMapping; // Cinematic lighting
-    renderer.toneMappingExposure = 1.2;
+    renderer.toneMappingExposure = 1.0;
 
     mountRef.current.innerHTML = ''; // Clear previous canvas
     mountRef.current.appendChild(renderer.domElement);
 
-    // --- STUDIO LIGHTING SETUP (HD LOOK) ---
-    
-    // 1. Ambient Light (Base fill)
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
-    scene.add(ambientLight);
-
-    // 2. Key Light (Main bright light sources with shadows)
-    const keyLight = new THREE.DirectionalLight(0xffffee, 2.5);
-    keyLight.position.set(5, 5, 5);
-    keyLight.castShadow = true;
-    keyLight.shadow.mapSize.width = 1024;
-    keyLight.shadow.mapSize.height = 1024;
-    keyLight.shadow.bias = -0.0001;
-    scene.add(keyLight);
-
-    // 3. Fill Light (Softer, cooler light from opposite side)
-    const fillLight = new THREE.DirectionalLight(0xddeeff, 1.0);
-    fillLight.position.set(-5, 2, 5);
-    scene.add(fillLight);
-    
-    // 4. Rim Light (Backlight for edge definition/pop)
-    const rimLight = new THREE.SpotLight(0xffffff, 4.0);
-    rimLight.position.set(0, 5, -5);
-    rimLight.lookAt(0, 0, 0);
-    scene.add(rimLight);
+    // --- ENVIRONMENT MAPPING (Pseudo Ray Tracing) ---
+    // Generate a high quality environment map from the RoomEnvironment preset
+    // This creates "stuff" for the shiny materials to reflect
+    const pmremGenerator = new THREE.PMREMGenerator(renderer);
+    pmremGenerator.compileEquirectangularShader();
+    const envTexture = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture;
+    scene.environment = envTexture;
+    // scene.background = null; // Keep background transparent
 
     // --- OBJECT GENERATION ---
     const mainGroup = new THREE.Group();
 
     if (objectData.type === 'built-in-camera') {
         // --- BUILT-IN CAMERA MODEL ---
-        // Enhanced Materials
-        const bodyMaterial = new THREE.MeshStandardMaterial({ 
+        const bodyMaterial = new THREE.MeshPhysicalMaterial({ 
             color: 0x333333, 
-            roughness: 0.4, 
-            metalness: 0.3 
-        });
-        const silverMaterial = new THREE.MeshStandardMaterial({ 
-            color: 0xeeeeee, 
             roughness: 0.2, 
-            metalness: 0.7 
+            metalness: 0.1,
+            clearcoat: 0.5,
+            clearcoatRoughness: 0.1
         });
-        const blackMaterial = new THREE.MeshStandardMaterial({ 
+        const silverMaterial = new THREE.MeshPhysicalMaterial({ 
+            color: 0xffffff, 
+            roughness: 0.15, 
+            metalness: 0.8,
+            envMapIntensity: 1.0
+        });
+        const blackMaterial = new THREE.MeshPhysicalMaterial({ 
             color: 0x111111, 
-            roughness: 0.3, 
-            metalness: 0.1 
+            roughness: 0.2, 
+            metalness: 0.0,
+            clearcoat: 0.3
         });
         const lensGlassMaterial = new THREE.MeshPhysicalMaterial({ 
             color: 0x111133, 
-            metalness: 0.9, 
+            metalness: 1.0, 
             roughness: 0.0, 
-            transmission: 0.5, 
+            transmission: 0.2, 
             transparent: true,
-            thickness: 1.0
+            thickness: 2.0,
+            ior: 1.5,
+            reflectivity: 1.0
         });
-        const redButtonMaterial = new THREE.MeshStandardMaterial({ 
+        const redButtonMaterial = new THREE.MeshPhysicalMaterial({ 
             color: 0xdd0000,
             roughness: 0.1,
-            metalness: 0.2
+            metalness: 0.2,
+            clearcoat: 1.0
         });
 
         const castAndReceive = (mesh: THREE.Mesh) => {
@@ -158,14 +148,14 @@ export const ThreeObject: React.FC<ThreeObjectProps> = ({ objectData, className,
         const lensGlass = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 0.1, 32), lensGlassMaterial);
         lensGlass.rotation.x = Math.PI / 2;
         lensGlass.position.z = 1.06;
-        mainGroup.add(lensGlass); // Glass doesn't usually cast standard shadows well in simple setups
+        mainGroup.add(lensGlass); 
 
         const button = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.2, 16), redButtonMaterial);
         button.position.set(1.0, 1.3, 0);
         castAndReceive(button);
         mainGroup.add(button);
 
-        const flash = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.4, 0.2), new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0x333333 }));
+        const flash = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.4, 0.2), new THREE.MeshPhysicalMaterial({ color: 0xffffff, emissive: 0x555555, roughness: 0, metalness: 0.5 }));
         flash.position.set(0.2, 1.4, 0);
         castAndReceive(flash);
         mainGroup.add(flash);
@@ -176,18 +166,19 @@ export const ThreeObject: React.FC<ThreeObjectProps> = ({ objectData, className,
         mainGroup.add(viewfinder);
         
     } else if (objectData.type === 'custom-voxel' && parsedVoxels.length > 0) {
-        // --- CUSTOM VOXEL RENDERER ---
+        // --- CUSTOM VOXEL RENDERER WITH "RAY TRACED" LOOK ---
         
-        // Geometry optimization: Beveled box for better specular highlights on edges
-        // Note: BoxGeometry(w, h, d) -> RoundedBoxGeometry is not standard in core three.js, 
-        // so we stick to BoxGeometry but rely on lighting for edge definition.
         const voxelGeometry = new THREE.BoxGeometry(1, 1, 1);
         
-        // HD Material: High gloss plastic/ceramic look
-        const voxelMaterial = new THREE.MeshStandardMaterial({ 
+        // Use MeshPhysicalMaterial for advanced PBR
+        const voxelMaterial = new THREE.MeshPhysicalMaterial({ 
             color: 0xffffff,
-            roughness: 0.2,  // Low roughness = Shiny
-            metalness: 0.1,  // Slight metalness for reflection, mostly dielectric (plastic)
+            roughness: 0.1,   // Very smooth surface (glossy)
+            metalness: 0.1,   // Slight metalness for plastic-like reflections
+            reflectivity: 1.0, 
+            clearcoat: 1.0,   // Adds a "clear coat" layer (like polished plastic or wet surface)
+            clearcoatRoughness: 0.1, // Smooth clear coat
+            envMapIntensity: 1.5, // Amplify environment reflections
         }); 
         
         const count = parsedVoxels.length;
@@ -195,7 +186,7 @@ export const ThreeObject: React.FC<ThreeObjectProps> = ({ objectData, className,
         mesh.castShadow = true;
         mesh.receiveShadow = true;
         
-        // Calculate center to center the object
+        // Center calculation
         let minX = Infinity, minY = Infinity, minZ = Infinity;
         let maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity;
 
@@ -208,7 +199,6 @@ export const ThreeObject: React.FC<ThreeObjectProps> = ({ objectData, className,
         const centerY = (minY + maxY) / 2;
         const centerZ = (minZ + maxZ) / 2;
 
-        // Scale factor to normalize size relative to the camera field (approx fitting in a 4x4x4 area)
         const maxDim = Math.max(maxX - minX, maxY - minY, maxZ - minZ) || 1;
         const normalizeScale = 3 / maxDim;
 
@@ -221,11 +211,13 @@ export const ThreeObject: React.FC<ThreeObjectProps> = ({ objectData, className,
                 (voxel.y - centerY) * normalizeScale, 
                 (voxel.z - centerZ) * normalizeScale
             );
-            dummy.scale.set(normalizeScale, normalizeScale, normalizeScale);
+            dummy.scale.set(normalizeScale * 0.98, normalizeScale * 0.98, normalizeScale * 0.98); // Tiny gap for bevel look
             dummy.updateMatrix();
             mesh.setMatrixAt(i, dummy.matrix);
             
             color.set(voxel.color);
+            // Boost color slightly to combat darkness from high reflectivity
+            color.multiplyScalar(1.2); 
             mesh.setColorAt(i, color);
         });
 
@@ -250,9 +242,7 @@ export const ThreeObject: React.FC<ThreeObjectProps> = ({ objectData, className,
       if (objectData.isSpinning) {
           const speed = objectData.spinSpeed || 0.005;
           mainGroup.rotation.y += speed;
-          // Floating animation (Sine wave on Y axis)
           mainGroup.position.y = Math.sin(Date.now() * 0.0015) * 0.15;
-          // Slight wobble on Z for realism
           mainGroup.rotation.z = objectData.rotationZ + Math.sin(Date.now() * 0.001) * 0.05;
       }
 
@@ -264,6 +254,8 @@ export const ThreeObject: React.FC<ThreeObjectProps> = ({ objectData, className,
     // --- CLEANUP ---
     return () => {
       cancelAnimationFrame(frameId);
+      pmremGenerator.dispose();
+      envTexture.dispose();
       if (mountRef.current && renderer.domElement) {
         mountRef.current.removeChild(renderer.domElement);
       }

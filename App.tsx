@@ -1,10 +1,6 @@
 
 
 
-
-
-
-
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import WelcomeScreen from './components/WelcomeScreen';
 import TemplateSelection from './components/TemplateSelection';
@@ -33,12 +29,7 @@ import TenantLoginModal from './components/TenantLoginModal';
 import TenantNotFoundScreen from './components/TenantNotFoundScreen';
 import TenantEditModal from './components/TenantEditModal';
 
-// Payment Components
-import PriceSelectionScreen from './components/PriceSelectionScreen';
-import PaymentScreen from './components/PaymentScreen';
-import PaymentVerificationScreen from './components/PaymentVerificationScreen';
-
-import { AppState, PhotoSlot, Settings, Template, Event, HistoryEntry, SessionKey, Review, Tenant, FloatingObject, PriceList, PaymentEntry } from './types';
+import { AppState, PhotoSlot, Settings, Template, Event, HistoryEntry, SessionKey, Review, Tenant, FloatingObject } from './types';
 import { db, ref, onValue, off, set, push, update, remove, firebaseObjectToArray, query, orderByChild, equalTo, get } from './firebase';
 import { getAllHistoryEntries, addHistoryEntry, deleteHistoryEntry, getCachedImage, storeImageInCache } from './utils/db';
 import { FullscreenIcon } from './components/icons/FullscreenIcon';
@@ -85,11 +76,6 @@ const DEFAULT_SETTINGS: Settings = {
   isStrictKioskMode: false,
   isSessionCodeEnabled: true,
   freePlayMaxTakes: 1,
-  
-  // Payment Defaults
-  isPaymentEnabled: false,
-  qrisImageUrl: '',
-
   theme: 'dark',
   welcomeTitle: 'SANS PHOTO',
   welcomeSubtitle: 'Your personal web photobooth',
@@ -214,11 +200,6 @@ const App: React.FC = () => {
   const [sessionKeys, setSessionKeys] = useState<SessionKey[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
   
-  // Payment States
-  const [priceLists, setPriceLists] = useState<PriceList[]>([]);
-  const [payments, setPayments] = useState<PaymentEntry[]>([]);
-  const [currentPaymentId, setCurrentPaymentId] = useState<string | null>(null);
-  
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [currentTenantId, setCurrentTenantId] = useState<string | null>(null);
   const [tenantNotFound, setTenantNotFound] = useState(false);
@@ -240,13 +221,13 @@ const App: React.FC = () => {
 
   useFullscreenLock(!!settings.isStrictKioskMode);
 
-  // Tenant detection
+  // Tenant detection from URL hash to fix SPA routing issues
   useEffect(() => {
     let allTenants: Tenant[] = [];
     const tenantsRef = ref(db, 'tenants');
 
     const checkPath = () => {
-        const path = window.location.hash.slice(1).replace(/^\//, '');
+        const path = window.location.hash.slice(1).replace(/^\//, ''); // e.g., #/tenant -> tenant
 
         if (path === '') {
             setCurrentTenantId('master');
@@ -267,33 +248,17 @@ const App: React.FC = () => {
         const fetchedTenants = firebaseObjectToArray<Tenant>(snapshot.val());
         setTenants(fetchedTenants);
         allTenants = fetchedTenants;
-        checkPath();
+        checkPath(); // Re-check path when tenants data changes
     });
 
     window.addEventListener('hashchange', checkPath);
-    checkPath();
+    checkPath(); // Initial check on load
 
     return () => {
         off(tenantsRef, 'value', onValueListener);
         window.removeEventListener('hashchange', checkPath);
     };
   }, []);
-
-  // Pre-cache QRIS Image when settings load
-  useEffect(() => {
-    if (settings.isPaymentEnabled && settings.qrisImageUrl) {
-        let fetchUrl = settings.qrisImageUrl;
-        if (settings.qrisImageUrl.startsWith('http')) {
-             fetchUrl = `https://images.weserv.nl/?url=${encodeURIComponent(settings.qrisImageUrl)}`;
-        }
-        
-        // Cache QRIS image using existing utils
-        fetch(fetchUrl)
-            .then(res => res.blob())
-            .then(blob => storeImageInCache(settings.qrisImageUrl!, blob))
-            .catch(err => console.error("Failed to pre-cache QRIS image", err));
-    }
-  }, [settings.isPaymentEnabled, settings.qrisImageUrl]);
 
   const cacheAllTemplates = useCallback(async (templatesToCache: Template[], sessionId: number) => {
     if (templatesToCache.length === 0) return;
@@ -318,6 +283,7 @@ const App: React.FC = () => {
         setCachingProgress((totalSuccessCount / totalTemplates) * 100);
     }
 
+    // Loop until all templates that need caching are processed
     while (templatesToProcess.length > 0 && sessionId === cachingSessionRef.current) {
         const failedThisRound: Template[] = [];
 
@@ -339,6 +305,7 @@ const App: React.FC = () => {
                 }
                 await storeImageInCache(template.imageUrl, blob);
                 
+                // Only increment and update progress on success
                 totalSuccessCount++;
                 if (sessionId === cachingSessionRef.current) {
                     setCachingProgress((totalSuccessCount / totalTemplates) * 100);
@@ -352,10 +319,12 @@ const App: React.FC = () => {
         templatesToProcess = failedThisRound;
 
         if (templatesToProcess.length > 0 && sessionId === cachingSessionRef.current) {
+            console.log(`Retrying ${templatesToProcess.length} failed templates in 3 seconds...`);
             await new Promise(resolve => setTimeout(resolve, 3000));
         }
     }
     
+    // Final check if session is still valid before hiding the caching UI
     if (sessionId === cachingSessionRef.current) {
         setTimeout(() => {
             if (sessionId === cachingSessionRef.current) {
@@ -385,14 +354,11 @@ const App: React.FC = () => {
     const eventsRef = ref(db, `${dataPath}/events`);
     const sessionKeysRef = ref(db, `${dataPath}/sessionKeys`);
     const reviewsRef = ref(db, `${dataPath}/reviews`);
-    
-    // Payment Refs
-    const priceListsRef = ref(db, `${dataPath}/priceLists`);
-    const paymentsRef = ref(db, `${dataPath}/payments`);
 
     const settingsListener = onValue(settingsRef, (snapshot) => {
       if (snapshot.exists()) {
         const val = snapshot.val();
+        // Merge defaults to handle new fields like floatingObjects
         setSettings({ ...DEFAULT_SETTINGS, ...val });
       }
       else set(settingsRef, DEFAULT_SETTINGS);
@@ -411,9 +377,6 @@ const App: React.FC = () => {
     const eventsListener = onValue(eventsRef, (snapshot) => setEvents(firebaseObjectToArray<Event>(snapshot.val())));
     const sessionKeysListener = onValue(sessionKeysRef, (snapshot) => setSessionKeys(firebaseObjectToArray<SessionKey>(snapshot.val())));
     const reviewsListener = onValue(reviewsRef, (snapshot) => setReviews(firebaseObjectToArray<Review>(snapshot.val()).sort((a, b) => Number(b.timestamp) - Number(a.timestamp))));
-    
-    const priceListsListener = onValue(priceListsRef, (snapshot) => setPriceLists(firebaseObjectToArray<PriceList>(snapshot.val())));
-    const paymentsListener = onValue(paymentsRef, (snapshot) => setPayments(firebaseObjectToArray<PaymentEntry>(snapshot.val()).sort((a,b) => b.timestamp - a.timestamp)));
 
     return () => {
       off(settingsRef, 'value', settingsListener);
@@ -421,8 +384,6 @@ const App: React.FC = () => {
       off(eventsRef, 'value', eventsListener);
       off(sessionKeysRef, 'value', sessionKeysListener);
       off(reviewsRef, 'value', reviewsListener);
-      off(priceListsRef, 'value', priceListsListener);
-      off(paymentsRef, 'value', paymentsListener);
     };
   }, [currentTenantId, cacheAllTemplates]);
 
@@ -478,122 +439,30 @@ const App: React.FC = () => {
   const handleStartSession = useCallback(async () => {
     if (!currentTenantId) return;
     setKeyCodeError(null);
-    
-    // Flow Branching based on Settings
-    if (settings.isPaymentEnabled) {
-        // 1. Payment Flow
-        setAppState(AppState.PRICE_SELECTION);
-    } else if (settings.isSessionCodeEnabled) {
-        // 2. Session Code Flow
-        setAppState(AppState.KEY_CODE_ENTRY);
+    if (settings.isSessionCodeEnabled) {
+      setAppState(AppState.KEY_CODE_ENTRY);
     } else {
-        // 3. Free Play Flow
-        setIsSessionLoading(true);
-        try {
-            const newKeyData: Omit<SessionKey, 'id'> = {
-            code: 'FREEPLAY', maxTakes: Number(settings.freePlayMaxTakes) || 1, takesUsed: 1, status: 'in_progress', createdAt: Date.now(), progress: 'Memilih Event', hasBeenReviewed: false,
-            };
-            const newKeyRef = await push(ref(db, `data/${currentTenantId}/sessionKeys`), newKeyData);
-            if (!newKeyRef.key) throw new Error("Could not get new session key.");
-            
-            const newKey: SessionKey = { id: newKeyRef.key, ...newKeyData };
-            setCurrentSessionKey(newKey);
-            setCurrentTakeCount(1);
-            setAppState(AppState.EVENT_SELECTION);
-        } catch (error) {
-            console.error("Error starting free play session:", error);
-            setKeyCodeError("Could not start a free session.");
-            setAppState(AppState.WELCOME);
-        } finally {
-            setIsSessionLoading(false);
-        }
-    }
-  }, [settings.isSessionCodeEnabled, settings.isPaymentEnabled, settings.freePlayMaxTakes, currentTenantId]);
-  
-  // Payment Handlers
-  const handlePriceSelect = useCallback(async (priceListId: string, userOrderName: string) => {
-      if (!currentTenantId) return;
-      const selectedPrice = priceLists.find(p => p.id === priceListId);
-      if (!selectedPrice) return;
-      
-      const newPayment: Omit<PaymentEntry, 'id'> = {
-          userOrderName,
-          priceListId,
-          priceListName: selectedPrice.name,
-          amount: selectedPrice.price,
-          status: 'pending',
-          timestamp: Date.now()
-      };
-      
-      const payRef = await push(ref(db, `data/${currentTenantId}/payments`), newPayment);
-      if (payRef.key) {
-          setCurrentPaymentId(payRef.key);
-          setAppState(AppState.PAYMENT_QRIS);
-      }
-  }, [currentTenantId, priceLists]);
-  
-  const handleConfirmPayment = useCallback(() => {
-      setAppState(AppState.PAYMENT_VERIFICATION);
-  }, []);
-  
-  const handleScanSuccess = useCallback(async (proofImageUrl?: string, imageHash?: string) => {
-      if (!currentTenantId || !currentPaymentId) return;
-      
-      // Check for Double Spend using Image Hash
-      if (imageHash) {
-          const duplicatePayment = payments.find(p => 
-              p.status === 'verified' && 
-              p.imageHash === imageHash
-          );
-          
-          if (duplicatePayment) {
-              alert("Bukti pembayaran ini sudah pernah digunakan sebelumnya! Harap gunakan bukti baru.");
-              setAppState(AppState.PAYMENT_VERIFICATION); // Stay on verification screen
-              return;
-          }
-      }
-
-      // Update payment status
-      await update(ref(db, `data/${currentTenantId}/payments/${currentPaymentId}`), { 
-          status: 'verified',
-          proofImageUrl: proofImageUrl || '',
-          imageHash: imageHash || ''
-      });
-      
-      // Find the payment entry to get the pricelist (maxTakes)
-      const currentPaymentSnapshot = await get(ref(db, `data/${currentTenantId}/payments/${currentPaymentId}`));
-      if (!currentPaymentSnapshot.exists()) return;
-      
-      const paymentData = currentPaymentSnapshot.val();
-      const priceList = priceLists.find(p => p.id === paymentData.priceListId);
-      const maxTakes = priceList?.maxTakes || 1;
-
-      // Start Session automatically
       setIsSessionLoading(true);
       try {
         const newKeyData: Omit<SessionKey, 'id'> = {
-          code: `PAY-${Date.now().toString().slice(-6)}`, 
-          maxTakes: maxTakes, 
-          takesUsed: 1, 
-          status: 'in_progress', 
-          createdAt: Date.now(), 
-          progress: 'Memilih Event', 
-          hasBeenReviewed: false,
+          code: 'FREEPLAY', maxTakes: Number(settings.freePlayMaxTakes) || 1, takesUsed: 1, status: 'in_progress', createdAt: Date.now(), progress: 'Memilih Event', hasBeenReviewed: false,
         };
         const newKeyRef = await push(ref(db, `data/${currentTenantId}/sessionKeys`), newKeyData);
-        if (newKeyRef.key) {
-            const newKey: SessionKey = { id: newKeyRef.key, ...newKeyData };
-            setCurrentSessionKey(newKey);
-            setCurrentTakeCount(1);
-            setAppState(AppState.EVENT_SELECTION);
-        }
+        if (!newKeyRef.key) throw new Error("Could not get new session key.");
+        
+        const newKey: SessionKey = { id: newKeyRef.key, ...newKeyData };
+        setCurrentSessionKey(newKey);
+        setCurrentTakeCount(1);
+        setAppState(AppState.EVENT_SELECTION);
       } catch (error) {
-        console.error("Error starting paid session:", error);
+        console.error("Error starting free play session:", error);
+        setKeyCodeError("Could not start a free session.");
+        setAppState(AppState.WELCOME);
       } finally {
         setIsSessionLoading(false);
       }
-
-  }, [currentTenantId, currentPaymentId, priceLists, payments]);
+    }
+  }, [settings.isSessionCodeEnabled, settings.freePlayMaxTakes, currentTenantId]);
 
   const handleKeyCodeSubmit = useCallback(async (code: string) => {
     if (!currentTenantId) return;
@@ -612,8 +481,9 @@ const App: React.FC = () => {
         const sessionKey: SessionKey = { id: keyId, ...data[keyId] };
 
         if (sessionKey.isUnlimited) {
+           // Create a NEW generated session based on this unlimited key
            const newSessionData: Omit<SessionKey, 'id'> = {
-             code: `${sessionKey.code}-${Date.now()}`,
+             code: `${sessionKey.code}-${Date.now()}`, // Unique internal code, user doesn't see this
              originalCode: sessionKey.code,
              maxTakes: sessionKey.maxTakes,
              takesUsed: 1,
@@ -632,6 +502,7 @@ const App: React.FC = () => {
              setKeyCodeError("Gagal membuat sesi baru.");
            }
         } else {
+          // Standard One-Time Key Logic
           if (sessionKey.status !== 'available') {
               setKeyCodeError(`Kode ini telah ${sessionKey.status === 'completed' ? 'digunakan' : 'sedang berjalan'}.`);
               setIsSessionLoading(false);
@@ -725,16 +596,22 @@ const App: React.FC = () => {
   const handleSaveTemplateAssignments = useCallback((eventId: string, assignedTemplateIds: string[]) => {
     if (!currentTenantId) return;
     const updates: Record<string, any> = {};
+    
+    // Save the new order to the event
     updates[`/data/${currentTenantId}/events/${eventId}/templateOrder`] = assignedTemplateIds;
+
     templates.forEach(t => {
       if (assignedTemplateIds.includes(t.id)) {
+        // If template is in the new list, but not assigned to this event yet, assign it
         if (t.eventId !== eventId) {
           updates[`/data/${currentTenantId}/templates/${t.id}/eventId`] = eventId;
         }
       } else if (t.eventId === eventId) {
+        // If template was for this event but is not in the new list, unassign it
         updates[`/data/${currentTenantId}/templates/${t.id}/eventId`] = null;
       }
     });
+
     update(ref(db), updates);
     setAssigningTemplatesEvent(null);
   }, [templates, currentTenantId]);
@@ -786,15 +663,18 @@ const App: React.FC = () => {
 
   const handleDeleteFreeplaySessionKeys = useCallback(async () => {
     if (!currentTenantId || !window.confirm("Are you sure you want to delete all 'FREEPLAY' session codes?")) return;
+    
     const freeplayKeys = sessionKeys.filter(key => key.code === 'FREEPLAY');
     if (freeplayKeys.length === 0) {
         alert("No 'FREEPLAY' keys found to delete.");
         return;
     }
+
     const updates: Record<string, null> = {};
     freeplayKeys.forEach(key => {
         updates[`/data/${currentTenantId}/sessionKeys/${key.id}`] = null;
     });
+
     try {
         await update(ref(db), updates);
     } catch (error) {
@@ -802,17 +682,6 @@ const App: React.FC = () => {
         alert("Failed to delete freeplay keys.");
     }
   }, [currentTenantId, sessionKeys]);
-  
-  // Price List Management
-  const handleAddPriceList = useCallback(async (name: string, description: string, price: number, maxTakes: number) => {
-      if(!currentTenantId) return;
-      await push(ref(db, `data/${currentTenantId}/priceLists`), { name, description, price, maxTakes });
-  }, [currentTenantId]);
-
-  const handleDeletePriceList = useCallback(async (id: string) => {
-      if(!currentTenantId || !window.confirm("Delete this price package?")) return;
-      await remove(ref(db, `data/${currentTenantId}/priceLists/${id}`));
-  }, [currentTenantId]);
 
   // Review Handlers
   const handleSaveReview = useCallback(async (reviewData: Omit<Review, 'id' | 'timestamp' | 'eventId' | 'eventName'>) => {
@@ -824,6 +693,8 @@ const App: React.FC = () => {
       const updates: Partial<SessionKey> = { hasBeenReviewed: true };
       if (settings.isReviewForFreebieEnabled && reviewData.rating === 5) {
         const currentMaxTakes = Number(currentSessionKey.maxTakes);
+        // FIX: The value of `settings.reviewFreebieTakesCount` could be undefined, causing a TypeError.
+        // Using the nullish coalescing operator provides a default value to ensure the operation is valid.
         const reviewFreebieTakesCount = Number(settings.reviewFreebieTakesCount ?? 1);
         updates.maxTakes = currentMaxTakes + reviewFreebieTakesCount;
       }
@@ -848,9 +719,7 @@ const App: React.FC = () => {
     switch (appState) {
         case AppState.TEMPLATE_SELECTION: setSelectedEventId(null); setAppState(AppState.EVENT_SELECTION); break;
         case AppState.EVENT_SELECTION: handleCancelSession(); break;
-        case AppState.PRICE_SELECTION: case AppState.KEY_CODE_ENTRY: case AppState.SETTINGS: case AppState.HISTORY: case AppState.ONLINE_HISTORY: setAppState(AppState.WELCOME); break;
-        case AppState.PAYMENT_QRIS: setAppState(AppState.PRICE_SELECTION); break;
-        case AppState.PAYMENT_VERIFICATION: setAppState(AppState.PAYMENT_QRIS); break;
+        case AppState.KEY_CODE_ENTRY: case AppState.SETTINGS: case AppState.HISTORY: case AppState.ONLINE_HISTORY: setAppState(AppState.WELCOME); break;
         case AppState.MANAGE_EVENTS: case AppState.MANAGE_SESSIONS: case AppState.MANAGE_REVIEWS: case AppState.MANAGE_TENANTS: setAppState(AppState.SETTINGS); break;
         case AppState.PREVIEW: (settings.maxRetakes ?? 0) > 0 ? setAppState(AppState.RETAKE_PREVIEW) : (setCapturedImages([]), setSelectedTemplate(null), setAppState(AppState.TEMPLATE_SELECTION)); break;
         default: setAppState(AppState.WELCOME);
@@ -865,11 +734,13 @@ const App: React.FC = () => {
   
   const handleAdminLogin = useCallback((tenant?: Tenant) => {
     if (tenant) {
+      // Tenant login from master page
       setIsAdminLoggedIn(true);
       setIsMasterAdmin(false);
       setIsLoginModalOpen(false);
       window.location.hash = `#/${tenant.path}`;
     } else {
+      // Master admin login
       setIsAdminLoggedIn(true);
       setIsMasterAdmin(true);
       setIsLoginModalOpen(false);
@@ -889,7 +760,9 @@ const App: React.FC = () => {
 
   const handleSessionEnd = useCallback(() => {
     if (currentSessionKey && currentTenantId) {
-        if (currentSessionKey.code.startsWith('FREEPLAY')) { 
+        // If session was 'unlimited' derived, we don't delete it, but marking as completed is fine.
+        // If session was FREEPLAY, we delete it.
+        if (currentSessionKey.code.startsWith('FREEPLAY')) { // Check startsWith in case we append ID later for uniqueness
             remove(ref(db, `data/${currentTenantId}/sessionKeys/${currentSessionKey.id}`));
         } else {
             update(ref(db, `data/${currentTenantId}/sessionKeys/${currentSessionKey.id}`), { status: 'completed', progress: null, currentEventName: null });
@@ -907,9 +780,13 @@ const App: React.FC = () => {
 
   const handleCancelSession = useCallback(() => {
       if (currentSessionKey && currentTenantId) {
+        // If isGenerated, we can just delete it on cancel to clean up? Or mark as available?
+        // If it's a standard one-time key, mark available.
+        // If Freeplay, delete.
           if (currentSessionKey.code.startsWith('FREEPLAY')) {
               remove(ref(db, `data/${currentTenantId}/sessionKeys/${currentSessionKey.id}`));
           } else if (currentSessionKey.isGenerated) {
+             // Optionally delete generated sessions on cancel to avoid clutter
              remove(ref(db, `data/${currentTenantId}/sessionKeys/${currentSessionKey.id}`));
           } else {
               update(ref(db, `data/${currentTenantId}/sessionKeys/${currentSessionKey.id}`), { status: 'available', takesUsed: 0, progress: null, currentEventName: null });
@@ -924,6 +801,7 @@ const App: React.FC = () => {
     }
   }, [currentSessionKey, currentTenantId]);
   
+  // Tenant (Admin) Management
   const handleAddTenant = useCallback(async (tenantData: Partial<Tenant>) => {
     const { username, password, path } = tenantData;
     if (!username || !password || !path) return alert("Username, password, and path are required.");
@@ -1002,7 +880,7 @@ const App: React.FC = () => {
     })();
   }, []);
 
-  // Other callbacks
+  // Other callbacks that just change state
   const handleGoToSettings = useCallback(() => setAppState(AppState.SETTINGS), []);
   const handleViewHistory = useCallback(() => { if (isAdminLoggedIn) setAppState(AppState.HISTORY); }, [isAdminLoggedIn]);
   const handleViewOnlineHistory = useCallback(() => setAppState(AppState.ONLINE_HISTORY), []);
@@ -1022,7 +900,6 @@ const App: React.FC = () => {
   const handleManageSessions = useCallback(() => setAppState(AppState.MANAGE_SESSIONS), []);
   const handleManageReviews = useCallback(() => setAppState(AppState.MANAGE_REVIEWS), []);
   const handleManageTenants = useCallback(() => setAppState(AppState.MANAGE_TENANTS), []);
-  
   // Capture/Retake callbacks
   const decideNextStepAfterCapture = useCallback(() => {
     if (currentSessionKey && currentTakeCount >= currentSessionKey.maxTakes && !(currentSessionKey.hasBeenReviewed)) setAppState(AppState.RATING);
@@ -1060,13 +937,6 @@ const App: React.FC = () => {
       case AppState.WELCOME:
         return <WelcomeScreen onStart={handleStartSession} onSettingsClick={handleGoToSettings} onViewHistory={handleViewHistory} onViewOnlineHistory={handleViewOnlineHistory} isAdminLoggedIn={isAdminLoggedIn} isCaching={isCaching} cachingProgress={cachingProgress} onAdminLoginClick={handleOpenAdminLogin} onAdminLogoutClick={handleAdminLogout} isLoading={isSessionLoading} settings={settings} reviews={reviews} />;
       case AppState.KEY_CODE_ENTRY: return <KeyCodeScreen onKeyCodeSubmit={handleKeyCodeSubmit} onBack={handleBack} error={keyCodeError} isLoading={isSessionLoading} />;
-      case AppState.PRICE_SELECTION: return <PriceSelectionScreen priceLists={priceLists} onSelect={handlePriceSelect} onBack={handleBack} />;
-      case AppState.PAYMENT_QRIS: 
-        const currentPayment = payments.find(p => p.id === currentPaymentId);
-        return <PaymentScreen payment={currentPayment || null} qrisImageUrl={settings.qrisImageUrl || ''} onPaid={handleConfirmPayment} onBack={handleBack} />;
-      case AppState.PAYMENT_VERIFICATION:
-        const paymentToVerify = payments.find(p => p.id === currentPaymentId);
-        return <PaymentVerificationScreen payment={paymentToVerify || null} onScanSuccess={handleScanSuccess} onBack={handleBack} />;
       case AppState.EVENT_SELECTION: return <EventSelectionScreen events={events.filter(e => !e.isArchived)} onSelect={handleEventSelect} onBack={handleBack} />;
       case AppState.TEMPLATE_SELECTION:
         const eventTemplates = templates.filter(t => isAdminLoggedIn ? true : t.eventId === selectedEventId);
@@ -1077,13 +947,13 @@ const App: React.FC = () => {
                 const indexA = orderMap.get(a.id);
                 const indexB = orderMap.get(b.id);
                 if (indexA !== undefined && indexB !== undefined) return Number(indexA) - Number(indexB);
-                if (indexA !== undefined) return -1; 
-                if (indexB !== undefined) return 1; 
-                return a.name.localeCompare(b.name);
+                if (indexA !== undefined) return -1; // a is ordered, b is not
+                if (indexB !== undefined) return 1; // b is ordered, a is not
+                return a.name.localeCompare(b.name); // neither are ordered, sort by name
             });
         }
         return <TemplateSelection templates={sortedTemplates} onSelect={handleTemplateSelect} onBack={handleBack} isAdminLoggedIn={isAdminLoggedIn} onAddTemplate={handleStartAddTemplate} onEditMetadata={handleStartEditTemplateMetadata} onEditLayout={handleStartEditLayout} onDelete={handleDeleteTemplate} />;
-      case AppState.SETTINGS: return <SettingsScreen settings={settings} priceLists={priceLists} payments={payments} onSettingsChange={handleSettingsChange} onManageTemplates={handleManageTemplates} onManageEvents={handleManageEvents} onManageSessions={handleManageSessions} onManageReviews={handleManageReviews} onViewHistory={handleViewHistory} onBack={handleBack} isMasterAdmin={isMasterAdmin} onManageTenants={handleManageTenants} onAddPriceList={handleAddPriceList} onDeletePriceList={handleDeletePriceList} />;
+      case AppState.SETTINGS: return <SettingsScreen settings={settings} onSettingsChange={handleSettingsChange} onManageTemplates={handleManageTemplates} onManageEvents={handleManageEvents} onManageSessions={handleManageSessions} onManageReviews={handleManageReviews} onViewHistory={handleViewHistory} onBack={handleBack} isMasterAdmin={isMasterAdmin} onManageTenants={handleManageTenants} />;
       case AppState.MANAGE_TENANTS: if (!isMasterAdmin) { setAppState(AppState.WELCOME); return null; } return <ManageTenantsScreen tenants={tenants} onBack={handleBack} onAddTenant={handleAddTenant} onUpdateTenant={handleUpdateTenant} onDeleteTenant={handleDeleteTenant} />;
       case AppState.MANAGE_EVENTS: return <ManageEventsScreen events={events} onBack={handleBack} onAddEvent={handleAddEvent} onRenameEvent={handleStartRenameEvent} onDeleteEvent={handleDeleteEvent} onToggleArchive={handleToggleArchiveEvent} onAssignTemplates={handleStartAssigningTemplates} onQrCodeSettings={handleStartEditQrCode} />;
       case AppState.MANAGE_SESSIONS: if (!isAdminLoggedIn) { setAppState(AppState.WELCOME); return null; } return <ManageSessionsScreen sessionKeys={sessionKeys} onBack={handleBack} onAddKey={handleAddSessionKey} onDeleteKey={handleDeleteSessionKey} onDeleteAllKeys={handleDeleteAllSessionKeys} onDeleteFreeplayKeys={handleDeleteFreeplaySessionKeys} />;
@@ -1119,7 +989,7 @@ const App: React.FC = () => {
       {appState === AppState.EDIT_TEMPLATE_METADATA && editingTemplate && <TemplateMetadataModal template={editingTemplate} onSave={handleSaveTemplateMetadata} onClose={handleCancelEditTemplateMetadata} />}
       
       <main className="w-full h-full p-4 flex flex-col items-center justify-center">
-        {keyCodeError && (appState === AppState.WELCOME || appState === AppState.KEY_CODE_ENTRY) && (
+        {keyCodeError && appState === AppState.WELCOME && (
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-red-800/90 p-4 rounded-lg z-50 text-center border border-red-600 text-white">
             <p className="font-bold">Error</p>
             <p>{keyCodeError}</p>
