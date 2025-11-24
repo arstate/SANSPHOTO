@@ -1,4 +1,6 @@
 
+
+
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import WelcomeScreen from './components/WelcomeScreen';
 import TemplateSelection from './components/TemplateSelection';
@@ -545,7 +547,7 @@ const App: React.FC = () => {
     try {
         const newKeyData: Omit<SessionKey, 'id'> = {
           code: `PAID-${Date.now().toString().slice(-4)}`, 
-          maxTakes: 1, // Default to 1, or could be based on package
+          maxTakes: selectedPriceList?.maxTakes || 1, // Use configured takes from price list
           takesUsed: 1, 
           status: 'in_progress', 
           createdAt: Date.now(), 
@@ -565,7 +567,7 @@ const App: React.FC = () => {
     } finally {
         setIsSessionLoading(false);
     }
-  }, [currentTenantId, currentPaymentId]);
+  }, [currentTenantId, currentPaymentId, selectedPriceList]);
 
   const validateProofHash = useCallback(async (hash: string): Promise<boolean> => {
       if (!currentTenantId) return false;

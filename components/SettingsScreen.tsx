@@ -1,4 +1,6 @@
 
+
+
 import React, { useState, useEffect } from 'react';
 import { Settings, FloatingObject, PriceList, PaymentEntry } from '../types';
 import { BackIcon } from './icons/BackIcon';
@@ -81,6 +83,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const [newPriceName, setNewPriceName] = useState('');
   const [newPriceDesc, setNewPriceDesc] = useState('');
   const [newPriceAmount, setNewPriceAmount] = useState('');
+  const [newPriceTakes, setNewPriceTakes] = useState(1);
 
   const isLight = settings.theme === 'light';
 
@@ -246,7 +249,8 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
           id: `price-${Date.now()}`,
           name: newPriceName,
           description: newPriceDesc,
-          price: parseInt(newPriceAmount, 10)
+          price: parseInt(newPriceAmount, 10),
+          maxTakes: newPriceTakes
       };
       
       onSettingsChange({
@@ -257,6 +261,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
       setNewPriceName('');
       setNewPriceDesc('');
       setNewPriceAmount('');
+      setNewPriceTakes(1);
   };
 
   const handleDeletePriceList = (id: string) => {
@@ -1232,10 +1237,10 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                     
                     {/* Add New Price List */}
                     <form onSubmit={handleAddPriceList} className="bg-[var(--color-bg-tertiary)]/50 p-4 rounded-lg border border-[var(--color-border-secondary)] space-y-3">
-                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                             <input
                                 type="text"
-                                placeholder="Package Name (e.g. Single)"
+                                placeholder="Package Name"
                                 value={newPriceName}
                                 onChange={e => setNewPriceName(e.target.value)}
                                 className="w-full bg-[var(--color-bg-primary)] border border-[var(--color-border-secondary)] rounded px-3 py-2 text-sm"
@@ -1243,9 +1248,18 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                             />
                             <input
                                 type="number"
-                                placeholder="Price (e.g. 25000)"
+                                placeholder="Price"
                                 value={newPriceAmount}
                                 onChange={e => setNewPriceAmount(e.target.value)}
+                                className="w-full bg-[var(--color-bg-primary)] border border-[var(--color-border-secondary)] rounded px-3 py-2 text-sm"
+                                required
+                            />
+                            <input
+                                type="number"
+                                placeholder="Sessions/Takes"
+                                value={newPriceTakes}
+                                onChange={e => setNewPriceTakes(Math.max(1, parseInt(e.target.value) || 1))}
+                                min="1"
                                 className="w-full bg-[var(--color-bg-primary)] border border-[var(--color-border-secondary)] rounded px-3 py-2 text-sm"
                                 required
                             />
@@ -1268,6 +1282,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                             <div key={pkg.id} className="flex items-center justify-between p-3 bg-[var(--color-bg-tertiary)] rounded-md border border-[var(--color-border-secondary)]">
                                 <div>
                                     <p className="font-bold">{pkg.name} - Rp {pkg.price.toLocaleString()}</p>
+                                    <p className="text-xs text-[var(--color-text-accent)] font-bold">{(pkg.maxTakes || 1)} Session(s)</p>
                                     <p className="text-xs text-[var(--color-text-muted)]">{pkg.description}</p>
                                 </div>
                                 <button onClick={() => handleDeletePriceList(pkg.id)} className="text-red-400 hover:text-red-300 p-2">

@@ -69,6 +69,7 @@ export interface PriceList {
   name: string;
   description: string;
   price: number;
+  maxTakes: number; // Number of sessions granted
 }
 
 export interface PaymentEntry {
