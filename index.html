@@ -158,6 +158,26 @@
       .animate-shake {
         animation: shake 0.82s cubic-bezier(.36,.07,.19,.97) both;
       }
+
+      @keyframes float-3d-spin {
+        0% {
+          transform: translateY(0px) rotateZ(-2deg) rotateY(-5deg) scale(1);
+          filter: drop-shadow(5px 10px 15px rgba(0,0,0,0.4));
+        }
+        50% {
+          transform: translateY(-25px) rotateZ(2deg) rotateY(5deg) scale(1.02);
+          filter: drop-shadow(15px 25px 25px rgba(0,0,0,0.3));
+        }
+        100% {
+          transform: translateY(0px) rotateZ(-2deg) rotateY(-5deg) scale(1);
+          filter: drop-shadow(5px 10px 15px rgba(0,0,0,0.4));
+        }
+      }
+      .animate-float-3d {
+        animation: float-3d-spin 6s ease-in-out infinite;
+        transform-style: preserve-3d;
+        perspective: 1000px;
+      }
     </style>
   <script type="importmap">
 {

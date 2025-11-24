@@ -1,5 +1,7 @@
 
 
+
+
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { CameraIcon } from './icons/CameraIcon';
 import { Template } from '../types';
@@ -14,13 +16,14 @@ interface CaptureScreenProps {
   onProgressUpdate?: (current: number, total: number) => void;
   existingImages?: string[];
   cameraSourceType?: 'default' | 'ip_camera';
+  cameraDeviceId?: string;
   ipCameraUrl?: string;
   ipCameraUseProxy?: boolean;
 }
 
 const CaptureScreen: React.FC<CaptureScreenProps> = ({ 
   onCaptureComplete, onRetakeComplete, retakeForIndex, template, countdownDuration, flashEffectEnabled, onProgressUpdate, existingImages,
-  cameraSourceType = 'default', ipCameraUrl, ipCameraUseProxy
+  cameraSourceType = 'default', cameraDeviceId, ipCameraUrl, ipCameraUseProxy
 }) => {
   const [photoIndex, setPhotoIndex] = useState(0);
   const [countdown, setCountdown] = useState<number | null>(null);
@@ -103,13 +106,17 @@ const CaptureScreen: React.FC<CaptureScreenProps> = ({
 
     const setupCamera = async () => {
       try {
-        stream = await navigator.mediaDevices.getUserMedia({ 
-          video: { 
-            facingMode: 'user',
-            width: { ideal: 1920 },
-            height: { ideal: 1080 },
-          }
-        });
+        const constraints: MediaStreamConstraints = { 
+            video: { 
+                width: { ideal: 1920 },
+                height: { ideal: 1080 },
+                // If a specific device ID is selected (e.g., external USB), use it.
+                // Otherwise default to user facing camera.
+                ...(cameraDeviceId ? { deviceId: { exact: cameraDeviceId } } : { facingMode: 'user' })
+            }
+        };
+
+        stream = await navigator.mediaDevices.getUserMedia(constraints);
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
         }
@@ -125,7 +132,7 @@ const CaptureScreen: React.FC<CaptureScreenProps> = ({
     return () => {
       stream?.getTracks().forEach(track => track.stop());
     };
-  }, [isIpCamera, finalIpCameraUrl]);
+  }, [isIpCamera, finalIpCameraUrl, cameraDeviceId]);
 
   const takePicture = useCallback(() => {
     const canvas = canvasRef.current;

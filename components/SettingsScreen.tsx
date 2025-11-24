@@ -1,7 +1,11 @@
 
 
 
-import React, { useState } from 'react';
+
+
+
+
+import React, { useState, useEffect } from 'react';
 import { Settings } from '../types';
 import { BackIcon } from './icons/BackIcon';
 import { KeyIcon } from './icons/KeyIcon';
@@ -14,6 +18,7 @@ import { FolderIcon } from './icons/FolderIcon';
 import { ReviewsIcon } from './icons/ReviewsIcon';
 import { UsersIcon } from './icons/UsersIcon';
 import { CameraIcon } from './icons/CameraIcon';
+import { RestartIcon } from './icons/RestartIcon';
 
 interface SettingsScreenProps {
     settings: Settings;
@@ -68,7 +73,28 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
 }) => {
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState<SettingsCategory>('general');
+  const [videoDevices, setVideoDevices] = useState<MediaDeviceInfo[]>([]);
   const isLight = settings.theme === 'light';
+
+  // Load devices for camera selection
+  useEffect(() => {
+      if (activeCategory === 'general') {
+          refreshVideoDevices();
+      }
+  }, [activeCategory]);
+
+  const refreshVideoDevices = async () => {
+      try {
+          // Request permission first to get labels
+          await navigator.mediaDevices.getUserMedia({ video: true });
+          
+          const devices = await navigator.mediaDevices.enumerateDevices();
+          const videoInputs = devices.filter(device => device.kind === 'videoinput');
+          setVideoDevices(videoInputs);
+      } catch (err) {
+          console.error("Error enumerating devices:", err);
+      }
+  };
 
   const handleSettingsInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
@@ -204,7 +230,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                             className="sr-only"
                         />
                         <span className="font-bold">Default Webcam</span>
-                        <span className="text-xs text-center text-[var(--color-text-muted)] mt-1">Uses browser API (getUserMedia)</span>
+                        <span className="text-xs text-center text-[var(--color-text-muted)] mt-1">Uses browser API (USB/HDMI Capture)</span>
                     </label>
 
                     <label className={`flex flex-col items-center p-4 border-2 rounded-lg cursor-pointer transition-colors ${settings.cameraSourceType === 'ip_camera' ? 'border-[var(--color-accent-primary)] bg-[var(--color-accent-primary)]/10' : 'border-[var(--color-border-secondary)] hover:border-[var(--color-border-primary)]'}`}>
@@ -220,6 +246,36 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                         <span className="text-xs text-center text-[var(--color-text-muted)] mt-1">MJPEG Stream via HTTP/URL</span>
                     </label>
                 </div>
+                
+                {/* USB/Default Device Selection */}
+                {settings.cameraSourceType !== 'ip_camera' && (
+                    <div className="mt-4 animate-fade-in">
+                        <div className="flex items-center justify-between mb-2">
+                            <label htmlFor="cameraDeviceId" className="block text-sm font-medium text-[var(--color-text-secondary)]">Select Input Device</label>
+                            <button 
+                                onClick={refreshVideoDevices} 
+                                className="text-xs text-[var(--color-text-accent)] flex items-center gap-1 hover:underline"
+                            >
+                                <RestartIcon /> Refresh Devices
+                            </button>
+                        </div>
+                        <p className="text-xs text-[var(--color-text-muted)] mb-2">If using USB HDMI capture on mobile, select the USB device here.</p>
+                        <select
+                            id="cameraDeviceId"
+                            name="cameraDeviceId"
+                            value={settings.cameraDeviceId || ''}
+                            onChange={handleSettingsInputChange}
+                            className="mt-1 block w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md shadow-sm py-2 px-3 text-[var(--color-text-primary)] focus:outline-none focus:ring-[var(--color-border-focus)] focus:border-[var(--color-border-focus)] sm:text-sm"
+                        >
+                            <option value="">Default (Front Camera / Auto)</option>
+                            {videoDevices.map((device, index) => (
+                                <option key={device.deviceId} value={device.deviceId}>
+                                    {device.label || `Camera ${index + 1}`}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                )}
 
                 {settings.cameraSourceType === 'ip_camera' && (
                     <div className="mt-4 animate-fade-in space-y-4">
@@ -486,6 +542,66 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                     </div>
                 </label>
               </div>
+            </div>
+            
+            {/* 3D Floating Camera Element */}
+            <div className="p-6 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] text-left space-y-4">
+              <h3 className="text-xl font-bold text-[var(--color-text-accent)]">Floating 3D Decoration</h3>
+              
+              <div className="border-t border-[var(--color-border-primary)] pt-4">
+                  <label htmlFor="isFloatingCameraEnabled" className="flex items-center justify-between cursor-pointer">
+                      <div>
+                          <span className="block text-sm font-medium text-[var(--color-text-secondary)]">Show 3D Analog Camera</span>
+                          <p className="text-xs text-[var(--color-text-muted)]">A decorative 3D vector camera that floats and rotates.</p>
+                      </div>
+                      <div className="relative">
+                          <input
+                              type="checkbox"
+                              id="isFloatingCameraEnabled"
+                              name="isFloatingCameraEnabled"
+                              checked={settings.isFloatingCameraEnabled ?? false}
+                              onChange={handleSettingsInputChange}
+                              className="sr-only peer"
+                          />
+                          <div className="w-11 h-6 bg-[var(--color-bg-tertiary)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--color-accent-primary)]"></div>
+                      </div>
+                  </label>
+              </div>
+
+              {settings.isFloatingCameraEnabled && (
+                  <div className="pt-4 space-y-4 animate-fade-in">
+                      <div>
+                          <label htmlFor="floatingCameraX" className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">
+                              Horizontal Position (X) - {settings.floatingCameraX ?? 85}%
+                          </label>
+                          <input
+                              type="range"
+                              id="floatingCameraX"
+                              name="floatingCameraX"
+                              min="0"
+                              max="100"
+                              value={settings.floatingCameraX ?? 85}
+                              onChange={handleSettingsInputChange}
+                              className="w-full h-2 bg-[var(--color-bg-tertiary)] rounded-lg appearance-none cursor-pointer"
+                          />
+                      </div>
+                      <div>
+                          <label htmlFor="floatingCameraY" className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">
+                              Vertical Position (Y) - {settings.floatingCameraY ?? 20}%
+                          </label>
+                          <input
+                              type="range"
+                              id="floatingCameraY"
+                              name="floatingCameraY"
+                              min="0"
+                              max="100"
+                              value={settings.floatingCameraY ?? 20}
+                              onChange={handleSettingsInputChange}
+                              className="w-full h-2 bg-[var(--color-bg-tertiary)] rounded-lg appearance-none cursor-pointer"
+                          />
+                      </div>
+                  </div>
+              )}
             </div>
 
             {/* Welcome Screen Background Customization */}

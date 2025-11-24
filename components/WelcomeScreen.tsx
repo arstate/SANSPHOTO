@@ -1,4 +1,6 @@
 
+
+
 import React, { useMemo, useRef, useEffect, useState } from 'react';
 import { SettingsIcon } from './icons/SettingsIcon';
 import { HistoryIcon } from './icons/HistoryIcon';
@@ -8,6 +10,7 @@ import { GlobeIcon } from './icons/GlobeIcon';
 import { Settings, Review } from '../types';
 import { GOOGLE_FONTS } from './SettingsScreen'; 
 import ReviewSlider from './ReviewSlider';
+import { AnalogCamera3D } from './icons/AnalogCamera3D';
 
 interface WelcomeScreenProps {
   onStart: () => void;
@@ -80,6 +83,11 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
     isOnlineHistoryButtonStrokeEnabled = true,
     onlineHistoryButtonStrokeColor,
     isOnlineHistoryButtonShadowEnabled = true,
+    
+    // Floating Camera
+    isFloatingCameraEnabled = false,
+    floatingCameraX = 85,
+    floatingCameraY = 20
   } = settings;
 
   const [randomTitleFont, setRandomTitleFont] = useState(welcomeTitleFont);
@@ -179,6 +187,20 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
 
       {(welcomeBgType === 'image' || welcomeBgType === 'camera') && (
         <div className="absolute inset-0 bg-black/30" />
+      )}
+
+      {/* Floating 3D Camera Element */}
+      {isFloatingCameraEnabled && (
+        <div 
+          className="absolute z-10 pointer-events-none animate-float-3d"
+          style={{ 
+            left: `${floatingCameraX}%`, 
+            top: `${floatingCameraY}%`,
+            transform: 'translate(-50%, -50%)' // Center on coordinate
+          }}
+        >
+          <AnalogCamera3D className="w-40 h-40 md:w-60 md:h-60 drop-shadow-2xl" />
+        </div>
       )}
       
       <div className="relative z-10 flex flex-col items-center justify-center h-full w-full p-4">

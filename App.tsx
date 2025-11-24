@@ -48,6 +48,7 @@ const DEFAULT_SETTINGS: Settings = {
   countdownDuration: 5,
   flashEffectEnabled: true,
   cameraSourceType: 'default',
+  cameraDeviceId: '',
   ipCameraUrl: '',
   ipCameraUseProxy: false,
   isPinLockEnabled: false,
@@ -71,6 +72,12 @@ const DEFAULT_SETTINGS: Settings = {
   welcomeSubtitleFont: "'Poppins', sans-serif",
   isWelcomeTitleFontRandom: false,
   isWelcomeSubtitleFontRandom: false,
+  
+  // Floating Camera Defaults
+  isFloatingCameraEnabled: false,
+  floatingCameraX: 85,
+  floatingCameraY: 20,
+
   startButtonText: 'START SESSION',
   startButtonBgColor: '',
   startButtonTextColor: '',
@@ -890,7 +897,7 @@ const App: React.FC = () => {
     const timestamp = Date.now();
     const newEntry: HistoryEntry = { id: String(timestamp), eventId: event.id, eventName: event.name, imageDataUrl, timestamp: timestamp };
     await addHistoryEntry(newEntry);
-    setHistory(prev => [newEntry, ...prev].sort((a,b) => b.timestamp - a.timestamp));
+    setHistory(prev => [newEntry, ...prev].sort((a,b) => Number(b.timestamp) - Number(a.timestamp)));
   }, [events, selectedEventId]);
 
   const renderContent = () => {
@@ -913,7 +920,7 @@ const App: React.FC = () => {
         const eventTemplates = templates.filter(t => isAdminLoggedIn ? true : t.eventId === selectedEventId);
         let sortedTemplates = eventTemplates;
         if (selectedEvent?.templateOrder) {
-            const orderMap = new Map(selectedEvent.templateOrder.map((id, index) => [id, index]));
+            const orderMap = new Map(selectedEvent.templateOrder.map((id, index) => [id, index] as [string, number]));
             sortedTemplates = [...eventTemplates].sort((a, b) => {
                 const indexA = orderMap.get(a.id);
                 const indexB = orderMap.get(b.id);
@@ -933,7 +940,7 @@ const App: React.FC = () => {
       case AppState.ONLINE_HISTORY: return <OnlineHistoryScreen onBack={handleBack} />;
       case AppState.EDIT_TEMPLATE_METADATA: if (!isAdminLoggedIn || !editingTemplate) { setAppState(AppState.WELCOME); return null; } return <TemplateMetadataModal template={editingTemplate} onSave={handleSaveTemplateMetadata} onClose={handleCancelEditTemplateMetadata} />;
       case AppState.EDIT_TEMPLATE_LAYOUT: if (!isAdminLoggedIn || !selectedTemplate) { setAppState(AppState.WELCOME); return null; } return <EditTemplateScreen template={selectedTemplate} onSave={handleTemplateLayoutSave} onCancel={handleEditLayoutCancel} />;
-      case AppState.CAPTURE: if (!selectedTemplate) { setAppState(AppState.WELCOME); return null; } return <CaptureScreen template={selectedTemplate} countdownDuration={settings.countdownDuration} flashEffectEnabled={settings.flashEffectEnabled} cameraSourceType={settings.cameraSourceType} ipCameraUrl={settings.ipCameraUrl} ipCameraUseProxy={settings.ipCameraUseProxy} onCaptureComplete={handleCaptureComplete} onRetakeComplete={handleRetakeComplete} retakeForIndex={retakingPhotoIndex} onProgressUpdate={handleCaptureProgressUpdate} existingImages={capturedImages} />;
+      case AppState.CAPTURE: if (!selectedTemplate) { setAppState(AppState.WELCOME); return null; } return <CaptureScreen template={selectedTemplate} countdownDuration={settings.countdownDuration} flashEffectEnabled={settings.flashEffectEnabled} cameraSourceType={settings.cameraSourceType} cameraDeviceId={settings.cameraDeviceId} ipCameraUrl={settings.ipCameraUrl} ipCameraUseProxy={settings.ipCameraUseProxy} onCaptureComplete={handleCaptureComplete} onRetakeComplete={handleRetakeComplete} retakeForIndex={retakingPhotoIndex} onProgressUpdate={handleCaptureProgressUpdate} existingImages={capturedImages} />;
       case AppState.RETAKE_PREVIEW: if (!selectedTemplate) { setAppState(AppState.WELCOME); return null; } return <RetakePreviewScreen images={capturedImages} template={selectedTemplate} onStartRetake={handleStartRetake} onDone={handleFinishRetakePreview} retakesUsed={retakesUsed} maxRetakes={settings.maxRetakes ?? 0} />;
       case AppState.RATING: if (!selectedEvent || !currentSessionKey || currentSessionKey.hasBeenReviewed) { setAppState(AppState.PREVIEW); return null; } return <RatingScreen eventName={selectedEvent.name} onSubmit={handleSaveReview} onSkip={handleSkipReview} settings={settings} />;
       case AppState.PREVIEW: if (!selectedTemplate || !currentSessionKey) { setAppState(AppState.WELCOME); return null; } return <PreviewScreen images={capturedImages} onRestart={handleSessionEnd} onBack={handleBack} template={selectedTemplate} onSaveHistory={handleSaveHistoryFromSession} event={selectedEvent} currentTake={currentTakeCount} maxTakes={currentSessionKey.maxTakes} onNextTake={handleStartNextTake} isDownloadButtonEnabled={settings.isDownloadButtonEnabled ?? true} isAutoDownloadEnabled={settings.isAutoDownloadEnabled ?? true} printSettings={{ isEnabled: settings.isPrintButtonEnabled ?? true, paperSize: settings.printPaperSize ?? '4x6', colorMode: settings.printColorMode ?? 'color', isCopyInputEnabled: settings.isPrintCopyInputEnabled ?? true, maxCopies: settings.printMaxCopies ?? 5, }} />;

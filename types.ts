@@ -35,8 +35,9 @@ export interface Settings {
   flashEffectEnabled: boolean;
   // Camera Settings
   cameraSourceType?: 'default' | 'ip_camera';
+  cameraDeviceId?: string; // New: ID for specific device selection (USB/HDMI Capture)
   ipCameraUrl?: string;
-  ipCameraUseProxy?: boolean; // New setting for proxy
+  ipCameraUseProxy?: boolean;
   
   isPinLockEnabled?: boolean;
   fullscreenPin?: string;
@@ -59,6 +60,12 @@ export interface Settings {
   welcomeSubtitleFont?: string;
   isWelcomeTitleFontRandom?: boolean;
   isWelcomeSubtitleFontRandom?: boolean;
+  
+  // Floating 3D Camera Element
+  isFloatingCameraEnabled?: boolean;
+  floatingCameraX?: number; // 0-100 percentage
+  floatingCameraY?: number; // 0-100 percentage
+
   startButtonText?: string;
   startButtonBgColor?: string;
   startButtonTextColor?: string;
