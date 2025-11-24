@@ -94,7 +94,11 @@ export interface Settings {
   isPinLockEnabled?: boolean;
   fullscreenPin?: string;
   isStrictKioskMode?: boolean;
+  
+  // Logic Flow Settings
   isSessionCodeEnabled?: boolean;
+  isPaymentEnabled?: boolean; // New: Toggle for Payment Mode
+  
   freePlayMaxTakes?: number;
   theme?: 'light' | 'dark';
   welcomeTitle?: string;

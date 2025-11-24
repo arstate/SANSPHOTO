@@ -1,7 +1,6 @@
 
 import React, { useRef, useEffect, useMemo } from 'react';
 import * as THREE from 'three';
-import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { FloatingObject, VoxelPoint } from '../types';
 
 interface ThreeObjectProps {
@@ -45,74 +44,43 @@ export const ThreeObject: React.FC<ThreeObjectProps> = ({ objectData, className,
     camera.position.x = 1;
     camera.lookAt(0, 0, 0);
 
-    // --- HD RENDERER SETUP ---
+    // --- STANDARD RENDERER SETUP (No PBR overhead) ---
     const renderer = new THREE.WebGLRenderer({ 
         alpha: true, 
         antialias: true,
-        powerPreference: "high-performance"
     });
     renderer.setSize(300, 300); // Fixed size for the container
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Limit pixel ratio for performance
     
-    // Enable realistic lighting features
+    // Standard shadow map
     renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Soft shadows
-    renderer.outputColorSpace = THREE.SRGBColorSpace; // Accurate colors
-    renderer.toneMapping = THREE.ACESFilmicToneMapping; // Cinematic lighting
-    renderer.toneMappingExposure = 1.0;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap; 
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
 
     mountRef.current.innerHTML = ''; // Clear previous canvas
     mountRef.current.appendChild(renderer.domElement);
 
-    // --- ENVIRONMENT MAPPING (Pseudo Ray Tracing) ---
-    // Generate a high quality environment map from the RoomEnvironment preset
-    // This creates "stuff" for the shiny materials to reflect
-    const pmremGenerator = new THREE.PMREMGenerator(renderer);
-    pmremGenerator.compileEquirectangularShader();
-    const envTexture = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture;
-    scene.environment = envTexture;
-    // scene.background = null; // Keep background transparent
+    // --- LIGHTING (Standard) ---
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+    scene.add(ambientLight);
+
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    dirLight.position.set(5, 10, 7);
+    dirLight.castShadow = true;
+    dirLight.shadow.mapSize.width = 1024;
+    dirLight.shadow.mapSize.height = 1024;
+    scene.add(dirLight);
 
     // --- OBJECT GENERATION ---
     const mainGroup = new THREE.Group();
 
     if (objectData.type === 'built-in-camera') {
-        // --- BUILT-IN CAMERA MODEL ---
-        const bodyMaterial = new THREE.MeshPhysicalMaterial({ 
-            color: 0x333333, 
-            roughness: 0.2, 
-            metalness: 0.1,
-            clearcoat: 0.5,
-            clearcoatRoughness: 0.1
-        });
-        const silverMaterial = new THREE.MeshPhysicalMaterial({ 
-            color: 0xffffff, 
-            roughness: 0.15, 
-            metalness: 0.8,
-            envMapIntensity: 1.0
-        });
-        const blackMaterial = new THREE.MeshPhysicalMaterial({ 
-            color: 0x111111, 
-            roughness: 0.2, 
-            metalness: 0.0,
-            clearcoat: 0.3
-        });
-        const lensGlassMaterial = new THREE.MeshPhysicalMaterial({ 
-            color: 0x111133, 
-            metalness: 1.0, 
-            roughness: 0.0, 
-            transmission: 0.2, 
-            transparent: true,
-            thickness: 2.0,
-            ior: 1.5,
-            reflectivity: 1.0
-        });
-        const redButtonMaterial = new THREE.MeshPhysicalMaterial({ 
-            color: 0xdd0000,
-            roughness: 0.1,
-            metalness: 0.2,
-            clearcoat: 1.0
-        });
+        // Keep built-in camera slightly nice looking but simplified
+        const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.5, metalness: 0.2 });
+        const silverMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4, metalness: 0.6 });
+        const blackMaterial = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.6, metalness: 0.1 });
+        const lensGlassMaterial = new THREE.MeshStandardMaterial({ color: 0x111133, roughness: 0.2, metalness: 0.8 });
+        const redButtonMaterial = new THREE.MeshStandardMaterial({ color: 0xdd0000 });
 
         const castAndReceive = (mesh: THREE.Mesh) => {
             mesh.castShadow = true;
@@ -155,7 +123,7 @@ export const ThreeObject: React.FC<ThreeObjectProps> = ({ objectData, className,
         castAndReceive(button);
         mainGroup.add(button);
 
-        const flash = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.4, 0.2), new THREE.MeshPhysicalMaterial({ color: 0xffffff, emissive: 0x555555, roughness: 0, metalness: 0.5 }));
+        const flash = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.4, 0.2), new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0x555555 }));
         flash.position.set(0.2, 1.4, 0);
         castAndReceive(flash);
         mainGroup.add(flash);
@@ -166,19 +134,15 @@ export const ThreeObject: React.FC<ThreeObjectProps> = ({ objectData, className,
         mainGroup.add(viewfinder);
         
     } else if (objectData.type === 'custom-voxel' && parsedVoxels.length > 0) {
-        // --- CUSTOM VOXEL RENDERER WITH "RAY TRACED" LOOK ---
+        // --- CUSTOM VOXEL RENDERER (SIMPLIFIED / FLAT) ---
         
         const voxelGeometry = new THREE.BoxGeometry(1, 1, 1);
         
-        // Use MeshPhysicalMaterial for advanced PBR
-        const voxelMaterial = new THREE.MeshPhysicalMaterial({ 
+        // Use MeshStandardMaterial with high roughness for a matte, blocky look (No PBR reflections)
+        const voxelMaterial = new THREE.MeshStandardMaterial({ 
             color: 0xffffff,
-            roughness: 0.1,   // Very smooth surface (glossy)
-            metalness: 0.1,   // Slight metalness for plastic-like reflections
-            reflectivity: 1.0, 
-            clearcoat: 1.0,   // Adds a "clear coat" layer (like polished plastic or wet surface)
-            clearcoatRoughness: 0.1, // Smooth clear coat
-            envMapIntensity: 1.5, // Amplify environment reflections
+            roughness: 1.0,   // Totally matte
+            metalness: 0.0,   // No metallic shine
         }); 
         
         const count = parsedVoxels.length;
@@ -216,8 +180,6 @@ export const ThreeObject: React.FC<ThreeObjectProps> = ({ objectData, className,
             mesh.setMatrixAt(i, dummy.matrix);
             
             color.set(voxel.color);
-            // Boost color slightly to combat darkness from high reflectivity
-            color.multiplyScalar(1.2); 
             mesh.setColorAt(i, color);
         });
 
@@ -254,8 +216,6 @@ export const ThreeObject: React.FC<ThreeObjectProps> = ({ objectData, className,
     // --- CLEANUP ---
     return () => {
       cancelAnimationFrame(frameId);
-      pmremGenerator.dispose();
-      envTexture.dispose();
       if (mountRef.current && renderer.domElement) {
         mountRef.current.removeChild(renderer.domElement);
       }

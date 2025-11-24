@@ -1,14 +1,4 @@
 
-
-
-
-
-
-
-
-
-
-
 import React, { useState, useEffect } from 'react';
 import { Settings, FloatingObject, PriceList, PaymentEntry } from '../types';
 import { BackIcon } from './icons/BackIcon';
@@ -131,6 +121,27 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
       ...settings,
       [name]: finalValue,
     });
+  };
+  
+  // Specialized handlers for mutual exclusivity
+  const handleToggleSessionCode = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const isEnabled = e.target.checked;
+      onSettingsChange({
+          ...settings,
+          isSessionCodeEnabled: isEnabled,
+          // If Session Code turned ON, Payment must be OFF
+          isPaymentEnabled: isEnabled ? false : settings.isPaymentEnabled
+      });
+  };
+
+  const handleTogglePaymentMode = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const isEnabled = e.target.checked;
+      onSettingsChange({
+          ...settings,
+          isPaymentEnabled: isEnabled,
+          // If Payment turned ON, Session Code must be OFF
+          isSessionCodeEnabled: isEnabled ? false : settings.isSessionCodeEnabled
+      });
   };
   
   const handleThemeChange = (theme: 'light' | 'dark') => {
@@ -1073,8 +1084,10 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 <div className="border-t border-[var(--color-border-primary)] pt-4">
                   <label htmlFor="isSessionCodeEnabled" className="flex items-center justify-between cursor-pointer">
                       <div>
-                          <span className="block text-sm font-medium text-[var(--color-text-secondary)]">Enable Session Code</span>
-                          <p className="text-xs text-[var(--color-text-muted)]">If disabled, users can start sessions without a code (free play mode).</p>
+                          <span className="block text-sm font-medium text-[var(--color-text-secondary)]">Enable Session Code Mode</span>
+                          <p className="text-xs text-[var(--color-text-muted)]">
+                              If enabled, Payment Mode will be disabled. Users need a code to start.
+                          </p>
                       </div>
                       <div className="relative">
                           <input
@@ -1082,7 +1095,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                               id="isSessionCodeEnabled"
                               name="isSessionCodeEnabled"
                               checked={settings.isSessionCodeEnabled ?? true}
-                              onChange={handleSettingsInputChange}
+                              onChange={handleToggleSessionCode}
                               className="sr-only peer"
                           />
                           <div className="w-11 h-6 bg-[var(--color-bg-tertiary)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--color-accent-primary)]"></div>
@@ -1090,7 +1103,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                   </label>
                 </div>
                 
-                {!(settings.isSessionCodeEnabled ?? true) && (
+                {!(settings.isSessionCodeEnabled ?? true) && !settings.isPaymentEnabled && (
                   <div className="border-t border-[var(--color-border-primary)] pt-4">
                     <label htmlFor="freePlayMaxTakes" className="block text-sm font-medium text-[var(--color-text-secondary)]">Takes per Free Session</label>
                     <p className="text-xs text-[var(--color-text-muted)] mb-2">Number of photo takes a user gets in free play mode.</p>
@@ -1106,18 +1119,20 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                   </div>
                 )}
 
-                <div className="pt-4">
-                  <p className="text-[var(--color-text-muted)] mb-4 text-sm">
-                    Generate and manage single-use session codes for users to start the photobooth.
-                  </p>
-                  <button
-                    onClick={onManageSessions}
-                    className="w-full bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-[var(--color-accent-primary-text)] font-bold py-3 px-6 rounded-full text-lg transition-transform transform hover:scale-105 flex items-center justify-center gap-2"
-                  >
-                    <TicketIcon />
-                    Manage Session Codes
-                  </button>
-                </div>
+                {(settings.isSessionCodeEnabled ?? true) && (
+                    <div className="pt-4">
+                    <p className="text-[var(--color-text-muted)] mb-4 text-sm">
+                        Generate and manage single-use session codes for users to start the photobooth.
+                    </p>
+                    <button
+                        onClick={onManageSessions}
+                        className="w-full bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-[var(--color-accent-primary-text)] font-bold py-3 px-6 rounded-full text-lg transition-transform transform hover:scale-105 flex items-center justify-center gap-2"
+                    >
+                        <TicketIcon />
+                        Manage Session Codes
+                    </button>
+                    </div>
+                )}
               </div>
 
              {/* Event Management */}
@@ -1166,9 +1181,36 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
       case 'payment':
         return (
             <div className="space-y-6">
-                {/* QRIS Image Upload */}
                 <div className="p-6 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] text-left space-y-4">
-                    <h3 className="text-xl font-bold text-[var(--color-text-accent)]">QRIS Payment</h3>
+                    <h3 className="text-xl font-bold text-[var(--color-text-accent)]">Payment Mode</h3>
+                    
+                    {/* Enable/Disable Payment Mode */}
+                    <div className="border-t border-[var(--color-border-primary)] pt-4">
+                        <label htmlFor="isPaymentEnabled" className="flex items-center justify-between cursor-pointer">
+                            <div>
+                                <span className="block text-sm font-medium text-[var(--color-text-secondary)]">Enable QRIS Payment Mode</span>
+                                <p className="text-xs text-[var(--color-text-muted)]">
+                                    If enabled, Session Code mode will be disabled. Users pay via QRIS to start.
+                                </p>
+                            </div>
+                            <div className="relative">
+                                <input
+                                    type="checkbox"
+                                    id="isPaymentEnabled"
+                                    name="isPaymentEnabled"
+                                    checked={settings.isPaymentEnabled ?? false}
+                                    onChange={handleTogglePaymentMode}
+                                    className="sr-only peer"
+                                />
+                                <div className="w-11 h-6 bg-[var(--color-bg-tertiary)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--color-accent-primary)]"></div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                {/* QRIS Image Upload */}
+                <div className={`p-6 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] text-left space-y-4 ${!settings.isPaymentEnabled ? 'opacity-50 pointer-events-none' : ''}`}>
+                    <h3 className="text-xl font-bold text-[var(--color-text-accent)]">QRIS Image</h3>
                     <div>
                         <label htmlFor="qrisImageUrl" className="block text-sm font-medium text-[var(--color-text-secondary)]">QRIS Image URL</label>
                         <p className="text-xs text-[var(--color-text-muted)] mb-2">Direct link or Google Photos Embed Link for your QRIS code.</p>
@@ -1185,7 +1227,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 </div>
 
                 {/* Price Lists Management */}
-                <div className="p-6 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] text-left space-y-4">
+                <div className={`p-6 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] text-left space-y-4 ${!settings.isPaymentEnabled ? 'opacity-50 pointer-events-none' : ''}`}>
                     <h3 className="text-xl font-bold text-[var(--color-text-accent)]">Price List Packages</h3>
                     
                     {/* Add New Price List */}

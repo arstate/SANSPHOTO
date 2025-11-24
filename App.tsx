@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import WelcomeScreen from './components/WelcomeScreen';
 import TemplateSelection from './components/TemplateSelection';
@@ -75,6 +76,7 @@ const DEFAULT_SETTINGS: Settings = {
   fullscreenPin: '1234',
   isStrictKioskMode: false,
   isSessionCodeEnabled: true,
+  isPaymentEnabled: false, // Default off
   freePlayMaxTakes: 1,
   theme: 'dark',
   welcomeTitle: 'SANS PHOTO',
@@ -463,16 +465,22 @@ const App: React.FC = () => {
     if (!currentTenantId) return;
     setKeyCodeError(null);
     
-    // Logic: Payment First -> Session Code -> Event
-    // If Payment is configured (has price lists), it takes precedence.
-    if (settings.priceLists && settings.priceLists.length > 0) {
-        setAppState(AppState.PRICE_SELECTION);
+    // 1. Prioritize Payment Mode if Enabled
+    if (settings.isPaymentEnabled) {
+        if (settings.priceLists && settings.priceLists.length > 0) {
+            setAppState(AppState.PRICE_SELECTION);
+        } else {
+            // Configured to pay but no prices? Fallback or error.
+            alert("Payment mode is enabled but no price packages are configured. Please contact admin.");
+        }
         return;
     }
 
+    // 2. Check for Session Code Mode
     if (settings.isSessionCodeEnabled) {
       setAppState(AppState.KEY_CODE_ENTRY);
     } else {
+      // 3. Free Play Mode
       setIsSessionLoading(true);
       try {
         const newKeyData: Omit<SessionKey, 'id'> = {
@@ -493,7 +501,7 @@ const App: React.FC = () => {
         setIsSessionLoading(false);
       }
     }
-  }, [settings.isSessionCodeEnabled, settings.freePlayMaxTakes, settings.priceLists, currentTenantId]);
+  }, [settings.isSessionCodeEnabled, settings.isPaymentEnabled, settings.freePlayMaxTakes, settings.priceLists, currentTenantId]);
 
   // Payment Flow Handlers
   const handlePriceSelect = useCallback((priceList: PriceList) => {
@@ -804,8 +812,6 @@ const App: React.FC = () => {
       const updates: Partial<SessionKey> = { hasBeenReviewed: true };
       if (settings.isReviewForFreebieEnabled && reviewData.rating === 5) {
         const currentMaxTakes = Number(currentSessionKey.maxTakes);
-        // FIX: The value of `settings.reviewFreebieTakesCount` could be undefined, causing a TypeError.
-        // Using the nullish coalescing operator provides a default value to ensure the operation is valid.
         const reviewFreebieTakesCount = Number(settings.reviewFreebieTakesCount ?? 1);
         updates.maxTakes = currentMaxTakes + reviewFreebieTakesCount;
       }
@@ -873,9 +879,6 @@ const App: React.FC = () => {
 
   const handleSessionEnd = useCallback(() => {
     if (currentSessionKey && currentTenantId) {
-        // If session was 'unlimited' derived, we don't delete it, but marking as completed is fine.
-        // If session was FREEPLAY, we delete it.
-        // If session was PAID, we should probably keep it or mark complete, similar to standard flow.
         if (currentSessionKey.code.startsWith('FREEPLAY')) { 
             remove(ref(db, `data/${currentTenantId}/sessionKeys/${currentSessionKey.id}`));
         } else {
@@ -894,17 +897,11 @@ const App: React.FC = () => {
 
   const handleCancelSession = useCallback(() => {
       if (currentSessionKey && currentTenantId) {
-        // If isGenerated, we can just delete it on cancel to clean up? Or mark as available?
-        // If it's a standard one-time key, mark available.
-        // If Freeplay, delete.
           if (currentSessionKey.code.startsWith('FREEPLAY')) {
               remove(ref(db, `data/${currentTenantId}/sessionKeys/${currentSessionKey.id}`));
           } else if (currentSessionKey.isGenerated) {
-             // Optionally delete generated sessions on cancel to avoid clutter
              remove(ref(db, `data/${currentTenantId}/sessionKeys/${currentSessionKey.id}`));
           } else if (currentSessionKey.code.startsWith('PAID-')) {
-             // Paid sessions should perhaps not be deleted so easily, but marked available if cancelled before photos?
-             // For now, treat as standard: available.
               update(ref(db, `data/${currentTenantId}/sessionKeys/${currentSessionKey.id}`), { status: 'available', takesUsed: 0, progress: null, currentEventName: null });
           } else {
               update(ref(db, `data/${currentTenantId}/sessionKeys/${currentSessionKey.id}`), { status: 'available', takesUsed: 0, progress: null, currentEventName: null });
