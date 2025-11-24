@@ -70,6 +70,14 @@ const CategoryButton: React.FC<{
   </button>
 );
 
+// Helper to proxy images (Google Drive etc)
+const getProxiedUrl = (url: string) => {
+    if (url && url.startsWith('http')) {
+        return `https://images.weserv.nl/?url=${encodeURIComponent(url)}`;
+    }
+    return url;
+};
+
 const PhotoPreviewModal: React.FC<{
     imageUrl: string;
     title: string;
@@ -83,7 +91,7 @@ const PhotoPreviewModal: React.FC<{
                     <CloseIcon />
                 </button>
                 
-                <img src={imageUrl} alt="Full Preview" className="max-w-[90vw] max-h-[80vh] object-contain rounded-lg shadow-2xl border-2 border-white/20" />
+                <img src={getProxiedUrl(imageUrl)} alt="Full Preview" className="max-w-[90vw] max-h-[80vh] object-contain rounded-lg shadow-2xl border-2 border-white/20" />
                 
                 <div className="mt-4 text-center">
                     <p className="text-white font-bold text-lg mb-2">{title}</p>
@@ -308,8 +316,12 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
 
   const handleDownloadPhoto = (url: string, filename: string) => {
       const link = document.createElement('a');
-      link.href = url;
+      // For download, we prefer the proxied URL to avoid CORS issues if saving to disk from browser context
+      // However, 'download' attribute often ignores cross-origin without correct headers.
+      // Weserv handles headers correctly.
+      link.href = getProxiedUrl(url);
       link.download = filename;
+      link.target = '_blank';
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -1364,7 +1376,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                                                 className="w-12 h-12 rounded bg-black/50 overflow-hidden cursor-pointer border border-[var(--color-border-secondary)] hover:border-[var(--color-accent-primary)]"
                                                 onClick={() => setPreviewImage({ url: linkedHistory.imageDataUrl, title: `${pay.userName} - ${new Date(pay.timestamp).toLocaleString()}` })}
                                              >
-                                                 <img src={linkedHistory.imageDataUrl} alt="Result" className="w-full h-full object-cover" />
+                                                 <img src={getProxiedUrl(linkedHistory.imageDataUrl)} alt="Result" className="w-full h-full object-cover" />
                                              </div>
                                          ) : (
                                              <div className="w-12 h-12 rounded bg-black/20 flex items-center justify-center text-[10px] text-[var(--color-text-muted)]">
