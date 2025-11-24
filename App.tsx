@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import WelcomeScreen from './components/WelcomeScreen';
 import TemplateSelection from './components/TemplateSelection';
@@ -354,7 +355,7 @@ const App: React.FC = () => {
     });
     const eventsListener = onValue(eventsRef, (snapshot) => setEvents(firebaseObjectToArray<Event>(snapshot.val())));
     const sessionKeysListener = onValue(sessionKeysRef, (snapshot) => setSessionKeys(firebaseObjectToArray<SessionKey>(snapshot.val())));
-    const reviewsListener = onValue(reviewsRef, (snapshot) => setReviews(firebaseObjectToArray<Review>(snapshot.val()).sort((a, b) => b.timestamp - a.timestamp)));
+    const reviewsListener = onValue(reviewsRef, (snapshot) => setReviews(firebaseObjectToArray<Review>(snapshot.val()).sort((a, b) => Number(b.timestamp) - Number(a.timestamp))));
 
     return () => {
       off(settingsRef, 'value', settingsListener);
@@ -924,7 +925,7 @@ const App: React.FC = () => {
             sortedTemplates = [...eventTemplates].sort((a, b) => {
                 const indexA = orderMap.get(a.id);
                 const indexB = orderMap.get(b.id);
-                if (indexA !== undefined && indexB !== undefined) return indexA - indexB;
+                if (indexA !== undefined && indexB !== undefined) return Number(indexA) - Number(indexB);
                 if (indexA !== undefined) return -1; // a is ordered, b is not
                 if (indexB !== undefined) return 1; // b is ordered, a is not
                 return a.name.localeCompare(b.name); // neither are ordered, sort by name

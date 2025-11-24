@@ -161,22 +161,17 @@
 
       @keyframes float-3d-spin {
         0% {
-          transform: translateY(0px) rotateZ(-2deg) rotateY(-5deg) scale(1);
-          filter: drop-shadow(5px 10px 15px rgba(0,0,0,0.4));
+          transform: translateY(0px);
         }
         50% {
-          transform: translateY(-25px) rotateZ(2deg) rotateY(5deg) scale(1.02);
-          filter: drop-shadow(15px 25px 25px rgba(0,0,0,0.3));
+          transform: translateY(-20px);
         }
         100% {
-          transform: translateY(0px) rotateZ(-2deg) rotateY(-5deg) scale(1);
-          filter: drop-shadow(5px 10px 15px rgba(0,0,0,0.4));
+          transform: translateY(0px);
         }
       }
       .animate-float-3d {
         animation: float-3d-spin 6s ease-in-out infinite;
-        transform-style: preserve-3d;
-        perspective: 1000px;
       }
     </style>
   <script type="importmap">
@@ -187,7 +182,8 @@
     "react": "https://aistudiocdn.com/react@^19.2.0",
     "firebase/app": "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js",
     "firebase/database": "https://www.gstatic.com/firebasejs/12.5.0/firebase-database.js",
-    "firebase/": "https://aistudiocdn.com/firebase@^12.5.0/"
+    "firebase/": "https://aistudiocdn.com/firebase@^12.5.0/",
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
   }
 }
 </script>

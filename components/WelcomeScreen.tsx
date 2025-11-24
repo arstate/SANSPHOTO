@@ -1,6 +1,8 @@
 
 
 
+
+
 import React, { useMemo, useRef, useEffect, useState } from 'react';
 import { SettingsIcon } from './icons/SettingsIcon';
 import { HistoryIcon } from './icons/HistoryIcon';
@@ -10,7 +12,7 @@ import { GlobeIcon } from './icons/GlobeIcon';
 import { Settings, Review } from '../types';
 import { GOOGLE_FONTS } from './SettingsScreen'; 
 import ReviewSlider from './ReviewSlider';
-import { AnalogCamera3D } from './icons/AnalogCamera3D';
+import { ThreeCamera } from './ThreeCamera';
 
 interface WelcomeScreenProps {
   onStart: () => void;
@@ -199,7 +201,8 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
             transform: 'translate(-50%, -50%)' // Center on coordinate
           }}
         >
-          <AnalogCamera3D className="w-40 h-40 md:w-60 md:h-60 drop-shadow-2xl" />
+          {/* Replaced SVG with Three.js 3D Object */}
+          <ThreeCamera className="w-60 h-60 md:w-80 md:h-80 drop-shadow-2xl" />
         </div>
       )}
       
