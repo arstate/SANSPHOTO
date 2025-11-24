@@ -40,7 +40,8 @@ const PriceSelectionScreen: React.FC<PriceSelectionScreenProps> = ({ priceLists,
         <h2 className="text-4xl font-bebas tracking-wider text-[var(--color-text-primary)] mb-2">Select Package</h2>
         <p className="text-[var(--color-text-muted)] mb-8">Pilih paket foto yang Anda inginkan</p>
         
-        <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-4 mb-8 overflow-y-auto max-h-[50vh] scrollbar-thin">
+        {/* Added p-4 instead of px-4 to prevent hover cutoff */}
+        <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-4 mb-8 overflow-y-auto max-h-[50vh] scrollbar-thin">
             {priceLists.map(pkg => (
                 <div 
                     key={pkg.id}

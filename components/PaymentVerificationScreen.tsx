@@ -167,7 +167,7 @@ const PaymentVerificationScreen: React.FC<PaymentVerificationScreenProps> = ({ t
 
         <h2 className="text-3xl font-bebas text-[var(--color-text-primary)] mb-2">Verifikasi Pembayaran</h2>
         <p className="text-[var(--color-text-muted)] mb-4 text-center max-w-md">
-            Arahkan bukti pembayaran (layar HP ke kamera) agar nominal <strong>Rp {targetAmount.toLocaleString()}</strong> terlihat jelas.
+            Arahkan bukti pembayaran (layar HP ke kamera) agar nominal <strong className="text-white">Rp {targetAmount.toLocaleString()}</strong> terlihat jelas.
         </p>
 
         <div className="relative bg-black rounded-xl overflow-hidden shadow-2xl border-4 border-[var(--color-border-primary)] w-full max-w-md aspect-[3/4]">
@@ -183,11 +183,11 @@ const PaymentVerificationScreen: React.FC<PaymentVerificationScreenProps> = ({ t
                 />
             )}
             
-            {/* Overlay Guide */}
+            {/* Overlay Guide - Moved to TOP and Text changed to WHITE */}
             {!capturedImage && (
-                <div className="absolute inset-0 border-[2px] border-white/30 pointer-events-none flex items-center justify-center">
-                    <div className="w-3/4 h-1/4 border-2 border-[var(--color-accent-primary)] rounded-lg bg-[var(--color-accent-primary)]/10 flex items-center justify-center">
-                        <span className="text-[var(--color-accent-primary)] text-sm font-bold bg-black/50 px-2 rounded">Area Nominal</span>
+                <div className="absolute inset-0 border-[2px] border-white/30 pointer-events-none flex flex-col items-center justify-start pt-12">
+                    <div className="w-3/4 h-1/5 border-2 border-[var(--color-accent-primary)] rounded-lg bg-[var(--color-accent-primary)]/10 flex items-center justify-center shadow-[0_0_15px_rgba(139,92,246,0.3)]">
+                        <span className="text-white text-sm font-bold bg-black/50 px-2 rounded shadow-sm">Area Nominal</span>
                     </div>
                 </div>
             )}
