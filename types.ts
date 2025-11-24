@@ -3,6 +3,9 @@
 export enum AppState {
   WELCOME,
   KEY_CODE_ENTRY,
+  PRICE_SELECTION, // New: Selection Price/Package
+  PAYMENT_SHOW, // New: Show QRIS
+  PAYMENT_VERIFICATION, // New: Scan Proof
   EVENT_SELECTION,
   TEMPLATE_SELECTION,
   SETTINGS,
@@ -61,6 +64,24 @@ export interface FloatingObject {
   spinSpeed: number; // 0.001 to 0.1
 }
 
+export interface PriceList {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+}
+
+export interface PaymentEntry {
+  id: string;
+  userName: string;
+  priceListId: string;
+  priceListName: string;
+  amount: number;
+  status: 'pending' | 'verified' | 'failed';
+  timestamp: number;
+  proofHash?: string; // To prevent double spending
+}
+
 export interface Settings {
   countdownDuration: number;
   flashEffectEnabled: boolean;
@@ -94,6 +115,10 @@ export interface Settings {
   
   // Floating 3D Objects (Replaces old single camera settings)
   floatingObjects?: FloatingObject[];
+  
+  // Payment Settings
+  priceLists?: PriceList[];
+  qrisImageUrl?: string;
 
   startButtonText?: string;
   startButtonBgColor?: string;

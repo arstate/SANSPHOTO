@@ -7,8 +7,10 @@
 
 
 
+
+
 import React, { useState, useEffect } from 'react';
-import { Settings, FloatingObject } from '../types';
+import { Settings, FloatingObject, PriceList, PaymentEntry } from '../types';
 import { BackIcon } from './icons/BackIcon';
 import { KeyIcon } from './icons/KeyIcon';
 import { TicketIcon } from './icons/TicketIcon';
@@ -26,6 +28,7 @@ import { ToggleOffIcon } from './icons/ToggleOffIcon';
 import { EditIcon } from './icons/EditIcon';
 import { TrashIcon } from './icons/TrashIcon';
 import { AddIcon } from './icons/AddIcon';
+import { QrCodeIcon } from './icons/QrCodeIcon';
 
 interface SettingsScreenProps {
     settings: Settings;
@@ -38,6 +41,7 @@ interface SettingsScreenProps {
     onBack: () => void;
     isMasterAdmin: boolean;
     onManageTenants: () => void;
+    payments?: PaymentEntry[];
 }
 
 export const GOOGLE_FONTS = [
@@ -52,7 +56,7 @@ export const GOOGLE_FONTS = [
   { name: 'Roboto Mono', value: "'Roboto Mono', monospace" },
 ];
 
-type SettingsCategory = 'general' | 'appearance' | 'security' | 'content' | 'reviews' | 'master';
+type SettingsCategory = 'general' | 'appearance' | 'security' | 'content' | 'payment' | 'reviews' | 'master';
 
 const CategoryButton: React.FC<{
   label: string;
@@ -76,13 +80,18 @@ const CategoryButton: React.FC<{
 
 const SettingsScreen: React.FC<SettingsScreenProps> = ({ 
     settings, onSettingsChange, onManageTemplates, onManageEvents, onManageSessions, onManageReviews, onViewHistory, onBack,
-    isMasterAdmin, onManageTenants
+    isMasterAdmin, onManageTenants, payments = []
 }) => {
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState<SettingsCategory>('general');
   const [videoDevices, setVideoDevices] = useState<MediaDeviceInfo[]>([]);
   const [editingObjectId, setEditingObjectId] = useState<string | null>(null);
   
+  // Payment State
+  const [newPriceName, setNewPriceName] = useState('');
+  const [newPriceDesc, setNewPriceDesc] = useState('');
+  const [newPriceAmount, setNewPriceAmount] = useState('');
+
   const isLight = settings.theme === 'light';
 
   // Load devices for camera selection
@@ -216,6 +225,38 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
         alert("Failed to read JSON file.");
     }
   };
+  
+  // Payment Management
+  const handleAddPriceList = (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!newPriceName || !newPriceAmount) return;
+      
+      const newItem: PriceList = {
+          id: `price-${Date.now()}`,
+          name: newPriceName,
+          description: newPriceDesc,
+          price: parseInt(newPriceAmount, 10)
+      };
+      
+      onSettingsChange({
+          ...settings,
+          priceLists: [...(settings.priceLists || []), newItem]
+      });
+      
+      setNewPriceName('');
+      setNewPriceDesc('');
+      setNewPriceAmount('');
+  };
+
+  const handleDeletePriceList = (id: string) => {
+      if (confirm('Delete this price package?')) {
+          onSettingsChange({
+              ...settings,
+              priceLists: (settings.priceLists || []).filter(p => p.id !== id)
+          });
+      }
+  };
+
   
   // Konversi timestamp ke format yang diterima oleh input datetime-local
   const formatTimestampForInput = (timestamp: number | undefined): string => {
@@ -1122,6 +1163,103 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
               </div>
           </div>
          );
+      case 'payment':
+        return (
+            <div className="space-y-6">
+                {/* QRIS Image Upload */}
+                <div className="p-6 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] text-left space-y-4">
+                    <h3 className="text-xl font-bold text-[var(--color-text-accent)]">QRIS Payment</h3>
+                    <div>
+                        <label htmlFor="qrisImageUrl" className="block text-sm font-medium text-[var(--color-text-secondary)]">QRIS Image URL</label>
+                        <p className="text-xs text-[var(--color-text-muted)] mb-2">Direct link or Google Photos Embed Link for your QRIS code.</p>
+                        <input
+                            type="text"
+                            id="qrisImageUrl"
+                            name="qrisImageUrl"
+                            value={settings.qrisImageUrl || ''}
+                            onChange={handleSettingsInputChange}
+                            placeholder="https://..."
+                            className="mt-1 block w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md shadow-sm py-2 px-3 text-[var(--color-text-primary)] focus:outline-none focus:ring-[var(--color-border-focus)] focus:border-[var(--color-border-focus)] sm:text-sm"
+                        />
+                    </div>
+                </div>
+
+                {/* Price Lists Management */}
+                <div className="p-6 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] text-left space-y-4">
+                    <h3 className="text-xl font-bold text-[var(--color-text-accent)]">Price List Packages</h3>
+                    
+                    {/* Add New Price List */}
+                    <form onSubmit={handleAddPriceList} className="bg-[var(--color-bg-tertiary)]/50 p-4 rounded-lg border border-[var(--color-border-secondary)] space-y-3">
+                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <input
+                                type="text"
+                                placeholder="Package Name (e.g. Single)"
+                                value={newPriceName}
+                                onChange={e => setNewPriceName(e.target.value)}
+                                className="w-full bg-[var(--color-bg-primary)] border border-[var(--color-border-secondary)] rounded px-3 py-2 text-sm"
+                                required
+                            />
+                            <input
+                                type="number"
+                                placeholder="Price (e.g. 25000)"
+                                value={newPriceAmount}
+                                onChange={e => setNewPriceAmount(e.target.value)}
+                                className="w-full bg-[var(--color-bg-primary)] border border-[var(--color-border-secondary)] rounded px-3 py-2 text-sm"
+                                required
+                            />
+                             <input
+                                type="text"
+                                placeholder="Description (optional)"
+                                value={newPriceDesc}
+                                onChange={e => setNewPriceDesc(e.target.value)}
+                                className="w-full bg-[var(--color-bg-primary)] border border-[var(--color-border-secondary)] rounded px-3 py-2 text-sm"
+                            />
+                         </div>
+                         <button type="submit" className="w-full bg-[var(--color-positive)] hover:bg-[var(--color-positive-hover)] text-[var(--color-positive-text)] font-bold py-2 rounded-md text-sm">
+                             Add Package
+                         </button>
+                    </form>
+
+                    {/* List Existing Packages */}
+                    <div className="space-y-2 mt-4">
+                        {(settings.priceLists || []).map(pkg => (
+                            <div key={pkg.id} className="flex items-center justify-between p-3 bg-[var(--color-bg-tertiary)] rounded-md border border-[var(--color-border-secondary)]">
+                                <div>
+                                    <p className="font-bold">{pkg.name} - Rp {pkg.price.toLocaleString()}</p>
+                                    <p className="text-xs text-[var(--color-text-muted)]">{pkg.description}</p>
+                                </div>
+                                <button onClick={() => handleDeletePriceList(pkg.id)} className="text-red-400 hover:text-red-300 p-2">
+                                    <TrashIcon />
+                                </button>
+                            </div>
+                        ))}
+                        {(!settings.priceLists || settings.priceLists.length === 0) && (
+                            <p className="text-center text-[var(--color-text-muted)] text-sm">No packages added.</p>
+                        )}
+                    </div>
+                </div>
+
+                {/* Payment History View */}
+                <div className="p-6 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] text-left space-y-4">
+                    <h3 className="text-xl font-bold text-[var(--color-text-accent)]">Recent Payments</h3>
+                     <div className="max-h-60 overflow-y-auto scrollbar-thin space-y-2">
+                         {payments.map(pay => (
+                             <div key={pay.id} className="p-3 bg-[var(--color-bg-tertiary)] rounded flex justify-between items-center text-sm">
+                                 <div>
+                                     <p className="font-bold">{pay.userName}</p>
+                                     <p className="text-xs text-[var(--color-text-muted)]">{pay.priceListName} - Rp {pay.amount.toLocaleString()}</p>
+                                     <p className="text-[10px] text-[var(--color-text-muted)]">{new Date(pay.timestamp).toLocaleString()}</p>
+                                 </div>
+                                 <span className={`px-2 py-1 rounded text-xs font-bold uppercase ${pay.status === 'verified' ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
+                                     {pay.status}
+                                 </span>
+                             </div>
+                         ))}
+                         {payments.length === 0 && <p className="text-center text-[var(--color-text-muted)]">No payments yet.</p>}
+                     </div>
+                </div>
+            </div>
+        );
       case 'reviews':
         return (
           <div className="space-y-6">
@@ -1319,6 +1457,12 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                  icon={<FolderIcon />}
                  isActive={activeCategory === 'content'}
                  onClick={() => setActiveCategory('content')}
+               />
+                <CategoryButton 
+                 label="Payment"
+                 icon={<QrCodeIcon />}
+                 isActive={activeCategory === 'payment'}
+                 onClick={() => setActiveCategory('payment')}
                />
                <CategoryButton 
                  label="Reviews"
