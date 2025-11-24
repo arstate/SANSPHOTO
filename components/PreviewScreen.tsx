@@ -1,6 +1,3 @@
-
-
-
 import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { DownloadIcon } from './icons/DownloadIcon';
 import { PrintIcon } from './icons/PrintIcon';

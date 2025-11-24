@@ -1,8 +1,3 @@
-
-
-
-
-
 import React, { useState, useEffect } from 'react';
 import { Settings, FloatingObject, PriceList, PaymentEntry, HistoryEntry } from '../types';
 import { BackIcon } from './icons/BackIcon';
@@ -39,6 +34,7 @@ interface SettingsScreenProps {
     onManageTenants: () => void;
     payments?: PaymentEntry[];
     history?: HistoryEntry[]; // Added to link payments to photos
+    onRefreshData?: () => void; // Added for manual refresh
 }
 
 export const GOOGLE_FONTS = [
@@ -106,7 +102,7 @@ const PhotoPreviewModal: React.FC<{
 
 const SettingsScreen: React.FC<SettingsScreenProps> = ({ 
     settings, onSettingsChange, onManageTemplates, onManageEvents, onManageSessions, onManageReviews, onViewHistory, onBack,
-    isMasterAdmin, onManageTenants, payments = [], history = []
+    isMasterAdmin, onManageTenants, payments = [], history = [], onRefreshData
 }) => {
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState<SettingsCategory>('general');
@@ -1344,7 +1340,17 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
 
                 {/* Payment History View */}
                 <div className="p-6 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] text-left space-y-4">
-                    <h3 className="text-xl font-bold text-[var(--color-text-accent)]">Recent Payments</h3>
+                    <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-xl font-bold text-[var(--color-text-accent)]">Recent Payments</h3>
+                        {onRefreshData && (
+                            <button 
+                                onClick={onRefreshData}
+                                className="text-sm flex items-center gap-2 bg-[var(--color-accent-primary)]/20 hover:bg-[var(--color-accent-primary)]/40 text-[var(--color-text-primary)] px-3 py-1.5 rounded-full transition-colors"
+                            >
+                                <RestartIcon /> Refresh Data
+                            </button>
+                        )}
+                    </div>
                      <div className="max-h-60 overflow-y-auto scrollbar-thin space-y-2">
                          {payments.map(pay => {
                              // Find linked history/photo
@@ -1374,7 +1380,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                                      <div className="flex items-center gap-2">
                                          {linkedHistory && (
                                              <button 
-                                                onClick={() => handleDownloadPhoto(linkedHistory.imageDataUrl, `sans-photo-${pay.timestamp}-${pay.userName}.png`)}
+                                                onClick={() => handleDownloadPhoto(linkedHistory.imageDataUrl, `sans-photo-${pay.timestamp}-${pay.userName.replace(/[^a-zA-Z0-9]/g, '_')}.png`)}
                                                 className="p-1.5 bg-[var(--color-bg-secondary)] rounded hover:text-[var(--color-accent-primary)]"
                                                 title="Download Photo"
                                              >

@@ -1,8 +1,3 @@
-
-
-
-
-
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import WelcomeScreen from './components/WelcomeScreen';
 import TemplateSelection from './components/TemplateSelection';
@@ -354,6 +349,12 @@ const App: React.FC = () => {
     }
   }, [cacheImage]);
 
+  // Manual refresh function for History
+  const refreshHistory = useCallback(async () => {
+      const localHistory = await getAllHistoryEntries();
+      setHistory(localHistory);
+  }, []);
+
   useEffect(() => {
     if (!currentTenantId) return;
 
@@ -361,11 +362,8 @@ const App: React.FC = () => {
     const currentSessionId = cachingSessionRef.current;
     setIsCaching(false);
 
-    const loadHistory = async () => {
-        const localHistory = await getAllHistoryEntries();
-        setHistory(localHistory);
-    };
-    loadHistory();
+    // Initial History Load
+    refreshHistory();
 
     const dataPath = `data/${currentTenantId}`;
 
@@ -412,7 +410,7 @@ const App: React.FC = () => {
       off(reviewsRef, 'value', reviewsListener);
       off(paymentsRef, 'value', paymentsListener);
     };
-  }, [currentTenantId, cacheAllTemplates, cacheImage]);
+  }, [currentTenantId, cacheAllTemplates, cacheImage, refreshHistory]);
 
   useEffect(() => {
     document.documentElement.classList.toggle('light', settings.theme === 'light');
@@ -1094,7 +1092,7 @@ const App: React.FC = () => {
             });
         }
         return <TemplateSelection templates={sortedTemplates} onSelect={handleTemplateSelect} onBack={handleBack} isAdminLoggedIn={isAdminLoggedIn} onAddTemplate={handleStartAddTemplate} onEditMetadata={handleStartEditTemplateMetadata} onEditLayout={handleStartEditLayout} onDelete={handleDeleteTemplate} />;
-      case AppState.SETTINGS: return <SettingsScreen settings={settings} onSettingsChange={handleSettingsChange} onManageTemplates={handleManageTemplates} onManageEvents={handleManageEvents} onManageSessions={handleManageSessions} onManageReviews={handleManageReviews} onViewHistory={handleViewHistory} onBack={handleBack} isMasterAdmin={isMasterAdmin} onManageTenants={handleManageTenants} payments={payments} history={history} />;
+      case AppState.SETTINGS: return <SettingsScreen settings={settings} onSettingsChange={handleSettingsChange} onManageTemplates={handleManageTemplates} onManageEvents={handleManageEvents} onManageSessions={handleManageSessions} onManageReviews={handleManageReviews} onViewHistory={handleViewHistory} onBack={handleBack} isMasterAdmin={isMasterAdmin} onManageTenants={handleManageTenants} payments={payments} history={history} onRefreshData={refreshHistory} />;
       case AppState.MANAGE_TENANTS: if (!isMasterAdmin) { setAppState(AppState.WELCOME); return null; } return <ManageTenantsScreen tenants={tenants} onBack={handleBack} onAddTenant={handleAddTenant} onUpdateTenant={handleUpdateTenant} onDeleteTenant={handleDeleteTenant} />;
       case AppState.MANAGE_EVENTS: return <ManageEventsScreen events={events} onBack={handleBack} onAddEvent={handleAddEvent} onRenameEvent={handleStartRenameEvent} onDeleteEvent={handleDeleteEvent} onToggleArchive={handleToggleArchiveEvent} onAssignTemplates={handleStartAssigningTemplates} onQrCodeSettings={handleStartEditQrCode} />;
       case AppState.MANAGE_SESSIONS: if (!isAdminLoggedIn) { setAppState(AppState.WELCOME); return null; } return <ManageSessionsScreen sessionKeys={sessionKeys} onBack={handleBack} onAddKey={handleAddSessionKey} onDeleteKey={handleDeleteSessionKey} onDeleteAllKeys={handleDeleteAllSessionKeys} onDeleteFreeplayKeys={handleDeleteFreeplaySessionKeys} />;
