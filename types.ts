@@ -30,6 +30,37 @@ export interface PhotoSlot {
   rotation?: number;
 }
 
+export interface VoxelPoint {
+  x: number;
+  y: number;
+  z: number;
+  color: string;
+}
+
+export interface FloatingObject {
+  id: string;
+  type: 'built-in-camera' | 'custom-voxel';
+  name: string;
+  voxelData?: string; // JSON string of VoxelPoint[]
+  isVisible: boolean;
+  
+  // Position (Screen %)
+  positionX: number;
+  positionY: number;
+  
+  // Appearance
+  scale: number;
+  
+  // Static Rotation (Degrees)
+  rotationX: number;
+  rotationY: number;
+  rotationZ: number;
+  
+  // Animation
+  isSpinning: boolean;
+  spinSpeed: number; // 0.001 to 0.1
+}
+
 export interface Settings {
   countdownDuration: number;
   flashEffectEnabled: boolean;
@@ -61,10 +92,8 @@ export interface Settings {
   isWelcomeTitleFontRandom?: boolean;
   isWelcomeSubtitleFontRandom?: boolean;
   
-  // Floating 3D Camera Element
-  isFloatingCameraEnabled?: boolean;
-  floatingCameraX?: number; // 0-100 percentage
-  floatingCameraY?: number; // 0-100 percentage
+  // Floating 3D Objects (Replaces old single camera settings)
+  floatingObjects?: FloatingObject[];
 
   startButtonText?: string;
   startButtonBgColor?: string;

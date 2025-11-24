@@ -3,6 +3,8 @@
 
 
 
+
+
 import React, { useMemo, useRef, useEffect, useState } from 'react';
 import { SettingsIcon } from './icons/SettingsIcon';
 import { HistoryIcon } from './icons/HistoryIcon';
@@ -12,7 +14,7 @@ import { GlobeIcon } from './icons/GlobeIcon';
 import { Settings, Review } from '../types';
 import { GOOGLE_FONTS } from './SettingsScreen'; 
 import ReviewSlider from './ReviewSlider';
-import { ThreeCamera } from './ThreeCamera';
+import { ThreeObject } from './ThreeObject';
 
 interface WelcomeScreenProps {
   onStart: () => void;
@@ -86,10 +88,8 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
     onlineHistoryButtonStrokeColor,
     isOnlineHistoryButtonShadowEnabled = true,
     
-    // Floating Camera
-    isFloatingCameraEnabled = false,
-    floatingCameraX = 85,
-    floatingCameraY = 20
+    // Floating Objects
+    floatingObjects = []
   } = settings;
 
   const [randomTitleFont, setRandomTitleFont] = useState(welcomeTitleFont);
@@ -191,20 +191,23 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
         <div className="absolute inset-0 bg-black/30" />
       )}
 
-      {/* Floating 3D Camera Element */}
-      {isFloatingCameraEnabled && (
-        <div 
-          className="absolute z-10 pointer-events-none animate-float-3d"
-          style={{ 
-            left: `${floatingCameraX}%`, 
-            top: `${floatingCameraY}%`,
-            transform: 'translate(-50%, -50%)' // Center on coordinate
-          }}
-        >
-          {/* Replaced SVG with Three.js 3D Object */}
-          <ThreeCamera className="w-60 h-60 md:w-80 md:h-80 drop-shadow-2xl" />
-        </div>
-      )}
+      {/* Floating 3D Objects */}
+      {floatingObjects.map(obj => {
+          if (!obj.isVisible) return null;
+          return (
+            <div 
+              key={obj.id}
+              className="absolute z-10 pointer-events-none"
+              style={{ 
+                left: `${obj.positionX}%`, 
+                top: `${obj.positionY}%`,
+                transform: 'translate(-50%, -50%)' 
+              }}
+            >
+              <ThreeObject objectData={obj} className="drop-shadow-2xl" />
+            </div>
+          );
+      })}
       
       <div className="relative z-10 flex flex-col items-center justify-center h-full w-full p-4">
         <div className="absolute top-4 left-4">

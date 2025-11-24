@@ -5,8 +5,10 @@
 
 
 
+
+
 import React, { useState, useEffect } from 'react';
-import { Settings } from '../types';
+import { Settings, FloatingObject } from '../types';
 import { BackIcon } from './icons/BackIcon';
 import { KeyIcon } from './icons/KeyIcon';
 import { TicketIcon } from './icons/TicketIcon';
@@ -19,6 +21,11 @@ import { ReviewsIcon } from './icons/ReviewsIcon';
 import { UsersIcon } from './icons/UsersIcon';
 import { CameraIcon } from './icons/CameraIcon';
 import { RestartIcon } from './icons/RestartIcon';
+import { ToggleOnIcon } from './icons/ToggleOnIcon';
+import { ToggleOffIcon } from './icons/ToggleOffIcon';
+import { EditIcon } from './icons/EditIcon';
+import { TrashIcon } from './icons/TrashIcon';
+import { AddIcon } from './icons/AddIcon';
 
 interface SettingsScreenProps {
     settings: Settings;
@@ -74,6 +81,8 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState<SettingsCategory>('general');
   const [videoDevices, setVideoDevices] = useState<MediaDeviceInfo[]>([]);
+  const [editingObjectId, setEditingObjectId] = useState<string | null>(null);
+  
   const isLight = settings.theme === 'light';
 
   // Load devices for camera selection
@@ -148,6 +157,64 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
       isClosedModeEnabled: isEnabled,
       reopenTimestamp: newTimestamp,
     });
+  };
+  
+  // Floating Object Management
+  const handleObjectToggle = (id: string) => {
+      const updatedObjects = (settings.floatingObjects || []).map(obj => 
+        obj.id === id ? { ...obj, isVisible: !obj.isVisible } : obj
+      );
+      onSettingsChange({ ...settings, floatingObjects: updatedObjects });
+  };
+  
+  const handleDeleteObject = (id: string) => {
+      if (!window.confirm("Delete this object?")) return;
+      const updatedObjects = (settings.floatingObjects || []).filter(obj => obj.id !== id);
+      onSettingsChange({ ...settings, floatingObjects: updatedObjects });
+  };
+  
+  const handleObjectPropertyChange = (id: string, prop: keyof FloatingObject, value: any) => {
+      const updatedObjects = (settings.floatingObjects || []).map(obj => 
+        obj.id === id ? { ...obj, [prop]: value } : obj
+      );
+      onSettingsChange({ ...settings, floatingObjects: updatedObjects });
+  };
+
+  const handleAddVoxelObject = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+        const text = await file.text();
+        // Basic validation: check if it's JSON and has array structure
+        const json = JSON.parse(text);
+        if (!Array.isArray(json)) {
+            alert("Invalid Voxel JSON format. Expected an array of voxel points.");
+            return;
+        }
+        
+        const newObject: FloatingObject = {
+            id: `voxel-${Date.now()}`,
+            type: 'custom-voxel',
+            name: file.name.replace('.json', ''),
+            isVisible: true,
+            voxelData: text,
+            positionX: 50,
+            positionY: 50,
+            scale: 1,
+            rotationX: 0,
+            rotationY: 0,
+            rotationZ: 0,
+            isSpinning: true,
+            spinSpeed: 0.005
+        };
+        
+        onSettingsChange({ ...settings, floatingObjects: [...(settings.floatingObjects || []), newObject] });
+        e.target.value = ''; // Reset input
+    } catch (err) {
+        console.error("Error parsing voxel file", err);
+        alert("Failed to read JSON file.");
+    }
   };
   
   // Konversi timestamp ke format yang diterima oleh input datetime-local
@@ -452,6 +519,9 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
           </div>
         );
       case 'appearance':
+        const currentFloatingObjects = settings.floatingObjects || [];
+        const editingObject = editingObjectId ? currentFloatingObjects.find(o => o.id === editingObjectId) : null;
+        
         return (
            <div className="space-y-6">
              {/* Welcome Screen Text Customization */}
@@ -544,64 +614,117 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
               </div>
             </div>
             
-            {/* 3D Floating Camera Element */}
+            {/* Floating 3D Objects Manager */}
             <div className="p-6 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] text-left space-y-4">
-              <h3 className="text-xl font-bold text-[var(--color-text-accent)]">Floating 3D Decoration</h3>
+              <h3 className="text-xl font-bold text-[var(--color-text-accent)]">Floating 3D Objects</h3>
+              <p className="text-sm text-[var(--color-text-muted)]">Manage decorative 3D objects on the welcome screen.</p>
               
-              <div className="border-t border-[var(--color-border-primary)] pt-4">
-                  <label htmlFor="isFloatingCameraEnabled" className="flex items-center justify-between cursor-pointer">
-                      <div>
-                          <span className="block text-sm font-medium text-[var(--color-text-secondary)]">Show 3D Analog Camera</span>
-                          <p className="text-xs text-[var(--color-text-muted)]">A decorative 3D vector camera that floats and rotates.</p>
+              {/* List */}
+              <div className="space-y-3">
+                  {currentFloatingObjects.map(obj => (
+                      <div key={obj.id} className="bg-[var(--color-bg-tertiary)] p-3 rounded-lg border border-[var(--color-border-secondary)]">
+                          <div className="flex justify-between items-center mb-2">
+                              <div>
+                                  <span className="font-bold text-[var(--color-text-primary)]">{obj.name}</span>
+                                  <span className="ml-2 text-xs text-[var(--color-text-muted)] px-1.5 py-0.5 border border-[var(--color-text-muted)] rounded">
+                                      {obj.type === 'built-in-camera' ? 'Built-in' : 'Custom Voxel'}
+                                  </span>
+                              </div>
+                              <div className="flex gap-2">
+                                  <button onClick={() => handleObjectToggle(obj.id)} className={`p-1.5 rounded-full ${obj.isVisible ? 'text-green-400 bg-green-900/20' : 'text-gray-400 bg-gray-700/50'}`}>
+                                      {obj.isVisible ? <ToggleOnIcon /> : <ToggleOffIcon />}
+                                  </button>
+                                  <button onClick={() => setEditingObjectId(editingObjectId === obj.id ? null : obj.id)} className={`p-1.5 rounded-full ${editingObjectId === obj.id ? 'text-[var(--color-accent-primary)] bg-[var(--color-accent-primary)]/10' : 'text-gray-400 hover:text-white'}`}>
+                                      <EditIcon />
+                                  </button>
+                                  <button onClick={() => handleDeleteObject(obj.id)} className="p-1.5 rounded-full text-red-400 hover:bg-red-900/20">
+                                      <TrashIcon />
+                                  </button>
+                              </div>
+                          </div>
+                          
+                          {/* Inline Edit Form */}
+                          {editingObjectId === obj.id && (
+                              <div className="mt-4 pt-4 border-t border-[var(--color-border-secondary)] grid grid-cols-1 sm:grid-cols-2 gap-4 animate-fade-in">
+                                  <div>
+                                      <label className="text-xs text-[var(--color-text-secondary)] block mb-1">Scale ({obj.scale})</label>
+                                      <input 
+                                        type="range" min="0.1" max="3" step="0.1" 
+                                        value={obj.scale} 
+                                        onChange={(e) => handleObjectPropertyChange(obj.id, 'scale', parseFloat(e.target.value))}
+                                        className="w-full h-2 bg-[var(--color-bg-primary)] rounded-lg appearance-none cursor-pointer"
+                                      />
+                                  </div>
+                                  <div>
+                                      <label className="text-xs text-[var(--color-text-secondary)] block mb-1">Spin Speed ({obj.spinSpeed})</label>
+                                      <input 
+                                        type="range" min="0" max="0.1" step="0.001" 
+                                        value={obj.spinSpeed} 
+                                        onChange={(e) => handleObjectPropertyChange(obj.id, 'spinSpeed', parseFloat(e.target.value))}
+                                        className="w-full h-2 bg-[var(--color-bg-primary)] rounded-lg appearance-none cursor-pointer"
+                                      />
+                                  </div>
+                                  <div>
+                                      <label className="text-xs text-[var(--color-text-secondary)] block mb-1">Pos X ({obj.positionX}%)</label>
+                                      <input 
+                                        type="range" min="0" max="100" 
+                                        value={obj.positionX} 
+                                        onChange={(e) => handleObjectPropertyChange(obj.id, 'positionX', parseInt(e.target.value))}
+                                        className="w-full h-2 bg-[var(--color-bg-primary)] rounded-lg appearance-none cursor-pointer"
+                                      />
+                                  </div>
+                                  <div>
+                                      <label className="text-xs text-[var(--color-text-secondary)] block mb-1">Pos Y ({obj.positionY}%)</label>
+                                      <input 
+                                        type="range" min="0" max="100" 
+                                        value={obj.positionY} 
+                                        onChange={(e) => handleObjectPropertyChange(obj.id, 'positionY', parseInt(e.target.value))}
+                                        className="w-full h-2 bg-[var(--color-bg-primary)] rounded-lg appearance-none cursor-pointer"
+                                      />
+                                  </div>
+                                  
+                                  <div className="col-span-1 sm:col-span-2 grid grid-cols-3 gap-2">
+                                      <div>
+                                          <label className="text-xs text-[var(--color-text-secondary)] block mb-1">Rot X</label>
+                                          <input type="number" step="0.1" value={obj.rotationX} onChange={(e) => handleObjectPropertyChange(obj.id, 'rotationX', parseFloat(e.target.value))} className="w-full bg-[var(--color-bg-primary)] border border-[var(--color-border-secondary)] rounded px-2 py-1 text-xs" />
+                                      </div>
+                                      <div>
+                                          <label className="text-xs text-[var(--color-text-secondary)] block mb-1">Rot Y</label>
+                                          <input type="number" step="0.1" value={obj.rotationY} onChange={(e) => handleObjectPropertyChange(obj.id, 'rotationY', parseFloat(e.target.value))} className="w-full bg-[var(--color-bg-primary)] border border-[var(--color-border-secondary)] rounded px-2 py-1 text-xs" />
+                                      </div>
+                                      <div>
+                                          <label className="text-xs text-[var(--color-text-secondary)] block mb-1">Rot Z</label>
+                                          <input type="number" step="0.1" value={obj.rotationZ} onChange={(e) => handleObjectPropertyChange(obj.id, 'rotationZ', parseFloat(e.target.value))} className="w-full bg-[var(--color-bg-primary)] border border-[var(--color-border-secondary)] rounded px-2 py-1 text-xs" />
+                                      </div>
+                                  </div>
+
+                                  <div className="col-span-1 sm:col-span-2">
+                                     <label className="flex items-center gap-2 cursor-pointer">
+                                        <input type="checkbox" checked={obj.isSpinning} onChange={(e) => handleObjectPropertyChange(obj.id, 'isSpinning', e.target.checked)} className="rounded bg-[var(--color-bg-primary)] border-[var(--color-border-secondary)]" />
+                                        <span className="text-sm">Enable Spinning Animation</span>
+                                     </label>
+                                  </div>
+                              </div>
+                          )}
                       </div>
-                      <div className="relative">
-                          <input
-                              type="checkbox"
-                              id="isFloatingCameraEnabled"
-                              name="isFloatingCameraEnabled"
-                              checked={settings.isFloatingCameraEnabled ?? false}
-                              onChange={handleSettingsInputChange}
-                              className="sr-only peer"
-                          />
-                          <div className="w-11 h-6 bg-[var(--color-bg-tertiary)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--color-accent-primary)]"></div>
-                      </div>
-                  </label>
+                  ))}
               </div>
 
-              {settings.isFloatingCameraEnabled && (
-                  <div className="pt-4 space-y-4 animate-fade-in">
-                      <div>
-                          <label htmlFor="floatingCameraX" className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">
-                              Horizontal Position (X) - {settings.floatingCameraX ?? 85}%
-                          </label>
-                          <input
-                              type="range"
-                              id="floatingCameraX"
-                              name="floatingCameraX"
-                              min="0"
-                              max="100"
-                              value={settings.floatingCameraX ?? 85}
-                              onChange={handleSettingsInputChange}
-                              className="w-full h-2 bg-[var(--color-bg-tertiary)] rounded-lg appearance-none cursor-pointer"
-                          />
-                      </div>
-                      <div>
-                          <label htmlFor="floatingCameraY" className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">
-                              Vertical Position (Y) - {settings.floatingCameraY ?? 20}%
-                          </label>
-                          <input
-                              type="range"
-                              id="floatingCameraY"
-                              name="floatingCameraY"
-                              min="0"
-                              max="100"
-                              value={settings.floatingCameraY ?? 20}
-                              onChange={handleSettingsInputChange}
-                              className="w-full h-2 bg-[var(--color-bg-tertiary)] rounded-lg appearance-none cursor-pointer"
-                          />
-                      </div>
-                  </div>
-              )}
+              {/* Upload New */}
+              <div className="border-t border-[var(--color-border-primary)] pt-4">
+                 <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">Add Custom Voxel Object (.json)</label>
+                 <label className="flex items-center justify-center w-full h-24 border-2 border-dashed border-[var(--color-border-secondary)] rounded-lg cursor-pointer hover:border-[var(--color-accent-primary)] hover:bg-[var(--color-bg-tertiary)] transition-colors">
+                     <div className="flex flex-col items-center">
+                         <AddIcon />
+                         <span className="text-xs mt-1 text-[var(--color-text-muted)]">Click to upload JSON</span>
+                     </div>
+                     <input type="file" accept=".json" onChange={handleAddVoxelObject} className="hidden" />
+                 </label>
+                 <p className="text-xs text-[var(--color-text-muted)] mt-2">
+                    Format: JSON array of objects with x, y, z coordinates and color hex. Example: <code>[{`{"x":0,"y":0,"z":0,"color":"#ff0000"}`}]</code>
+                 </p>
+              </div>
+
             </div>
 
             {/* Welcome Screen Background Customization */}

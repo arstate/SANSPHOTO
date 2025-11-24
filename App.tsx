@@ -1,4 +1,6 @@
 
+
+
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import WelcomeScreen from './components/WelcomeScreen';
 import TemplateSelection from './components/TemplateSelection';
@@ -27,7 +29,7 @@ import TenantLoginModal from './components/TenantLoginModal';
 import TenantNotFoundScreen from './components/TenantNotFoundScreen';
 import TenantEditModal from './components/TenantEditModal';
 
-import { AppState, PhotoSlot, Settings, Template, Event, HistoryEntry, SessionKey, Review, Tenant } from './types';
+import { AppState, PhotoSlot, Settings, Template, Event, HistoryEntry, SessionKey, Review, Tenant, FloatingObject } from './types';
 import { db, ref, onValue, off, set, push, update, remove, firebaseObjectToArray, query, orderByChild, equalTo, get } from './firebase';
 import { getAllHistoryEntries, addHistoryEntry, deleteHistoryEntry, getCachedImage, storeImageInCache } from './utils/db';
 import { FullscreenIcon } from './components/icons/FullscreenIcon';
@@ -43,6 +45,23 @@ const INITIAL_PHOTO_SLOTS: PhotoSlot[] = [
   { id: 4, inputId: 2, x: 630, y: 610,  width: 480, height: 480 },
   { id: 5, inputId: 3, x: 90,  y: 1150, width: 480, height: 480 },
   { id: 6, inputId: 3, x: 630, y: 1150, width: 480, height: 480 },
+];
+
+const DEFAULT_FLOATING_OBJECTS: FloatingObject[] = [
+  {
+    id: 'default-camera',
+    type: 'built-in-camera',
+    name: 'Analog Camera',
+    isVisible: true,
+    positionX: 85,
+    positionY: 20,
+    scale: 1,
+    rotationX: 0.2,
+    rotationY: 0,
+    rotationZ: -0.1,
+    isSpinning: true,
+    spinSpeed: 0.005
+  }
 ];
 
 const DEFAULT_SETTINGS: Settings = {
@@ -74,10 +93,8 @@ const DEFAULT_SETTINGS: Settings = {
   isWelcomeTitleFontRandom: false,
   isWelcomeSubtitleFontRandom: false,
   
-  // Floating Camera Defaults
-  isFloatingCameraEnabled: false,
-  floatingCameraX: 85,
-  floatingCameraY: 20,
+  // New Floating Objects Structure
+  floatingObjects: DEFAULT_FLOATING_OBJECTS,
 
   startButtonText: 'START SESSION',
   startButtonBgColor: '',
@@ -339,7 +356,11 @@ const App: React.FC = () => {
     const reviewsRef = ref(db, `${dataPath}/reviews`);
 
     const settingsListener = onValue(settingsRef, (snapshot) => {
-      if (snapshot.exists()) setSettings({ ...DEFAULT_SETTINGS, ...snapshot.val() });
+      if (snapshot.exists()) {
+        const val = snapshot.val();
+        // Merge defaults to handle new fields like floatingObjects
+        setSettings({ ...DEFAULT_SETTINGS, ...val });
+      }
       else set(settingsRef, DEFAULT_SETTINGS);
     });
     const templatesListener = onValue(templatesRef, (snapshot) => {
