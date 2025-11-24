@@ -1,8 +1,10 @@
 
 
 
+
+
 import React, { useState, useEffect } from 'react';
-import { Settings, FloatingObject, PriceList, PaymentEntry } from '../types';
+import { Settings, FloatingObject, PriceList, PaymentEntry, HistoryEntry } from '../types';
 import { BackIcon } from './icons/BackIcon';
 import { KeyIcon } from './icons/KeyIcon';
 import { TicketIcon } from './icons/TicketIcon';
@@ -21,6 +23,8 @@ import { EditIcon } from './icons/EditIcon';
 import { TrashIcon } from './icons/TrashIcon';
 import { AddIcon } from './icons/AddIcon';
 import { QrCodeIcon } from './icons/QrCodeIcon';
+import { DownloadIcon } from './icons/DownloadIcon';
+import { CloseIcon } from './icons/CloseIcon';
 
 interface SettingsScreenProps {
     settings: Settings;
@@ -34,6 +38,7 @@ interface SettingsScreenProps {
     isMasterAdmin: boolean;
     onManageTenants: () => void;
     payments?: PaymentEntry[];
+    history?: HistoryEntry[]; // Added to link payments to photos
 }
 
 export const GOOGLE_FONTS = [
@@ -69,10 +74,39 @@ const CategoryButton: React.FC<{
   </button>
 );
 
+const PhotoPreviewModal: React.FC<{
+    imageUrl: string;
+    title: string;
+    onClose: () => void;
+    onDownload: () => void;
+}> = ({ imageUrl, title, onClose, onDownload }) => {
+    return (
+        <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4" onClick={onClose}>
+            <div className="relative max-w-full max-h-full flex flex-col items-center" onClick={e => e.stopPropagation()}>
+                <button onClick={onClose} className="absolute -top-12 right-0 text-white p-2 hover:bg-white/20 rounded-full">
+                    <CloseIcon />
+                </button>
+                
+                <img src={imageUrl} alt="Full Preview" className="max-w-[90vw] max-h-[80vh] object-contain rounded-lg shadow-2xl border-2 border-white/20" />
+                
+                <div className="mt-4 text-center">
+                    <p className="text-white font-bold text-lg mb-2">{title}</p>
+                    <button 
+                        onClick={onDownload}
+                        className="bg-[var(--color-positive)] hover:bg-[var(--color-positive-hover)] text-white font-bold py-2 px-6 rounded-full flex items-center gap-2 mx-auto"
+                    >
+                        <DownloadIcon /> Download
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 
 const SettingsScreen: React.FC<SettingsScreenProps> = ({ 
     settings, onSettingsChange, onManageTemplates, onManageEvents, onManageSessions, onManageReviews, onViewHistory, onBack,
-    isMasterAdmin, onManageTenants, payments = []
+    isMasterAdmin, onManageTenants, payments = [], history = []
 }) => {
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState<SettingsCategory>('general');
@@ -84,6 +118,9 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const [newPriceDesc, setNewPriceDesc] = useState('');
   const [newPriceAmount, setNewPriceAmount] = useState('');
   const [newPriceTakes, setNewPriceTakes] = useState(1);
+  
+  // Preview Modal State
+  const [previewImage, setPreviewImage] = useState<{ url: string, title: string } | null>(null);
 
   const isLight = settings.theme === 'light';
 
@@ -271,6 +308,15 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
               priceLists: (settings.priceLists || []).filter(p => p.id !== id)
           });
       }
+  };
+
+  const handleDownloadPhoto = (url: string, filename: string) => {
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
   };
 
   
@@ -1243,7 +1289,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                                 placeholder="Package Name"
                                 value={newPriceName}
                                 onChange={e => setNewPriceName(e.target.value)}
-                                className="w-full bg-[var(--color-bg-primary)] border border-[var(--color-border-secondary)] rounded px-3 py-2 text-sm"
+                                className="w-full bg-[var(--color-bg-primary)] border border-[var(--color-border-secondary)] rounded-md px-3 py-2 text-sm"
                                 required
                             />
                             <input
@@ -1251,7 +1297,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                                 placeholder="Price"
                                 value={newPriceAmount}
                                 onChange={e => setNewPriceAmount(e.target.value)}
-                                className="w-full bg-[var(--color-bg-primary)] border border-[var(--color-border-secondary)] rounded px-3 py-2 text-sm"
+                                className="w-full bg-[var(--color-bg-primary)] border border-[var(--color-border-secondary)] rounded-md px-3 py-2 text-sm"
                                 required
                             />
                             <input
@@ -1260,7 +1306,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                                 value={newPriceTakes}
                                 onChange={e => setNewPriceTakes(Math.max(1, parseInt(e.target.value) || 1))}
                                 min="1"
-                                className="w-full bg-[var(--color-bg-primary)] border border-[var(--color-border-secondary)] rounded px-3 py-2 text-sm"
+                                className="w-full bg-[var(--color-bg-primary)] border border-[var(--color-border-secondary)] rounded-md px-3 py-2 text-sm"
                                 required
                             />
                              <input
@@ -1268,7 +1314,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                                 placeholder="Description (optional)"
                                 value={newPriceDesc}
                                 onChange={e => setNewPriceDesc(e.target.value)}
-                                className="w-full bg-[var(--color-bg-primary)] border border-[var(--color-border-secondary)] rounded px-3 py-2 text-sm"
+                                className="w-full bg-[var(--color-bg-primary)] border border-[var(--color-border-secondary)] rounded-md px-3 py-2 text-sm"
                             />
                          </div>
                          <button type="submit" className="w-full bg-[var(--color-positive)] hover:bg-[var(--color-positive-hover)] text-[var(--color-positive-text)] font-bold py-2 rounded-md text-sm">
@@ -1300,18 +1346,48 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 <div className="p-6 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] text-left space-y-4">
                     <h3 className="text-xl font-bold text-[var(--color-text-accent)]">Recent Payments</h3>
                      <div className="max-h-60 overflow-y-auto scrollbar-thin space-y-2">
-                         {payments.map(pay => (
-                             <div key={pay.id} className="p-3 bg-[var(--color-bg-tertiary)] rounded flex justify-between items-center text-sm">
-                                 <div>
-                                     <p className="font-bold">{pay.userName}</p>
-                                     <p className="text-xs text-[var(--color-text-muted)]">{pay.priceListName} - Rp {pay.amount.toLocaleString()}</p>
-                                     <p className="text-[10px] text-[var(--color-text-muted)]">{new Date(pay.timestamp).toLocaleString()}</p>
+                         {payments.map(pay => {
+                             // Find linked history/photo
+                             const linkedHistory = history.find(h => h.paymentId === pay.id || (h.userName === pay.userName && Math.abs(h.timestamp - pay.timestamp) < 3600000)); // Fallback to fuzzy name match if ID missing
+                             
+                             return (
+                                 <div key={pay.id} className="p-3 bg-[var(--color-bg-tertiary)] rounded flex justify-between items-center text-sm">
+                                     <div className="flex items-center gap-3">
+                                         {linkedHistory ? (
+                                             <div 
+                                                className="w-12 h-12 rounded bg-black/50 overflow-hidden cursor-pointer border border-[var(--color-border-secondary)] hover:border-[var(--color-accent-primary)]"
+                                                onClick={() => setPreviewImage({ url: linkedHistory.imageDataUrl, title: `${pay.userName} - ${new Date(pay.timestamp).toLocaleString()}` })}
+                                             >
+                                                 <img src={linkedHistory.imageDataUrl} alt="Result" className="w-full h-full object-cover" />
+                                             </div>
+                                         ) : (
+                                             <div className="w-12 h-12 rounded bg-black/20 flex items-center justify-center text-[10px] text-[var(--color-text-muted)]">
+                                                 No Photo
+                                             </div>
+                                         )}
+                                         <div>
+                                             <p className="font-bold">{pay.userName}</p>
+                                             <p className="text-xs text-[var(--color-text-muted)]">{pay.priceListName} - Rp {pay.amount.toLocaleString()}</p>
+                                             <p className="text-[10px] text-[var(--color-text-muted)]">{new Date(pay.timestamp).toLocaleString()}</p>
+                                         </div>
+                                     </div>
+                                     <div className="flex items-center gap-2">
+                                         {linkedHistory && (
+                                             <button 
+                                                onClick={() => handleDownloadPhoto(linkedHistory.imageDataUrl, `sans-photo-${pay.timestamp}-${pay.userName}.png`)}
+                                                className="p-1.5 bg-[var(--color-bg-secondary)] rounded hover:text-[var(--color-accent-primary)]"
+                                                title="Download Photo"
+                                             >
+                                                 <DownloadIcon />
+                                             </button>
+                                         )}
+                                         <span className={`px-2 py-1 rounded text-xs font-bold uppercase ${pay.status === 'verified' ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
+                                             {pay.status}
+                                         </span>
+                                     </div>
                                  </div>
-                                 <span className={`px-2 py-1 rounded text-xs font-bold uppercase ${pay.status === 'verified' ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
-                                     {pay.status}
-                                 </span>
-                             </div>
-                         ))}
+                             );
+                         })}
                          {payments.length === 0 && <p className="text-center text-[var(--color-text-muted)]">No payments yet.</p>}
                      </div>
                 </div>
@@ -1473,6 +1549,14 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
   return (
     <>
       {isGuideOpen && <KioskGuide onClose={() => setIsGuideOpen(false)} />}
+      {previewImage && (
+          <PhotoPreviewModal 
+            imageUrl={previewImage.url} 
+            title={previewImage.title} 
+            onClose={() => setPreviewImage(null)} 
+            onDownload={() => handleDownloadPhoto(previewImage.url, `sans-photo-${Date.now()}.png`)}
+          />
+      )}
       <div className="relative flex flex-col items-center w-full h-full">
         <div className="absolute top-4 left-4 z-10">
           <button 

@@ -1,6 +1,8 @@
 
 
 
+
+
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import WelcomeScreen from './components/WelcomeScreen';
 import TemplateSelection from './components/TemplateSelection';
@@ -536,6 +538,8 @@ const App: React.FC = () => {
   const handlePaymentVerified = useCallback(async (proofHash: string) => {
     if (!currentTenantId || !currentPaymentId) return;
     
+    const payment = payments.find(p => p.id === currentPaymentId);
+
     // 1. Update Payment Status & Save Hash
     await update(ref(db, `data/${currentTenantId}/payments/${currentPaymentId}`), { 
         status: 'verified',
@@ -553,6 +557,8 @@ const App: React.FC = () => {
           createdAt: Date.now(), 
           progress: 'Memilih Event', 
           hasBeenReviewed: false,
+          userName: payment?.userName,
+          paymentId: currentPaymentId,
         };
         const newKeyRef = await push(ref(db, `data/${currentTenantId}/sessionKeys`), newKeyData);
         if (!newKeyRef.key) throw new Error("Could not get new session key.");
@@ -567,7 +573,7 @@ const App: React.FC = () => {
     } finally {
         setIsSessionLoading(false);
     }
-  }, [currentTenantId, currentPaymentId, selectedPriceList]);
+  }, [currentTenantId, currentPaymentId, selectedPriceList, payments]);
 
   const validateProofHash = useCallback(async (hash: string): Promise<boolean> => {
       if (!currentTenantId) return false;
@@ -1034,10 +1040,18 @@ const App: React.FC = () => {
     const event = events.find(e => e.id === selectedEventId);
     if (!event) return;
     const timestamp = Date.now();
-    const newEntry: HistoryEntry = { id: String(timestamp), eventId: event.id, eventName: event.name, imageDataUrl, timestamp: timestamp };
+    const newEntry: HistoryEntry = { 
+      id: String(timestamp), 
+      eventId: event.id, 
+      eventName: event.name, 
+      imageDataUrl, 
+      timestamp: timestamp,
+      userName: currentSessionKey?.userName, // Link history to user if available
+      paymentId: currentSessionKey?.paymentId, // Link history to payment if available
+    };
     await addHistoryEntry(newEntry);
     setHistory(prev => [newEntry, ...prev].sort((a,b) => Number(b.timestamp) - Number(a.timestamp)));
-  }, [events, selectedEventId]);
+  }, [events, selectedEventId, currentSessionKey]);
 
   const renderContent = () => {
     if (tenantNotFound) return <TenantNotFoundScreen />;
@@ -1080,7 +1094,7 @@ const App: React.FC = () => {
             });
         }
         return <TemplateSelection templates={sortedTemplates} onSelect={handleTemplateSelect} onBack={handleBack} isAdminLoggedIn={isAdminLoggedIn} onAddTemplate={handleStartAddTemplate} onEditMetadata={handleStartEditTemplateMetadata} onEditLayout={handleStartEditLayout} onDelete={handleDeleteTemplate} />;
-      case AppState.SETTINGS: return <SettingsScreen settings={settings} onSettingsChange={handleSettingsChange} onManageTemplates={handleManageTemplates} onManageEvents={handleManageEvents} onManageSessions={handleManageSessions} onManageReviews={handleManageReviews} onViewHistory={handleViewHistory} onBack={handleBack} isMasterAdmin={isMasterAdmin} onManageTenants={handleManageTenants} payments={payments} />;
+      case AppState.SETTINGS: return <SettingsScreen settings={settings} onSettingsChange={handleSettingsChange} onManageTemplates={handleManageTemplates} onManageEvents={handleManageEvents} onManageSessions={handleManageSessions} onManageReviews={handleManageReviews} onViewHistory={handleViewHistory} onBack={handleBack} isMasterAdmin={isMasterAdmin} onManageTenants={handleManageTenants} payments={payments} history={history} />;
       case AppState.MANAGE_TENANTS: if (!isMasterAdmin) { setAppState(AppState.WELCOME); return null; } return <ManageTenantsScreen tenants={tenants} onBack={handleBack} onAddTenant={handleAddTenant} onUpdateTenant={handleUpdateTenant} onDeleteTenant={handleDeleteTenant} />;
       case AppState.MANAGE_EVENTS: return <ManageEventsScreen events={events} onBack={handleBack} onAddEvent={handleAddEvent} onRenameEvent={handleStartRenameEvent} onDeleteEvent={handleDeleteEvent} onToggleArchive={handleToggleArchiveEvent} onAssignTemplates={handleStartAssigningTemplates} onQrCodeSettings={handleStartEditQrCode} />;
       case AppState.MANAGE_SESSIONS: if (!isAdminLoggedIn) { setAppState(AppState.WELCOME); return null; } return <ManageSessionsScreen sessionKeys={sessionKeys} onBack={handleBack} onAddKey={handleAddSessionKey} onDeleteKey={handleDeleteSessionKey} onDeleteAllKeys={handleDeleteAllSessionKeys} onDeleteFreeplayKeys={handleDeleteFreeplaySessionKeys} />;
@@ -1092,7 +1106,7 @@ const App: React.FC = () => {
       case AppState.CAPTURE: if (!selectedTemplate) { setAppState(AppState.WELCOME); return null; } return <CaptureScreen template={selectedTemplate} countdownDuration={settings.countdownDuration} flashEffectEnabled={settings.flashEffectEnabled} cameraSourceType={settings.cameraSourceType} cameraDeviceId={settings.cameraDeviceId} ipCameraUrl={settings.ipCameraUrl} ipCameraUseProxy={settings.ipCameraUseProxy} onCaptureComplete={handleCaptureComplete} onRetakeComplete={handleRetakeComplete} retakeForIndex={retakingPhotoIndex} onProgressUpdate={handleCaptureProgressUpdate} existingImages={capturedImages} />;
       case AppState.RETAKE_PREVIEW: if (!selectedTemplate) { setAppState(AppState.WELCOME); return null; } return <RetakePreviewScreen images={capturedImages} template={selectedTemplate} onStartRetake={handleStartRetake} onDone={handleFinishRetakePreview} retakesUsed={retakesUsed} maxRetakes={settings.maxRetakes ?? 0} />;
       case AppState.RATING: if (!selectedEvent || !currentSessionKey || currentSessionKey.hasBeenReviewed) { setAppState(AppState.PREVIEW); return null; } return <RatingScreen eventName={selectedEvent.name} onSubmit={handleSaveReview} onSkip={handleSkipReview} settings={settings} />;
-      case AppState.PREVIEW: if (!selectedTemplate || !currentSessionKey) { setAppState(AppState.WELCOME); return null; } return <PreviewScreen images={capturedImages} onRestart={handleSessionEnd} onBack={handleBack} template={selectedTemplate} onSaveHistory={handleSaveHistoryFromSession} event={selectedEvent} currentTake={currentTakeCount} maxTakes={currentSessionKey.maxTakes} onNextTake={handleStartNextTake} isDownloadButtonEnabled={settings.isDownloadButtonEnabled ?? true} isAutoDownloadEnabled={settings.isAutoDownloadEnabled ?? true} printSettings={{ isEnabled: settings.isPrintButtonEnabled ?? true, paperSize: settings.printPaperSize ?? '4x6', colorMode: settings.printColorMode ?? 'color', isCopyInputEnabled: settings.isPrintCopyInputEnabled ?? true, maxCopies: settings.printMaxCopies ?? 5, }} />;
+      case AppState.PREVIEW: if (!selectedTemplate || !currentSessionKey) { setAppState(AppState.WELCOME); return null; } return <PreviewScreen images={capturedImages} onRestart={handleSessionEnd} onBack={handleBack} template={selectedTemplate} onSaveHistory={handleSaveHistoryFromSession} event={selectedEvent} currentTake={currentTakeCount} maxTakes={currentSessionKey.maxTakes} onNextTake={handleStartNextTake} isDownloadButtonEnabled={settings.isDownloadButtonEnabled ?? true} isAutoDownloadEnabled={settings.isAutoDownloadEnabled ?? true} printSettings={{ isEnabled: settings.isPrintButtonEnabled ?? true, paperSize: settings.printPaperSize ?? '4x6', colorMode: settings.printColorMode ?? 'color', isCopyInputEnabled: settings.isPrintCopyInputEnabled ?? true, maxCopies: settings.printMaxCopies ?? 5, }} userName={currentSessionKey.userName} />;
       default: return <WelcomeScreen onStart={handleStartSession} onSettingsClick={handleGoToSettings} onViewHistory={handleViewHistory} onViewOnlineHistory={handleViewOnlineHistory} isAdminLoggedIn={isAdminLoggedIn} isCaching={isCaching} cachingProgress={cachingProgress} onAdminLoginClick={handleOpenAdminLogin} onAdminLogoutClick={handleAdminLogout} isLoading={isSessionLoading} settings={settings} reviews={reviews} />;
     }
   };

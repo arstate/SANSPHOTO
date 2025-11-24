@@ -196,6 +196,8 @@ export interface HistoryEntry {
   eventName: string;
   imageDataUrl: string;
   timestamp: number;
+  userName?: string; // New: Link to user
+  paymentId?: string; // New: Link to payment
 }
 
 export interface OnlineHistoryEntry {
@@ -219,6 +221,8 @@ export interface SessionKey {
   isUnlimited?: boolean; // New: Unlimited / Persistent mode
   isGenerated?: boolean; // New: Generated from an unlimited key
   originalCode?: string; // New: Reference to original code if generated
+  userName?: string; // New: Store user name if from payment
+  paymentId?: string; // New: Store payment ID
 }
 
 export interface Review {

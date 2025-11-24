@@ -1,4 +1,6 @@
 
+
+
 import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { DownloadIcon } from './icons/DownloadIcon';
 import { PrintIcon } from './icons/PrintIcon';
@@ -31,6 +33,7 @@ interface PreviewScreenProps {
   isDownloadButtonEnabled: boolean;
   isAutoDownloadEnabled: boolean;
   printSettings: PrintSettings;
+  userName?: string;
 }
 
 interface PrintModalProps {
@@ -141,7 +144,7 @@ const loadImage = (src: string): Promise<HTMLImageElement> => {
 
 const PreviewScreen: React.FC<PreviewScreenProps> = ({ 
     images, onRestart, onBack, template, onSaveHistory, event,
-    currentTake, maxTakes, onNextTake, isDownloadButtonEnabled, isAutoDownloadEnabled, printSettings
+    currentTake, maxTakes, onNextTake, isDownloadButtonEnabled, isAutoDownloadEnabled, printSettings, userName
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const finalImageRef = useRef<HTMLImageElement>(null);
@@ -177,11 +180,13 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
     const url = imageDataUrl || canvasRef.current?.toDataURL('image/png');
     if (url) {
       const link = document.createElement('a');
-      link.download = `sans-photo-${Date.now()}.png`;
+      // Append user name to filename if available
+      const filenameSuffix = userName ? `-${userName.replace(/[^a-zA-Z0-9]/g, '_')}` : '';
+      link.download = `sans-photo-${Date.now()}${filenameSuffix}.png`;
       link.href = url;
       link.click();
     }
-  }, []);
+  }, [userName]);
 
   const handlePrint = useCallback(() => {
     const imageDataUrl = finalImageRef.current?.src;
