@@ -1353,8 +1353,8 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                     </div>
                      <div className="max-h-60 overflow-y-auto scrollbar-thin space-y-2">
                          {payments.map(pay => {
-                             // Find linked history/photo
-                             const linkedHistory = history.find(h => h.paymentId === pay.id || (h.userName === pay.userName && Math.abs(h.timestamp - pay.timestamp) < 3600000)); // Fallback to fuzzy name match if ID missing
+                             // Find linked history/photo - prioritize paymentId link, fallback to userName/time
+                             const linkedHistory = history.find(h => h.paymentId === pay.id || (h.userName === pay.userName && Math.abs(h.timestamp - pay.timestamp) < 3600000));
                              
                              return (
                                  <div key={pay.id} className="p-3 bg-[var(--color-bg-tertiary)] rounded flex justify-between items-center text-sm">
