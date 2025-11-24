@@ -1,8 +1,12 @@
 
 
 
+
+
+
+
 import React, { useState, useEffect } from 'react';
-import { Settings, FloatingObject, PriceList, PaymentEntry } from '../types';
+import { Settings, FloatingObject, PriceList, PaymentEntry, OnlineHistoryEntry } from '../types';
 import { BackIcon } from './icons/BackIcon';
 import { KeyIcon } from './icons/KeyIcon';
 import { TicketIcon } from './icons/TicketIcon';
@@ -21,6 +25,9 @@ import { EditIcon } from './icons/EditIcon';
 import { TrashIcon } from './icons/TrashIcon';
 import { AddIcon } from './icons/AddIcon';
 import { QrCodeIcon } from './icons/QrCodeIcon';
+import { DownloadIcon } from './icons/DownloadIcon';
+import { CloseIcon } from './icons/CloseIcon';
+import { UploadingIcon } from './icons/UploadingIcon';
 
 interface SettingsScreenProps {
     settings: Settings;
@@ -49,6 +56,9 @@ export const GOOGLE_FONTS = [
 ];
 
 type SettingsCategory = 'general' | 'appearance' | 'security' | 'content' | 'payment' | 'reviews' | 'master';
+
+// URL to fetch list of photos (Same as OnlineHistoryScreen)
+const SCRIPT_URL_GET_HISTORY = 'https://script.google.com/macros/s/AKfycbwbnlO9vk95yTKeHFFilhJbfFcjibH80sFzsA5II3BAkuNudCTabRNdBUhYlCEHHO5CYQ/exec';
 
 const CategoryButton: React.FC<{
   label: string;
@@ -84,6 +94,11 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const [newPriceDesc, setNewPriceDesc] = useState('');
   const [newPriceAmount, setNewPriceAmount] = useState('');
   const [newPriceTakes, setNewPriceTakes] = useState(1);
+
+  // View Payment Photo Gallery State
+  const [viewingPhotos, setViewingPhotos] = useState<OnlineHistoryEntry[] | null>(null);
+  const [isFindingPhoto, setIsFindingPhoto] = useState<string | null>(null); // Stores ID of payment being searched
+  const [downloadingPhotoIds, setDownloadingPhotoIds] = useState<string[]>([]);
 
   const isLight = settings.theme === 'light';
 
@@ -270,6 +285,70 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
               ...settings,
               priceLists: (settings.priceLists || []).filter(p => p.id !== id)
           });
+      }
+  };
+
+  // Payment Photo Viewing Logic (Gallery Support)
+  const handleViewPaymentPhoto = async (payment: PaymentEntry) => {
+      if (isFindingPhoto) return;
+      setIsFindingPhoto(payment.id);
+
+      try {
+          const safeUserName = payment.userName.replace(/[^a-zA-Z0-9\s-_]/g, '').trim().replace(/\s+/g, '_');
+          if (!safeUserName) throw new Error("Invalid username format");
+
+          // Fetch list from Google Apps Script
+          const response = await fetch(SCRIPT_URL_GET_HISTORY);
+          if (!response.ok) throw new Error("Failed to fetch photo list");
+          
+          const data: OnlineHistoryEntry[] = await response.json();
+          
+          // Filter photos that match the username
+          // Logic: The filename includes the sanitized username at the end
+          // Format: sans-photo-{timestamp}-{username}.png
+          const matchedPhotos = data.filter(item => 
+              item.nama.includes(safeUserName)
+          );
+
+          if (matchedPhotos.length > 0) {
+              // Sort descending by name (timestamp likely in name) or rely on API order
+              matchedPhotos.sort((a, b) => b.nama.localeCompare(a.nama));
+              setViewingPhotos(matchedPhotos);
+          } else {
+              alert(`Photos for user "${payment.userName}" not found in cloud storage. They might not be uploaded yet.`);
+          }
+
+      } catch (e) {
+          console.error("Error finding photo:", e);
+          alert("Failed to retrieve photos from cloud.");
+      } finally {
+          setIsFindingPhoto(null);
+      }
+  };
+
+  const handleDownloadPhoto = async (photo: OnlineHistoryEntry) => {
+      if (downloadingPhotoIds.includes(photo.nama)) return;
+      setDownloadingPhotoIds(prev => [...prev, photo.nama]);
+
+      try {
+          // Use Proxy to bypass CORS
+          const proxiedUrl = `https://images.weserv.nl/?url=${encodeURIComponent(photo.url)}`;
+          const response = await fetch(proxiedUrl);
+          if (!response.ok) throw new Error("Proxy fetch failed");
+          
+          const blob = await response.blob();
+          const link = document.createElement('a');
+          link.href = URL.createObjectURL(blob);
+          link.download = photo.nama || `payment-photo-${Date.now()}.jpg`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(link.href);
+      } catch (e) {
+          console.error("Download error:", e);
+          alert("Failed to download image.");
+      } finally {
+          setDownloadingPhotoIds(prev => prev.filter(id => id !== photo.nama));
       }
   };
 
@@ -1307,9 +1386,23 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                                      <p className="text-xs text-[var(--color-text-muted)]">{pay.priceListName} - Rp {pay.amount.toLocaleString()}</p>
                                      <p className="text-[10px] text-[var(--color-text-muted)]">{new Date(pay.timestamp).toLocaleString()}</p>
                                  </div>
-                                 <span className={`px-2 py-1 rounded text-xs font-bold uppercase ${pay.status === 'verified' ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
-                                     {pay.status}
-                                 </span>
+                                 <div className="flex items-center gap-2">
+                                     <span className={`px-2 py-1 rounded text-xs font-bold uppercase ${pay.status === 'verified' ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
+                                         {pay.status}
+                                     </span>
+                                     <button 
+                                        onClick={() => handleViewPaymentPhoto(pay)}
+                                        className="p-2 bg-[var(--color-info)]/20 hover:bg-[var(--color-info)]/40 text-[var(--color-info)] rounded-full transition-colors disabled:opacity-50"
+                                        title="View Photos"
+                                        disabled={!!isFindingPhoto}
+                                     >
+                                         {isFindingPhoto === pay.id ? (
+                                             <div className="animate-spin h-4 w-4 border-2 border-[var(--color-info)] border-t-transparent rounded-full"></div>
+                                         ) : (
+                                             <EyeIcon />
+                                         )}
+                                     </button>
+                                 </div>
                              </div>
                          ))}
                          {payments.length === 0 && <p className="text-center text-[var(--color-text-muted)]">No payments yet.</p>}
@@ -1472,6 +1565,62 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
 
   return (
     <>
+      {/* View Photo Gallery Modal */}
+      {viewingPhotos && (
+        <div
+          className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4"
+          onClick={() => setViewingPhotos(null)}
+        >
+          <div
+            className="relative bg-[var(--color-bg-secondary)] rounded-lg shadow-xl w-full h-full max-w-5xl flex flex-col p-4 border border-[var(--color-border-primary)]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center mb-4 pb-2 border-b border-[var(--color-border-primary)]">
+                <h3 className="text-xl font-bold text-[var(--color-text-primary)]">
+                    Photo Gallery ({viewingPhotos.length})
+                </h3>
+                <button
+                  onClick={() => setViewingPhotos(null)}
+                  className="bg-black/50 hover:bg-black/80 text-white p-2 rounded-full"
+                  aria-label="Close"
+                >
+                  <CloseIcon />
+                </button>
+            </div>
+
+            <div className="flex-grow overflow-y-auto scrollbar-thin p-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                    {viewingPhotos.map((photo, index) => (
+                        <div key={index} className="relative group bg-black/20 rounded-lg overflow-hidden border border-[var(--color-border-secondary)]">
+                            <div className="aspect-[2/3] w-full">
+                                <img
+                                    src={photo.url}
+                                    alt={photo.nama}
+                                    className="w-full h-full object-contain"
+                                    loading="lazy"
+                                />
+                            </div>
+                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                <button
+                                    onClick={() => handleDownloadPhoto(photo)}
+                                    disabled={downloadingPhotoIds.includes(photo.nama)}
+                                    className="bg-[var(--color-positive)] hover:bg-[var(--color-positive-hover)] text-[var(--color-positive-text)] font-bold py-2 px-6 rounded-full text-sm transition-transform transform hover:scale-105 flex items-center gap-2 disabled:bg-[var(--color-bg-tertiary)] disabled:cursor-wait"
+                                >
+                                    {downloadingPhotoIds.includes(photo.nama) ? <UploadingIcon /> : <DownloadIcon />}
+                                    <span>Download</span>
+                                </button>
+                            </div>
+                            <div className="absolute bottom-0 left-0 right-0 bg-black/50 p-2 text-xs text-white truncate">
+                                {photo.nama}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {isGuideOpen && <KioskGuide onClose={() => setIsGuideOpen(false)} />}
       <div className="relative flex flex-col items-center w-full h-full">
         <div className="absolute top-4 left-4 z-10">
