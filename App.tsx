@@ -1,6 +1,8 @@
 
 
 
+
+
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import WelcomeScreen from './components/WelcomeScreen';
 import TemplateSelection from './components/TemplateSelection';
@@ -973,7 +975,18 @@ const App: React.FC = () => {
 
     (async () => {
         try {
-            const filename = `sans-photo-${Date.now()}.png`;
+            let filename = `sans-photo-${Date.now()}.png`;
+            
+            if (currentPaymentId) {
+                const payment = payments.find(p => p.id === currentPaymentId);
+                if (payment && payment.userName) {
+                    const safeUserName = payment.userName.replace(/[^a-zA-Z0-9\s-_]/g, '').trim().replace(/\s+/g, '_');
+                    if (safeUserName) {
+                        filename = `sans-photo-${Date.now()}-${safeUserName}.png`;
+                    }
+                }
+            }
+
             const payload = JSON.stringify({ foto: imageDataUrl, nama: filename });
 
             await fetch(SCRIPT_URL_RETAKE, {
@@ -995,7 +1008,7 @@ const App: React.FC = () => {
             setUploadInfo(prev => prev.id === uploadId ? { ...prev, status: 'error' } : prev);
         }
     })();
-  }, []);
+  }, [payments, currentPaymentId]);
 
   // Other callbacks that just change state
   const handleGoToSettings = useCallback(() => setAppState(AppState.SETTINGS), []);

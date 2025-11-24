@@ -43,7 +43,7 @@ const PaymentScreen: React.FC<PaymentScreenProps> = ({ priceList, qrisImageUrl, 
                 <div className="mb-8">
                     <p className="text-sm text-[var(--color-text-secondary)] uppercase tracking-widest mb-1">Total Pembayaran</p>
                     <p className="text-4xl font-bold text-[var(--color-accent-primary)]">Rp {priceList.price.toLocaleString()}</p>
-                    <div className="mt-4 p-3 bg-purple-900/30 border border-purple-700/50 rounded text-purple-200 text-sm">
+                    <div className="mt-4 p-3 bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded text-[var(--color-text-primary)] text-sm">
                         ⚠️ <strong>PENTING:</strong> Pastikan nominal pembayaran sesuai dengan yang tertera di atas.
                     </div>
                 </div>
