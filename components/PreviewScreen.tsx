@@ -177,8 +177,9 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
     const url = imageDataUrl || canvasRef.current?.toDataURL('image/png');
     if (url) {
       const link = document.createElement('a');
-      // Append user name to filename if available
-      const filenameSuffix = userName ? `-${userName.replace(/[^a-zA-Z0-9]/g, '_')}` : '';
+      // Append user name to filename if available, replacing non-alphanumeric chars with underscore
+      const safeUserName = userName ? userName.replace(/[^a-zA-Z0-9]/g, '_') : '';
+      const filenameSuffix = safeUserName ? `-${safeUserName}` : '';
       link.download = `sans-photo-${Date.now()}${filenameSuffix}.png`;
       link.href = url;
       link.click();

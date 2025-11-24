@@ -536,7 +536,17 @@ const App: React.FC = () => {
   const handlePaymentVerified = useCallback(async (proofHash: string) => {
     if (!currentTenantId || !currentPaymentId) return;
     
-    const payment = payments.find(p => p.id === currentPaymentId);
+    // Fetch Payment data directly to ensure we have the latest userName
+    // relying on 'payments' state array might fail due to race conditions
+    let userName = 'Guest';
+    try {
+        const snapshot = await get(ref(db, `data/${currentTenantId}/payments/${currentPaymentId}`));
+        if (snapshot.exists()) {
+            userName = snapshot.val().userName;
+        }
+    } catch (e) {
+        console.error("Error fetching payment details", e);
+    }
 
     // 1. Update Payment Status & Save Hash
     await update(ref(db, `data/${currentTenantId}/payments/${currentPaymentId}`), { 
@@ -555,7 +565,7 @@ const App: React.FC = () => {
           createdAt: Date.now(), 
           progress: 'Memilih Event', 
           hasBeenReviewed: false,
-          userName: payment?.userName,
+          userName: userName,
           paymentId: currentPaymentId,
         };
         const newKeyRef = await push(ref(db, `data/${currentTenantId}/sessionKeys`), newKeyData);
@@ -571,7 +581,7 @@ const App: React.FC = () => {
     } finally {
         setIsSessionLoading(false);
     }
-  }, [currentTenantId, currentPaymentId, selectedPriceList, payments]);
+  }, [currentTenantId, currentPaymentId, selectedPriceList]);
 
   const validateProofHash = useCallback(async (hash: string): Promise<boolean> => {
       if (!currentTenantId) return false;
