@@ -5,6 +5,10 @@
 
 
 
+
+
+
+
 import React, { useState, useEffect } from 'react';
 import { Settings, FloatingObject, PriceList, PaymentEntry, OnlineHistoryEntry } from '../types';
 import { BackIcon } from './icons/BackIcon';
@@ -28,6 +32,7 @@ import { QrCodeIcon } from './icons/QrCodeIcon';
 import { DownloadIcon } from './icons/DownloadIcon';
 import { CloseIcon } from './icons/CloseIcon';
 import { UploadingIcon } from './icons/UploadingIcon';
+import { DollarIcon } from './icons/DollarIcon';
 
 interface SettingsScreenProps {
     settings: Settings;
@@ -41,6 +46,7 @@ interface SettingsScreenProps {
     isMasterAdmin: boolean;
     onManageTenants: () => void;
     payments?: PaymentEntry[];
+    onDeletePayment: (id: string) => void;
 }
 
 export const GOOGLE_FONTS = [
@@ -82,7 +88,7 @@ const CategoryButton: React.FC<{
 
 const SettingsScreen: React.FC<SettingsScreenProps> = ({ 
     settings, onSettingsChange, onManageTemplates, onManageEvents, onManageSessions, onManageReviews, onViewHistory, onBack,
-    isMasterAdmin, onManageTenants, payments = []
+    isMasterAdmin, onManageTenants, payments = [], onDeletePayment
 }) => {
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState<SettingsCategory>('general');
@@ -1402,6 +1408,13 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                                              <EyeIcon />
                                          )}
                                      </button>
+                                     <button 
+                                        onClick={() => onDeletePayment(pay.id)}
+                                        className="p-2 bg-[var(--color-negative)]/20 hover:bg-[var(--color-negative)]/40 text-[var(--color-negative)] rounded-full transition-colors"
+                                        title="Delete Payment"
+                                     >
+                                         <TrashIcon />
+                                     </button>
                                  </div>
                              </div>
                          ))}
@@ -1666,7 +1679,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                />
                 <CategoryButton 
                  label="Payment"
-                 icon={<QrCodeIcon />}
+                 icon={<DollarIcon />}
                  isActive={activeCategory === 'payment'}
                  onClick={() => setActiveCategory('payment')}
                />
