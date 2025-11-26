@@ -8,7 +8,6 @@ const IS_LOCALHOST = Boolean(
 // Files to cache immediately
 const PRECACHE_URLS = [
   './',
-  './index.html',
   './manifest.json',
   'https://cdn.tailwindcss.com',
   'https://unpkg.com/html5-qrcode',
