@@ -5,12 +5,15 @@
 
 
 
+
+
 import React, { useMemo, useRef, useEffect, useState } from 'react';
 import { SettingsIcon } from './icons/SettingsIcon';
 import { HistoryIcon } from './icons/HistoryIcon';
 import { AdminIcon } from './icons/AdminIcon';
 import { LogoutIcon } from './icons/LogoutIcon';
 import { GlobeIcon } from './icons/GlobeIcon';
+import { InstallIcon } from './icons/InstallIcon';
 import { Settings, Review } from '../types';
 import { GOOGLE_FONTS } from './SettingsScreen'; 
 import ReviewSlider from './ReviewSlider';
@@ -94,7 +97,32 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
 
   const [randomTitleFont, setRandomTitleFont] = useState(welcomeTitleFont);
   const [randomSubtitleFont, setRandomSubtitleFont] = useState(welcomeSubtitleFont);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    // Listen for the beforeinstallprompt event
+    const handleInstallPrompt = (e: any) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleInstallPrompt);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleInstallPrompt);
+    };
+  }, []);
+
+  const handleInstallApp = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        setDeferredPrompt(null);
+      }
+    }
+  };
 
   useEffect(() => {
     // FIX: Replaced NodeJS.Timeout with number for browser compatibility.
@@ -210,7 +238,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
       })}
       
       <div className="relative z-10 flex flex-col items-center justify-center h-full w-full p-4">
-        <div className="absolute top-4 left-4">
+        <div className="absolute top-4 left-4 flex gap-2">
           <button 
             onClick={isAdminLoggedIn ? onAdminLogoutClick : onAdminLoginClick}
             className="bg-[var(--color-bg-secondary)]/50 hover:bg-[var(--color-bg-tertiary)]/70 text-[var(--color-text-primary)] font-bold p-3 rounded-full transition-colors"
@@ -218,6 +246,18 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
           >
             {isAdminLoggedIn ? <LogoutIcon /> : <AdminIcon />}
           </button>
+          
+          {/* Install PWA Button */}
+          {deferredPrompt && (
+            <button 
+              onClick={handleInstallApp}
+              className="bg-[var(--color-accent-primary)]/80 hover:bg-[var(--color-accent-primary)] text-[var(--color-text-primary)] font-bold p-3 rounded-full transition-colors shadow-lg animate-bounce"
+              aria-label="Install App"
+              title="Install App"
+            >
+              <InstallIcon />
+            </button>
+          )}
         </div>
 
         <div className={`flex-grow flex flex-col items-center justify-center transition-all duration-500 ${hasReviewsToShow ? 'pb-48' : ''}`}>
