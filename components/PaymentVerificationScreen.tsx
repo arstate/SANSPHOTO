@@ -41,7 +41,6 @@ const PaymentVerificationScreen: React.FC<PaymentVerificationScreenProps> = ({ t
 
   const startCamera = useCallback(async () => {
     try {
-        // stopCamera(); // Don't stop here, useEffect cleanup handles it, or we might kill the restart
         const newStream = await navigator.mediaDevices.getUserMedia({ 
             video: { 
                 facingMode: 'user',
@@ -52,11 +51,17 @@ const PaymentVerificationScreen: React.FC<PaymentVerificationScreenProps> = ({ t
         setStream(newStream);
         if (videoRef.current) {
             videoRef.current.srcObject = newStream;
+            // Explicitly play to avoid black screen on some devices
+            try {
+                await videoRef.current.play();
+            } catch (e) {
+                console.warn("Autoplay blocked or failed", e);
+            }
         }
         setLogs('Mencari bukti pembayaran...');
     } catch (err) {
         console.error("Camera error:", err);
-        setLogs("Gagal akses kamera.");
+        setLogs("Gagal akses kamera. Izinkan akses kamera.");
     }
   }, []);
 
@@ -76,18 +81,18 @@ const PaymentVerificationScreen: React.FC<PaymentVerificationScreenProps> = ({ t
   const captureAndVerify = useCallback(async () => {
     if (!videoRef.current || !canvasRef.current || isProcessingRef.current) return;
 
+    // CRITICAL FIX: If video is not ready, return SILENTLY.
+    // Do not throw errors or update state, otherwise it flickers and resets the stream.
+    if (videoRef.current.readyState !== 4 || videoRef.current.videoWidth === 0) {
+        return;
+    }
+
     isProcessingRef.current = true;
-    // Don't set 'scanning' state here visually every time to avoid flickering, 
-    // just update logs or small indicators if needed.
     
     try {
         const video = videoRef.current;
         const canvas = canvasRef.current;
         
-        if (video.videoWidth === 0 || video.videoHeight === 0) {
-             throw new Error("Video not ready");
-        }
-
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
         const ctx = canvas.getContext('2d');
@@ -95,31 +100,30 @@ const PaymentVerificationScreen: React.FC<PaymentVerificationScreenProps> = ({ t
 
         // Draw video to canvas
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.6); // Lower quality for speed
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.5); // Lower quality for speed
 
         // 1. Check Duplication Hash
-        // setLogs('Memeriksa...');
         const hash = await generateImageHash(dataUrl);
         const isDuplicate = await validateProofHash(hash);
         
         if (isDuplicate) {
             setScanStatus('duplicate');
             setLogs('Bukti sudah digunakan!');
-            // Don't return here? We want to keep scanning until they remove it or show new one.
-            // But we shouldn't proceed to OCR if it's duplicate.
+            isProcessingRef.current = false;
             return; 
         }
 
         // 2. OCR Processing
-        setScanStatus('analyzing');
-        setLogs('Menganalisa nominal...');
+        // Only update status if we weren't already analyzing to prevent jitter
+        if (scanStatusRef.current !== 'analyzing') {
+            setScanStatus('analyzing');
+            setLogs('Menganalisa nominal...');
+        }
         
         const result = await Tesseract.recognize(
             dataUrl,
             'eng',
-            { 
-                // Core path is auto-handled usually, strictly no logger to save perf if needed
-            }
+            { logger: () => {} } // Disable logger for performance
         );
 
         const text = result.data.text;
@@ -128,7 +132,7 @@ const PaymentVerificationScreen: React.FC<PaymentVerificationScreenProps> = ({ t
         const cleanText = text.replace(/[^0-9.,]/g, ' '); 
         const amountString = targetAmount.toLocaleString('id-ID'); // e.g. "25.000"
         const amountPlain = targetAmount.toString(); // "25000"
-        const amountPlainDot = amountPlain.replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.'); // "25.000" manual logic if locale fails
+        const amountPlainDot = amountPlain.replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.'); // "25.000" manual logic
         
         const found = cleanText.includes(amountString) || cleanText.includes(amountPlain) || cleanText.includes(amountPlainDot);
         
@@ -137,7 +141,7 @@ const PaymentVerificationScreen: React.FC<PaymentVerificationScreenProps> = ({ t
             stopCamera();
             setTimeout(() => onVerified(hash), 1500);
         } else {
-            // Nominal not found
+            // Nominal not found, go back to scanning silently
             if (scanStatusRef.current !== 'success') {
                 setScanStatus('scanning');
                 setLogs('Nominal tidak terbaca, coba dekatkan...');
@@ -146,15 +150,13 @@ const PaymentVerificationScreen: React.FC<PaymentVerificationScreenProps> = ({ t
 
     } catch (err) {
         console.error(err);
+        // Only reset to scanning if we hit a hard error, but try to keep camera alive
         if (scanStatusRef.current !== 'success') {
              setScanStatus('scanning');
-             setLogs('Mencari bukti...');
+             // Don't change logs here to avoid flicker unless critical
         }
     } finally {
-        // Add a small delay before allowing next scan to let UI breathe
-        setTimeout(() => {
-            isProcessingRef.current = false;
-        }, 500);
+        isProcessingRef.current = false;
     }
   }, [targetAmount, stopCamera, onVerified, validateProofHash]);
 
@@ -171,7 +173,7 @@ const PaymentVerificationScreen: React.FC<PaymentVerificationScreenProps> = ({ t
           if (scanStatusRef.current !== 'success' && !isProcessingRef.current) {
               captureAndVerify();
           }
-      }, 2500); // Scan every 2.5 seconds
+      }, 1000); // Scan every 1 second for better responsiveness
 
       return () => clearInterval(intervalId);
   }, [captureAndVerify]);
@@ -190,7 +192,7 @@ const PaymentVerificationScreen: React.FC<PaymentVerificationScreenProps> = ({ t
 
         <h2 className="text-3xl font-bebas text-[var(--color-text-primary)] mb-2">Verifikasi Pembayaran</h2>
         <p className="text-[var(--color-text-muted)] mb-4 text-center max-w-md">
-            Arahkan bukti pembayaran (layar HP ke kamera) agar nominal <strong className="text-white">Rp {targetAmount.toLocaleString()}</strong> terlihat jelas.
+            Arahkan bukti pembayaran (layar HP ke kamera) agar nominal <strong className="text-[var(--color-text-primary)] text-xl">Rp {targetAmount.toLocaleString()}</strong> terlihat jelas.
         </p>
 
         <div className="relative bg-black rounded-xl overflow-hidden shadow-2xl border-4 border-[var(--color-border-primary)] w-full max-w-md aspect-[3/4]">
@@ -206,11 +208,14 @@ const PaymentVerificationScreen: React.FC<PaymentVerificationScreenProps> = ({ t
                 ref={videoRef} 
                 autoPlay 
                 playsInline 
+                muted
+                onLoadedMetadata={() => {
+                    // Ensure video plays once metadata is loaded
+                    videoRef.current?.play().catch(e => console.error("Play failed", e));
+                }}
                 className="w-full h-full object-cover"
                 style={{ transform: 'scaleX(1)' }} 
             />
-            
-            {/* Success Image Overlay (if any, usually we just stop video) */}
             
             {/* Overlay Guide */}
             {scanStatus !== 'success' && (
