@@ -175,7 +175,8 @@ export const ThreeObject: React.FC<ThreeObjectProps> = ({ objectData, className,
                 (voxel.y - centerY) * normalizeScale, 
                 (voxel.z - centerZ) * normalizeScale
             );
-            dummy.scale.set(normalizeScale * 0.98, normalizeScale * 0.98, normalizeScale * 0.98); // Tiny gap for bevel look
+            // Set scale to 1.0 (no gap) to make voxels contiguous
+            dummy.scale.set(normalizeScale, normalizeScale, normalizeScale);
             dummy.updateMatrix();
             mesh.setMatrixAt(i, dummy.matrix);
             

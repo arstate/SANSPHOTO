@@ -2,6 +2,7 @@
 
 export enum AppState {
   WELCOME,
+  TUTORIAL, // New: Tutorial Screen
   KEY_CODE_ENTRY,
   PRICE_SELECTION, // New: Selection Price/Package
   PAYMENT_SHOW, // New: Show QRIS

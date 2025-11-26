@@ -49,8 +49,8 @@ const PriceSelectionScreen: React.FC<PriceSelectionScreenProps> = ({ priceLists,
                     className={`cursor-pointer rounded-xl p-6 border-2 transition-all transform hover:scale-105 ${selectedId === pkg.id ? 'border-[var(--color-accent-primary)] bg-[var(--color-accent-primary)]/10 shadow-[0_0_20px_rgba(139,92,246,0.3)]' : 'border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)] hover:border-[var(--color-border-secondary)]'}`}
                 >
                     <h3 className="text-2xl font-bold text-[var(--color-text-primary)] mb-2">{pkg.name}</h3>
-                    <p className="text-3xl font-bebas text-[var(--color-accent-secondary)] mb-4">Rp {pkg.price.toLocaleString()}</p>
-                    <p className="text-sm text-[var(--color-text-secondary)]">{pkg.description}</p>
+                    <p className="text-3xl font-bebas text-[var(--color-text-accent)] mb-4">Rp {pkg.price.toLocaleString()}</p>
+                    <p className="text-xl text-[var(--color-text-secondary)]">{pkg.description}</p>
                 </div>
             ))}
         </div>

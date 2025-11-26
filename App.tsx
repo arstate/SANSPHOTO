@@ -5,6 +5,8 @@
 
 
 
+
+
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import WelcomeScreen from './components/WelcomeScreen';
 import TemplateSelection from './components/TemplateSelection';
@@ -35,6 +37,7 @@ import TenantEditModal from './components/TenantEditModal';
 import PriceSelectionScreen from './components/PriceSelectionScreen';
 import PaymentScreen from './components/PaymentScreen';
 import PaymentVerificationScreen from './components/PaymentVerificationScreen';
+import TutorialScreen from './components/TutorialScreen';
 
 import { AppState, PhotoSlot, Settings, Template, Event, HistoryEntry, SessionKey, Review, Tenant, FloatingObject, PriceList, PaymentEntry } from './types';
 import { db, ref, onValue, off, set, push, update, remove, firebaseObjectToArray, query, orderByChild, equalTo, get } from './firebase';
@@ -467,7 +470,12 @@ const App: React.FC = () => {
     }
   }, [settings.isStrictKioskMode]);
 
-  const handleStartSession = useCallback(async () => {
+  const handleStartSession = useCallback(() => {
+      // Direct to Tutorial Screen first
+      setAppState(AppState.TUTORIAL);
+  }, []);
+
+  const handleTutorialComplete = useCallback(async () => {
     if (!currentTenantId) return;
     setKeyCodeError(null);
     
@@ -845,6 +853,7 @@ const App: React.FC = () => {
 
   const handleBack = useCallback(() => {
     switch (appState) {
+        case AppState.TUTORIAL: setAppState(AppState.WELCOME); break;
         case AppState.TEMPLATE_SELECTION: setSelectedEventId(null); setAppState(AppState.EVENT_SELECTION); break;
         case AppState.EVENT_SELECTION: handleCancelSession(); break;
         case AppState.KEY_CODE_ENTRY: case AppState.SETTINGS: case AppState.HISTORY: case AppState.ONLINE_HISTORY: case AppState.PRICE_SELECTION: setAppState(AppState.WELCOME); break;
@@ -1073,6 +1082,8 @@ const App: React.FC = () => {
     switch (appState) {
       case AppState.WELCOME:
         return <WelcomeScreen onStart={handleStartSession} onSettingsClick={handleGoToSettings} onViewHistory={handleViewHistory} onViewOnlineHistory={handleViewOnlineHistory} isAdminLoggedIn={isAdminLoggedIn} isCaching={isCaching} cachingProgress={cachingProgress} onAdminLoginClick={handleOpenAdminLogin} onAdminLogoutClick={handleAdminLogout} isLoading={isSessionLoading} settings={settings} reviews={reviews} />;
+      case AppState.TUTORIAL:
+        return <TutorialScreen onComplete={handleTutorialComplete} onBack={handleBack} settings={settings} />;
       case AppState.KEY_CODE_ENTRY: return <KeyCodeScreen onKeyCodeSubmit={handleKeyCodeSubmit} onBack={handleBack} error={keyCodeError} isLoading={isSessionLoading} />;
       
       // Payment Flow
