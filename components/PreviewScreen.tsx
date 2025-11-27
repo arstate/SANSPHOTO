@@ -190,11 +190,17 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
       return;
     }
 
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) {
-        alert('Harap izinkan pop-up untuk situs ini agar dapat mencetak.');
-        return;
-    }
+    // Create an invisible iframe
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    // Important: visibility hidden sometimes prevents rendering in some browsers, 
+    // position off-screen or size 0 is safer for "invisible" printing.
+    document.body.appendChild(iframe);
     
     let pageSizeCss = '';
     switch (printSettings.paperSize) {
@@ -213,7 +219,7 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
     const grayscaleCss = printSettings.colorMode === 'grayscale' ? 'filter: grayscale(100%);' : '';
     const isLandscapeTemplate = template.orientation === 'landscape';
     
-    // Logika untuk rotasi
+    // Logic for rotation
     const bodyStyles = `
         margin: 0; 
         padding: 0;
@@ -225,26 +231,24 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
         box-sizing: border-box;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
+        overflow: hidden;
     `;
     let imageStyles = `
         ${grayscaleCss}
         box-sizing: border-box;
     `;
 
-    // Jika template lanskap, rotasi gambar dan sesuaikan ukuran agar tidak gepeng
+    // If template is landscape, rotate image and adjust fit
     if (isLandscapeTemplate) {
         imageStyles += `
             transform: rotate(90deg);
-            /* Setelah rotasi, lebar asli menjadi tinggi, dan sebaliknya. */
-            /* Jadi kita batasi lebar gambar dengan tinggi viewport (vh), dan tinggi gambar dengan lebar viewport (vw). */
-            /* Ini memastikan gambar mempertahankan rasio aspeknya saat mengisi halaman potret. */
             max-width: 100vh;
             max-height: 100vw;
             width: auto;
             height: auto;
         `;
     } else {
-        // Untuk potret, gunakan object-fit untuk memastikan pas
+        // For portrait
         imageStyles += `
             max-width: 100%;
             max-height: 100%;
@@ -252,43 +256,60 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
         `;
     }
 
-    printWindow.document.write(`
-        <html>
-            <head>
-                <title>Print SANS PHOTO</title>
-                <style>
-                    @page { 
-                        ${pageSizeCss}
-                        margin: 0; 
-                    }
-                    body { 
-                        ${bodyStyles}
-                    }
-                    img { 
-                        ${imageStyles}
-                    }
-                </style>
-            </head>
-            <body>
-                <img src="${imageDataUrl}" />
-                <script>
-                    window.onload = function() {
-                        window.print();
-                        window.onafterprint = function() {
-                            window.close();
-                        };
-                    };
-                    // Fallback untuk browser yang tidak mendukung onafterprint dengan baik
-                    setTimeout(() => {
-                         if (!window.closed) {
-                            // window.close(); 
-                         }
-                    }, 2000);
-                </script>
-            </body>
-        </html>
-    `);
-    printWindow.document.close();
+    const iframeDoc = iframe.contentWindow?.document;
+    if (iframeDoc) {
+        iframeDoc.open();
+        iframeDoc.write(`
+            <html>
+                <head>
+                    <title>Print SANS PHOTO</title>
+                    <style>
+                        @page { 
+                            ${pageSizeCss}
+                            margin: 0; 
+                        }
+                        body { 
+                            ${bodyStyles}
+                        }
+                        img { 
+                            ${imageStyles}
+                        }
+                    </style>
+                </head>
+                <body>
+                    <img src="${imageDataUrl}" id="printImage" />
+                    <script>
+                        // Wait for image to load before printing
+                        const img = document.getElementById('printImage');
+                        if (img.complete) {
+                            window.print();
+                        } else {
+                            img.onload = function() {
+                                window.print();
+                            };
+                        }
+                        // Try to remove iframe after print (or if user cancels)
+                        /* Note: Detecting exact print cancel is hard across browsers, 
+                           so we just leave it or cleanup via timeout in parent if needed. 
+                           Ideally, we don't strictly need to remove it immediately as it is invisible.
+                        */
+                    </script>
+                </body>
+            </html>
+        `);
+        iframeDoc.close();
+        
+        // Focus the iframe to ensure print dialog appears for it
+        iframe.contentWindow?.focus();
+    }
+
+    // Cleanup iframe after a delay to allow print dialog to trigger
+    setTimeout(() => {
+        if (document.body.contains(iframe)) {
+            document.body.removeChild(iframe);
+        }
+    }, 60000); // Remove after 1 minute to be safe
+
     setIsPrintModalOpen(false);
   }, [printSettings, template]);
 
