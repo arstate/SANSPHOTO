@@ -198,8 +198,7 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
     iframe.style.width = '0';
     iframe.style.height = '0';
     iframe.style.border = '0';
-    // Important: visibility hidden sometimes prevents rendering in some browsers, 
-    // position off-screen or size 0 is safer for "invisible" printing.
+    iframe.style.visibility = 'hidden'; // Use visibility hidden to allow rendering but keep hidden
     document.body.appendChild(iframe);
     
     let pageSizeCss = '';
@@ -281,34 +280,38 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
                     <script>
                         // Wait for image to load before printing
                         const img = document.getElementById('printImage');
-                        if (img.complete) {
+                        
+                        function triggerPrint() {
+                            // Focus is required for silent printing in some browsers
+                            window.focus();
                             window.print();
+                        }
+
+                        if (img.complete) {
+                            setTimeout(triggerPrint, 100);
                         } else {
                             img.onload = function() {
-                                window.print();
+                                setTimeout(triggerPrint, 100);
                             };
                         }
-                        // Try to remove iframe after print (or if user cancels)
-                        /* Note: Detecting exact print cancel is hard across browsers, 
-                           so we just leave it or cleanup via timeout in parent if needed. 
-                           Ideally, we don't strictly need to remove it immediately as it is invisible.
-                        */
                     </script>
                 </body>
             </html>
         `);
         iframeDoc.close();
         
-        // Focus the iframe to ensure print dialog appears for it
+        // Focus the iframe from parent to ensure print dialog appears for it
         iframe.contentWindow?.focus();
     }
 
-    // Cleanup iframe after a delay to allow print dialog to trigger
+    // Cleanup iframe after a delay
+    // Note: If using Kiosk printing, it happens fast. If manual, it waits for dialog.
+    // 60 seconds is a safe buffer.
     setTimeout(() => {
         if (document.body.contains(iframe)) {
             document.body.removeChild(iframe);
         }
-    }, 60000); // Remove after 1 minute to be safe
+    }, 60000); 
 
     setIsPrintModalOpen(false);
   }, [printSettings, template]);

@@ -1,3 +1,4 @@
+
 import React from 'react';
 
 interface KioskGuideProps {
@@ -16,10 +17,29 @@ const KioskGuide: React.FC<KioskGuideProps> = ({ onClose }) => {
       >
         <h2 className="font-bebas text-3xl text-center mb-2">How to Enable True Kiosk Mode</h2>
         <p className="text-center text-[var(--color-text-muted)] mb-6">
-          For maximum security, use your device's built-in features. The app's "Strict Kiosk Mode" is a strong deterrent but can be bypassed by advanced users. For a foolproof solution, follow these guides:
+          For professional use, configure your browser to run in full Kiosk mode with silent printing.
         </p>
 
-        <div className="flex-grow overflow-y-auto scrollbar-thin space-y-4 pr-2">
+        <div className="flex-grow overflow-y-auto scrollbar-thin space-y-6 pr-2">
+          
+          {/* Silent Printing Guide (New) */}
+          <div className="bg-[var(--color-accent-primary)]/10 border border-[var(--color-accent-primary)] p-4 rounded-lg">
+            <h3 className="font-bold text-lg text-[var(--color-accent-primary)] mb-2">🔥 How to Remove Print Popup (Silent Print)</h3>
+            <p className="text-sm text-[var(--color-text-primary)] mb-2">
+                By default, browsers force a popup. To print instantly on click:
+            </p>
+            <ol className="list-decimal list-inside space-y-2 text-sm text-[var(--color-text-secondary)]">
+              <li>Close all open Chrome/Edge windows.</li>
+              <li>Right-click your browser shortcut (e.g., Chrome) on Desktop.</li>
+              <li>Select <strong>Properties</strong>.</li>
+              <li>In the <strong>Target</strong> field, add this to the very end (after the quotes):<br/>
+                  <code className="bg-black/30 px-2 py-1 rounded text-white select-all"> --kiosk-printing</code>
+              </li>
+              <li>Click Apply/OK.</li>
+              <li>Launch the browser using this shortcut. Now, when you click Print, it will send data directly to the default printer without a dialog.</li>
+            </ol>
+          </div>
+
           {/* Windows Guide */}
           <div className="bg-[var(--color-bg-primary)]/50 p-4 rounded-lg">
             <h3 className="font-bold text-lg text-[var(--color-text-accent)] mb-2">Windows (Assigned Access)</h3>
