@@ -1,14 +1,3 @@
-
-
-
-
-
-
-
-
-
-
-
 import React, { useState, useEffect } from 'react';
 import { Settings, FloatingObject, PriceList, PaymentEntry, OnlineHistoryEntry } from '../types';
 import { BackIcon } from './icons/BackIcon';
@@ -33,6 +22,8 @@ import { DownloadIcon } from './icons/DownloadIcon';
 import { CloseIcon } from './icons/CloseIcon';
 import { UploadingIcon } from './icons/UploadingIcon';
 import { DollarIcon } from './icons/DollarIcon';
+import { PrintIcon } from './icons/PrintIcon';
+import { CheckIcon } from './icons/CheckIcon';
 
 interface SettingsScreenProps {
     settings: Settings;
@@ -94,6 +85,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const [activeCategory, setActiveCategory] = useState<SettingsCategory>('general');
   const [videoDevices, setVideoDevices] = useState<MediaDeviceInfo[]>([]);
   const [editingObjectId, setEditingObjectId] = useState<string | null>(null);
+  const [showPrintConfigSuccess, setShowPrintConfigSuccess] = useState(false);
   
   // Payment State
   const [newPriceName, setNewPriceName] = useState('');
@@ -358,6 +350,67 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
       }
   };
 
+  const handleConfigurePrinter = () => {
+    // Standard visible iframe for browser popup print
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.top = '0';
+    iframe.style.left = '0';
+    iframe.style.width = '100vw';
+    iframe.style.height = '100vh';
+    iframe.style.zIndex = '9999';
+    iframe.style.backgroundColor = 'white';
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentWindow?.document;
+    if (doc) {
+        doc.open();
+        doc.write(`
+            <html>
+            <head>
+                <title>Printer Calibration</title>
+                <style>
+                    body { font-family: sans-serif; padding: 40px; text-align: center; color: #333; }
+                    .instruction { margin: 20px auto; border: 2px dashed #ccc; padding: 20px; max-width: 600px; text-align: left; }
+                    .btn { padding: 10px 20px; background: #eee; border: 1px solid #ccc; cursor: pointer; display: none; }
+                </style>
+            </head>
+            <body>
+                <h1>Printer Configuration Page</h1>
+                <p>This is a test page to configure your browser's default print settings.</p>
+                
+                <div class="instruction">
+                    <h3>Instructions:</h3>
+                    <ol>
+                        <li>In the print dialog, select your Target Printer.</li>
+                        <li>Set <strong>Margins</strong> to <strong>None</strong>.</li>
+                        <li>Set <strong>Scale</strong> to <strong>100%</strong> (or Default).</li>
+                        <li>Ensure <strong>Background Graphics</strong> is checked if needed.</li>
+                        <li>Click <strong>Print</strong> to save these settings as the browser default.</li>
+                    </ol>
+                    <p><em>Note: You can select "Save as PDF" if you don't want to waste paper, as long as the page size matches.</em></p>
+                </div>
+            </body>
+            </html>
+        `);
+        doc.close();
+
+        // Listen for the print dialog closing (approximate save)
+        const onAfterPrint = () => {
+            document.body.removeChild(iframe);
+            setShowPrintConfigSuccess(true);
+            setTimeout(() => setShowPrintConfigSuccess(false), 3000);
+        };
+
+        iframe.contentWindow!.onafterprint = onAfterPrint;
+        
+        iframe.contentWindow!.focus();
+        setTimeout(() => {
+            iframe.contentWindow!.print();
+        }, 500);
+    }
+  };
+
   
   // Konversi timestamp ke format yang diterima oleh input datetime-local
   const formatTimestampForInput = (timestamp: number | undefined): string => {
@@ -604,6 +657,28 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
             {/* Print Settings */}
             <div className="p-6 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] text-left space-y-4">
               <h3 className="text-xl font-bold text-[var(--color-text-accent)]">Print Settings</h3>
+              
+              {/* Configure Defaults Button */}
+              <div className="bg-[var(--color-bg-tertiary)]/50 p-4 rounded-lg border border-[var(--color-border-secondary)]">
+                  <div className="flex justify-between items-start gap-4">
+                      <div>
+                          <h4 className="font-bold text-[var(--color-text-primary)]">Printer Calibration</h4>
+                          <p className="text-xs text-[var(--color-text-muted)] mt-1">
+                              Open the browser's native print dialog to set margins, paper size, and scale as defaults for Kiosk mode.
+                          </p>
+                      </div>
+                      <button 
+                        onClick={handleConfigurePrinter}
+                        className="bg-[var(--color-info)] hover:bg-[var(--color-info-hover)] text-[var(--color-info-text)] font-bold py-2 px-4 rounded-md text-sm whitespace-nowrap flex items-center gap-2"
+                      >
+                          <SettingsIcon /> Configure Defaults
+                      </button>
+                  </div>
+                  <p className="text-[10px] text-yellow-500 mt-2">
+                      *Note: If you launched Chrome with <code>--kiosk-printing</code>, the popup will be suppressed. Launch normally to configure.
+                  </p>
+              </div>
+
               <div className="border-t border-[var(--color-border-primary)] pt-4">
                 <label htmlFor="isPrintButtonEnabled" className="flex items-center justify-between cursor-pointer">
                     <div>
@@ -1085,6 +1160,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
             </div>
            </div>
         );
+// ... rest of the file (Security, Content, Payment, Reviews, Master cases remain unchanged) ...
       case 'security':
         return (
            <div className="space-y-6">
@@ -1578,6 +1654,14 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
 
   return (
     <>
+      {/* Toast Notification */}
+      {showPrintConfigSuccess && (
+        <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 bg-green-500 text-white px-6 py-3 rounded-full shadow-lg flex items-center gap-2 animate-bounce">
+            <CheckIcon />
+            <span className="font-bold">Settings Saved</span>
+        </div>
+      )}
+
       {/* View Photo Gallery Modal */}
       {viewingPhotos && (
         <div
