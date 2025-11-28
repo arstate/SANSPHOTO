@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { BackIcon } from './icons/BackIcon';
 import { AddIcon } from './icons/AddIcon';
 import { EditIcon } from './icons/EditIcon';
@@ -94,7 +94,7 @@ const ImageFromCache: React.FC<{ src: string; alt: string; className: string; }>
     );
   }
 
-  return <img src={imageSrc} alt={alt} className={className} loading="lazy" />;
+  return <img src={imageSrc} alt={alt} className={className} loading="lazy" draggable={false} />;
 };
 
 
@@ -102,6 +102,12 @@ const TemplateSelection: React.FC<TemplateSelectionProps> = ({
   templates, onSelect, onBack, isAdminLoggedIn, onAddTemplate, onEditMetadata, onEditLayout, onDelete 
 }) => {
   const [previewedTemplate, setPreviewedTemplate] = useState<Template | null>(templates[0] || null);
+  
+  // Drag to Scroll Refs
+  const sliderRef = useRef<HTMLDivElement>(null);
+  const isDown = useRef(false);
+  const startX = useRef(0);
+  const scrollLeft = useRef(0);
 
   useEffect(() => {
     // If templates change (e.g., one is deleted or list is filtered) and the previewed one is gone,
@@ -110,6 +116,38 @@ const TemplateSelection: React.FC<TemplateSelectionProps> = ({
       setPreviewedTemplate(templates[0] || null);
     }
   }, [templates, previewedTemplate]);
+
+  // Drag Handlers
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (!sliderRef.current) return;
+    isDown.current = true;
+    sliderRef.current.classList.add('cursor-grabbing');
+    sliderRef.current.classList.remove('cursor-grab');
+    startX.current = e.pageX - sliderRef.current.offsetLeft;
+    scrollLeft.current = sliderRef.current.scrollLeft;
+  };
+
+  const handleMouseLeave = () => {
+    if (!sliderRef.current) return;
+    isDown.current = false;
+    sliderRef.current.classList.remove('cursor-grabbing');
+    sliderRef.current.classList.add('cursor-grab');
+  };
+
+  const handleMouseUp = () => {
+    if (!sliderRef.current) return;
+    isDown.current = false;
+    sliderRef.current.classList.remove('cursor-grabbing');
+    sliderRef.current.classList.add('cursor-grab');
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDown.current || !sliderRef.current) return;
+    e.preventDefault();
+    const x = e.pageX - sliderRef.current.offsetLeft;
+    const walk = (x - startX.current) * 2; // Scroll-fast multiplier
+    sliderRef.current.scrollLeft = scrollLeft.current - walk;
+  };
 
   return (
     <div className="relative flex flex-col h-full w-full">
@@ -179,7 +217,14 @@ const TemplateSelection: React.FC<TemplateSelectionProps> = ({
       </main>
 
       <footer className="w-full shrink-0 pt-6">
-        <div className="flex overflow-x-auto space-x-4 pb-2 scrollbar-thin px-4">
+        <div 
+            ref={sliderRef}
+            className="flex overflow-x-auto space-x-4 pb-2 scrollbar-thin px-4 cursor-grab select-none active:cursor-grabbing"
+            onMouseDown={handleMouseDown}
+            onMouseLeave={handleMouseLeave}
+            onMouseUp={handleMouseUp}
+            onMouseMove={handleMouseMove}
+        >
             {templates.map(template => (
                 <button
                     key={template.id}
@@ -190,7 +235,7 @@ const TemplateSelection: React.FC<TemplateSelectionProps> = ({
                     <ImageFromCache 
                         src={template.imageUrl} 
                         alt={template.name}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover pointer-events-none" 
                     />
                     {isAdminLoggedIn && !template.eventId && (
                         <div className="absolute top-0 right-0 p-1 bg-yellow-500/80 rounded-bl-md" title="Unassigned">
