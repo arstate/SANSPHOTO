@@ -1144,8 +1144,9 @@ const App: React.FC = () => {
   const handleCaptureComplete = useCallback((images: string[]) => { setCapturedImages(images); if ((settings.maxRetakes ?? 0) > 0) setAppState(AppState.RETAKE_PREVIEW); else decideNextStepAfterCapture(); }, [settings.maxRetakes, decideNextStepAfterCapture]);
   const handleStartRetake = useCallback((photoIndex: number) => { if (settings.maxRetakes === undefined || retakesUsed >= settings.maxRetakes) return; setRetakesUsed(prev => prev + 1); setRetakingPhotoIndex(photoIndex); setAppState(AppState.CAPTURE); }, [retakesUsed, settings.maxRetakes]);
   const handleRetakeComplete = useCallback((newImage: string) => { if (retakingPhotoIndex === null) return; setCapturedImages(prev => { const newImages = [...prev]; newImages[retakingPhotoIndex] = newImage; return newImages; }); setRetakingPhotoIndex(null); setAppState(AppState.RETAKE_PREVIEW); }, [retakingPhotoIndex]);
-  const handleFinishRetakePreview = useCallback((imageDataUrl: string) => {
-    // Note: Upload moved to Filter Selection screen
+  
+  // NOTE: This handler no longer receives image data, upload happens in Filter Selection
+  const handleFinishRetakePreview = useCallback(() => {
     setAppState(AppState.FILTER_SELECTION);
   }, []);
 

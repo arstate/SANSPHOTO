@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { Template } from '../types';
 import { getCachedImage, storeImageInCache } from '../utils/db';
@@ -8,7 +9,7 @@ interface RetakePreviewScreenProps {
   images: string[];
   template: Template;
   onStartRetake: (photoIndex: number) => void;
-  onDone: (imageDataUrl: string) => void;
+  onDone: () => void; // Changed: No longer expects string argument
   retakesUsed: number;
   maxRetakes: number;
 }
@@ -151,15 +152,10 @@ const RetakePreviewScreen: React.FC<RetakePreviewScreenProps> = ({
   }, [images, template, TEMPLATE_WIDTH, TEMPLATE_HEIGHT]);
 
   const handleContinue = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) {
-        setErrorMsg("Canvas not available.");
-        return;
-    }
-    // Get original quality PNG data
-    const imageDataUrl = canvas.toDataURL("image/png"); 
-    // Pass data up and continue navigation, upload will be handled in the background
-    onDone(imageDataUrl);
+    // Optimization: We don't generate the final upload image here anymore.
+    // The final image generation (burning filters etc) and upload happens in the FilterSelectionScreen.
+    // This makes the transition instant.
+    onDone();
   }, [onDone]);
 
   useEffect(() => {
