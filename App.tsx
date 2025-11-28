@@ -1183,10 +1183,14 @@ const App: React.FC = () => {
     setAppState(AppState.FILTER_SELECTION);
   }, []); // removed handleUploadToDrive dep
 
-  const handleFilterSelectionComplete = useCallback((filter: string) => {
+  const handleFilterSelectionComplete = useCallback((filter: string, imageDataUrl: string) => {
       setSelectedFilter(filter);
+      
+      // TRIGGER UPLOAD HERE: Upload the final image immediately when "Finish & Print" is clicked
+      handleUploadToDrive(imageDataUrl);
+
       decideNextStepAfterFilter();
-  }, [decideNextStepAfterFilter]);
+  }, [decideNextStepAfterFilter, handleUploadToDrive]);
 
   const handleStartNextTake = useCallback(() => { if (!currentSessionKey || currentTakeCount >= currentSessionKey.maxTakes) return; const nextTake = currentTakeCount + 1; setCurrentTakeCount(nextTake); if(currentTenantId) update(ref(db, `data/${currentTenantId}/sessionKeys/${currentSessionKey.id}`), { takesUsed: nextTake }); setCapturedImages([]); setSelectedTemplate(null); setRetakesUsed(0); setRetakingPhotoIndex(null); setSelectedFilter('none'); setAppState(AppState.TEMPLATE_SELECTION); }, [currentSessionKey, currentTakeCount, currentTenantId]);
   
@@ -1198,9 +1202,8 @@ const App: React.FC = () => {
     await addHistoryEntry(newEntry);
     setHistory(prev => [newEntry, ...prev].sort((a,b) => Number(b.timestamp) - Number(a.timestamp)));
     
-    // NEW: Trigger Upload Here (After final composite with filter is generated)
-    handleUploadToDrive(imageDataUrl);
-  }, [events, selectedEventId, handleUploadToDrive]);
+    // REMOVED AUTO-UPLOAD HERE: Upload is now handled in handleFilterSelectionComplete
+  }, [events, selectedEventId]);
 
   const renderContent = () => {
     // If we're in Client Gallery Mode, skip tenant checks (as it relies on external script)
