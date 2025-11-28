@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { DownloadIcon } from './icons/DownloadIcon';
 import { PrintIcon } from './icons/PrintIcon';
@@ -33,7 +34,7 @@ interface PreviewScreenProps {
   printSettings: PrintSettings;
   onSaveWhatsapp?: (number: string) => void;
   currentPaymentId?: string | null;
-  existingWhatsappNumber?: string;
+  savedWhatsappNumber?: string;
 }
 
 interface PrintModalProps {
@@ -52,40 +53,56 @@ interface WhatsappModalProps {
 
 const WhatsappModal: React.FC<WhatsappModalProps> = ({ isOpen, onClose, onSubmit }) => {
     const [number, setNumber] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     if (!isOpen) return null;
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleConfirm = () => {
         if (number.trim()) {
+            setIsSubmitting(true);
             onSubmit(number.trim());
             onClose();
         }
     };
 
     return (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={onClose}>
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={(e) => { e.stopPropagation(); onClose(); }}>
             <div className="bg-[var(--color-bg-secondary)] rounded-lg shadow-xl p-6 w-full max-w-sm border border-[var(--color-border-primary)]" onClick={e => e.stopPropagation()}>
                 <h2 className="font-bebas text-3xl text-center mb-2">Kirim ke WhatsApp</h2>
                 <p className="text-center text-[var(--color-text-muted)] text-sm mb-4">Masukkan nomor WA kamu agar admin bisa mengirimkan softfile foto.</p>
-                <form onSubmit={handleSubmit}>
+                <div className="flex flex-col gap-4">
                     <input 
                         type="tel" 
                         value={number} 
                         onChange={(e) => setNumber(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                                e.preventDefault();
+                                handleConfirm();
+                            }
+                        }}
                         placeholder="08xxxxxxxxxx"
-                        className="w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md py-3 px-4 text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[#25D366] mb-4 text-center text-xl font-bold"
+                        className="w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md py-3 px-4 text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[#25D366] text-center text-xl font-bold"
                         autoFocus
                     />
                     <div className="flex flex-col gap-2">
-                        <button type="submit" className="w-full bg-[#25D366] hover:bg-[#20b858] text-white font-bold py-3 px-4 rounded-full text-lg shadow-lg">
-                            Kirim Nomor
+                        <button 
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); handleConfirm(); }}
+                            disabled={isSubmitting || !number.trim()}
+                            className="w-full bg-[#25D366] hover:bg-[#20b858] text-white font-bold py-3 px-4 rounded-full text-lg shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {isSubmitting ? 'Mengirim...' : 'Kirim Nomor'}
                         </button>
-                        <button type="button" onClick={onClose} className="w-full bg-transparent hover:bg-[var(--color-bg-tertiary)] text-[var(--color-text-muted)] font-bold py-2 rounded-full text-sm">
+                        <button 
+                            type="button" 
+                            onClick={(e) => { e.stopPropagation(); onClose(); }}
+                            className="w-full bg-transparent hover:bg-[var(--color-bg-tertiary)] text-[var(--color-text-muted)] font-bold py-2 rounded-full text-sm"
+                        >
                             Batal
                         </button>
                     </div>
-                </form>
+                </div>
             </div>
         </div>
     );
@@ -191,7 +208,7 @@ const loadImage = (src: string): Promise<HTMLImageElement> => {
 
 const PreviewScreen: React.FC<PreviewScreenProps> = ({ 
     images, onRestart, onBack, template, onSaveHistory, event,
-    currentTake, maxTakes, onNextTake, isDownloadButtonEnabled, isAutoDownloadEnabled, printSettings, onSaveWhatsapp, currentPaymentId, existingWhatsappNumber
+    currentTake, maxTakes, onNextTake, isDownloadButtonEnabled, isAutoDownloadEnabled, printSettings, onSaveWhatsapp, currentPaymentId, savedWhatsappNumber
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const finalImageRef = useRef<HTMLImageElement>(null);
@@ -203,8 +220,8 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [isWhatsappModalOpen, setIsWhatsappModalOpen] = useState(false);
   const [generatedQrUrl, setGeneratedQrUrl] = useState<string | null>(null);
-  // Initialize whatsappSent state based on whether a number already exists for this payment
-  const [whatsappSent, setWhatsappSent] = useState(!!existingWhatsappNumber);
+  // Ensure local lock is effective if props update is slow
+  const [hasSubmittedWhatsapp, setHasSubmittedWhatsapp] = useState(false);
 
   const isLastTake = currentTake >= maxTakes;
   const isLandscape = template.orientation === 'landscape';
@@ -368,9 +385,9 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
   }, [printSettings, template]);
 
   const handleWhatsappSubmit = (number: string) => {
+      setHasSubmittedWhatsapp(true); // Disable locally immediately
       if (onSaveWhatsapp) {
           onSaveWhatsapp(number);
-          setWhatsappSent(true);
       }
   };
 
@@ -483,10 +500,8 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
     // Reset refs for each new preview
     historySavedRef.current = false;
     downloadTriggeredRef.current = false;
-    // Don't reset to false blindly; check if number already exists from props to enforce 1x per payment
-    setWhatsappSent(!!existingWhatsappNumber);
     drawCanvas();
-  }, [drawCanvas, existingWhatsappNumber]);
+  }, [drawCanvas]);
 
   return (
     <>
@@ -591,12 +606,16 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
             {/* WhatsApp Button (Only shown if Payment ID exists) */}
             {currentPaymentId && (
                 <button
-                    onClick={() => setIsWhatsappModalOpen(true)}
-                    disabled={isLoading || !!errorMsg || whatsappSent}
-                    className={`w-full font-bold py-3 px-8 rounded-full text-lg transition-transform transform hover:scale-105 flex items-center justify-center gap-3 shadow-lg ${whatsappSent ? 'bg-gray-600 cursor-default transform-none' : 'bg-[#25D366] hover:bg-[#20b858] text-white'}`}
+                    type="button"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        setIsWhatsappModalOpen(true);
+                    }}
+                    disabled={isLoading || !!errorMsg || !!savedWhatsappNumber || hasSubmittedWhatsapp}
+                    className={`w-full font-bold py-3 px-8 rounded-full text-lg transition-transform transform hover:scale-105 flex items-center justify-center gap-3 shadow-lg ${savedWhatsappNumber || hasSubmittedWhatsapp ? 'bg-gray-600 cursor-default transform-none' : 'bg-[#25D366] hover:bg-[#20b858] text-white'}`}
                 >
                     <WhatsAppIcon />
-                    <span>{whatsappSent ? 'Terkirim ke Admin' : 'Kirim ke WhatsApp'}</span>
+                    <span>{savedWhatsappNumber || hasSubmittedWhatsapp ? 'Terkirim ke Admin' : 'Kirim ke WhatsApp'}</span>
                 </button>
             )}
 
