@@ -22,6 +22,7 @@ export enum AppState {
   HISTORY,
   ONLINE_HISTORY,
   MANAGE_TENANTS,
+  PAYMENT_METHOD_SELECTION, // New: Select QRIS or Cashier
 }
 
 export interface PhotoSlot {
@@ -82,6 +83,7 @@ export interface PaymentEntry {
   status: 'pending' | 'verified' | 'failed';
   timestamp: number;
   proofHash?: string; // To prevent double spending
+  whatsappNumber?: string; // WhatsApp number for sending results
 }
 
 export interface Settings {
@@ -96,6 +98,7 @@ export interface Settings {
   isPinLockEnabled?: boolean;
   fullscreenPin?: string;
   isStrictKioskMode?: boolean;
+  isAutoFullscreenEnabled?: boolean;
   
   // Logic Flow Settings
   isSessionCodeEnabled?: boolean;

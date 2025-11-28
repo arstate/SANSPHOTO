@@ -1,4 +1,6 @@
 
+
+
 import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { DownloadIcon } from './icons/DownloadIcon';
 import { PrintIcon } from './icons/PrintIcon';
@@ -7,6 +9,8 @@ import { BackIcon } from './icons/BackIcon';
 import { RestartIcon } from './icons/RestartIcon';
 import { Template, Event, Settings } from '../types';
 import { getCachedImage, storeImageInCache } from '../utils/db';
+import { WhatsAppIcon } from './icons/WhatsAppIcon';
+import WhatsAppInputModal from './WhatsAppInputModal';
 
 // Declare QRCode global from CDN
 declare const QRCode: any;
@@ -31,6 +35,7 @@ interface PreviewScreenProps {
   isDownloadButtonEnabled: boolean;
   isAutoDownloadEnabled: boolean;
   printSettings: PrintSettings;
+  onWhatsAppSubmit: (phoneNumber: string) => Promise<void>;
 }
 
 interface PrintModalProps {
@@ -141,7 +146,7 @@ const loadImage = (src: string): Promise<HTMLImageElement> => {
 
 const PreviewScreen: React.FC<PreviewScreenProps> = ({ 
     images, onRestart, onBack, template, onSaveHistory, event,
-    currentTake, maxTakes, onNextTake, isDownloadButtonEnabled, isAutoDownloadEnabled, printSettings
+    currentTake, maxTakes, onNextTake, isDownloadButtonEnabled, isAutoDownloadEnabled, printSettings, onWhatsAppSubmit
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const finalImageRef = useRef<HTMLImageElement>(null);
@@ -151,6 +156,8 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
+  const [isWhatsAppModalOpen, setIsWhatsAppModalOpen] = useState(false);
+  const [whatsappSuccess, setWhatsappSuccess] = useState(false);
   const [generatedQrUrl, setGeneratedQrUrl] = useState<string | null>(null);
 
   const isLastTake = currentTake >= maxTakes;
@@ -316,6 +323,13 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
     setIsPrintModalOpen(false);
   }, [printSettings, template]);
 
+  const handleWhatsAppConfirm = useCallback(async (number: string) => {
+      await onWhatsAppSubmit(number);
+      setIsWhatsAppModalOpen(false);
+      setWhatsappSuccess(true);
+      setTimeout(() => setWhatsappSuccess(false), 3000);
+  }, [onWhatsAppSubmit]);
+
   const drawCanvas = useCallback(async () => {
     setIsLoading(true);
     setErrorMsg(null);
@@ -437,6 +451,21 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
       imageSrc={finalImageRef.current?.src ?? null}
       settings={printSettings}
     />
+    
+    {isWhatsAppModalOpen && (
+        <WhatsAppInputModal 
+            onClose={() => setIsWhatsAppModalOpen(false)} 
+            onConfirm={handleWhatsAppConfirm} 
+        />
+    )}
+
+    {whatsappSuccess && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-green-500 text-white px-6 py-3 rounded-full shadow-lg flex items-center gap-2 animate-bounce">
+            <CheckIcon />
+            <span className="font-bold">Nomor WhatsApp Tersimpan!</span>
+        </div>
+    )}
+
     <div className="relative flex flex-col items-center justify-center h-full w-full">
        <div className="absolute top-4 left-4">
         <button 
@@ -499,12 +528,13 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
                 </button>
             )}
             
-            <div className="w-full flex gap-4">
+            {/* Action Buttons Row */}
+            <div className="w-full grid grid-cols-2 gap-3">
               {isDownloadButtonEnabled && (
                 <button
                   onClick={() => handleDownload()}
                   disabled={isLoading || !!errorMsg}
-                  className="w-full flex-1 bg-[var(--color-positive)] hover:bg-[var(--color-positive-hover)] text-[var(--color-positive-text)] font-bold py-4 px-8 rounded-full text-xl transition-transform transform hover:scale-105 flex items-center justify-center gap-3 disabled:bg-[var(--color-bg-tertiary)] disabled:cursor-not-allowed disabled:transform-none"
+                  className="flex-1 bg-[var(--color-positive)] hover:bg-[var(--color-positive-hover)] text-[var(--color-positive-text)] font-bold py-3 px-4 rounded-xl text-lg transition-transform transform hover:scale-105 flex items-center justify-center gap-2 disabled:bg-[var(--color-bg-tertiary)] disabled:cursor-not-allowed disabled:transform-none"
                 >
                   <DownloadIcon />
                   Unduh
@@ -515,18 +545,27 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
                  <button
                   onClick={() => setIsPrintModalOpen(true)}
                   disabled={isLoading || !!errorMsg}
-                  className="w-full flex-1 bg-[var(--color-info)] hover:bg-[var(--color-info-hover)] text-[var(--color-info-text)] font-bold py-4 px-8 rounded-full text-xl transition-transform transform hover:scale-105 flex items-center justify-center gap-3 disabled:bg-[var(--color-bg-tertiary)] disabled:cursor-not-allowed disabled:transform-none"
+                  className="flex-1 bg-[var(--color-info)] hover:bg-[var(--color-info-hover)] text-[var(--color-info-text)] font-bold py-3 px-4 rounded-xl text-lg transition-transform transform hover:scale-105 flex items-center justify-center gap-2 disabled:bg-[var(--color-bg-tertiary)] disabled:cursor-not-allowed disabled:transform-none"
                 >
                   <PrintIcon />
                   Cetak
                 </button>
               )}
+              
+              <button
+                  onClick={() => setIsWhatsAppModalOpen(true)}
+                  disabled={isLoading || !!errorMsg}
+                  className="col-span-2 bg-[#25D366] hover:bg-[#128C7E] text-white font-bold py-3 px-4 rounded-xl text-lg transition-transform transform hover:scale-105 flex items-center justify-center gap-2 disabled:bg-[var(--color-bg-tertiary)] disabled:cursor-not-allowed disabled:transform-none"
+                >
+                  <WhatsAppIcon />
+                  Kirim ke WhatsApp
+                </button>
             </div>
 
             {event?.isQrCodeEnabled && generatedQrUrl && (
-                <div className="p-4 bg-[var(--color-bg-secondary)] rounded-lg text-center">
+                <div className="p-4 bg-[var(--color-bg-secondary)] rounded-lg text-center w-full">
                     <p className="text-sm text-[var(--color-text-secondary)] mb-2">Pindai untuk tautan cepat</p>
-                    <img src={generatedQrUrl} alt="Kode QR" className="w-64 h-64 mx-auto rounded-md border-4 border-white" />
+                    <img src={generatedQrUrl} alt="Kode QR" className="w-48 h-48 mx-auto rounded-md border-4 border-white" />
                 </div>
             )}
         </div>
