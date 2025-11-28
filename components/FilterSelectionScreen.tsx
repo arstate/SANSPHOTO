@@ -232,33 +232,25 @@ const FilterSelectionScreen: React.FC<FilterSelectionScreenProps> = ({ images, t
 
       {/* Main Preview Area */}
       <main className="flex-grow flex items-center justify-center w-full min-h-0 p-4 relative z-10 overflow-hidden">
-        
         {/* 
-           Layout Fix: Use the template image as the relative parent.
-           This ensures the aspect ratio is always perfect based on the image's intrinsic dimensions.
-           The div wrapper shrink-wraps the image.
+           Layout Fix: Force the container to respect the exact Aspect Ratio of the template.
+           This ensures the percentage-based absolute positioning of photos aligns perfectly 
+           with the template overlay, solving the "floating/unlocked layer" bug.
         */}
-        <div className="relative inline-flex shadow-2xl bg-white p-1 md:p-2 rounded-sm max-w-full max-h-full">
-            <div className="relative">
+        <div 
+            className="relative shadow-2xl bg-white p-1 md:p-2 rounded-sm flex-shrink-0"
+            style={{ 
+                aspectRatio: isLandscape ? '3/2' : '2/3',
+                height: 'auto',
+                width: 'auto',
+                maxHeight: 'calc(100vh - 280px)',
+                maxWidth: '100%'
+            }}
+        >
+            <div className="relative w-full h-full overflow-hidden bg-white">
                 {/* 
-                    Layer 1 (Top): Template Image 
-                    It dictates the size of the container. 
-                    z-20 ensures it's above the photos (acting as a frame).
-                */}
-                <img 
-                    src={template.imageUrl} 
-                    alt="Template Frame" 
-                    className="block max-w-full object-contain relative z-20 pointer-events-none select-none" 
-                    style={{ 
-                        maxHeight: 'calc(100vh - 280px)', // Reserve space for header (approx 80px) and footer/slider (approx 200px)
-                        width: 'auto'
-                    }}
-                />
-
-                {/* 
-                    Layer 2 (Bottom): Captured Photos 
-                    Absolute position matches the Template Image exactly.
-                    z-10 ensures they are below the template frame.
+                    Layer 1 (Bottom): Captured Photos 
+                    Absolute positioning is based on the container's dimensions which now strictly follow aspect ratio.
                 */}
                 <div className="absolute inset-0 z-10 w-full h-full">
                     {images.map((imgSrc, index) => {
@@ -283,6 +275,17 @@ const FilterSelectionScreen: React.FC<FilterSelectionScreenProps> = ({ images, t
                         ));
                     })}
                 </div>
+
+                {/* 
+                    Layer 2 (Top): Template Image 
+                    Using 'object-fill' forces the image to stretch exactly to the container edges.
+                    Since container has correct aspect ratio, this won't distort the image but ensures alignment.
+                */}
+                <img 
+                    src={template.imageUrl} 
+                    alt="Template Frame" 
+                    className="absolute inset-0 w-full h-full object-fill z-20 pointer-events-none select-none" 
+                />
             </div>
         </div>
       </main>
