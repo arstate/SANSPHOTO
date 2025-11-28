@@ -84,9 +84,7 @@ const PaymentVerificationScreen: React.FC<PaymentVerificationScreenProps> = ({ t
     const canvas = canvasRef.current;
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
-    
-    // Fix Chrome Android Aw Snap
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
     // Draw video to canvas (No Mirroring as requested)

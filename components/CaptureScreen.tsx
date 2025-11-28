@@ -1,4 +1,7 @@
 
+
+
+
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { CameraIcon } from './icons/CameraIcon';
 import { Template } from '../types';
@@ -53,15 +56,22 @@ const CaptureScreen: React.FC<CaptureScreenProps> = ({
     const slotForCurrentPhoto = template.photoSlots.find(slot => slot.inputId === currentInputId);
 
     if (slotForCurrentPhoto && slotForCurrentPhoto.width > 0 && slotForCurrentPhoto.height > 0) {
+        // Memastikan rotasi adalah angka
         const rotation = Number(slotForCurrentPhoto.rotation || 0);
+        
+        // Untuk rotasi 90 atau 270 derajat, lebar dan tinggi visual ditukar.
+        // Logika ini menyesuaikan rasio aspek pratinjau kamera agar sesuai dengan slot yang diputar.
         const isRotatedSideways = Math.abs(rotation) % 180 === 90;
         
         if (isRotatedSideways) {
+            // Gunakan tinggi/lebar untuk slot yang diputar ke samping
             return `${slotForCurrentPhoto.height} / ${slotForCurrentPhoto.width}`;
         }
+        // Gunakan lebar/tinggi untuk slot tegak atau terbalik
         return `${slotForCurrentPhoto.width} / ${slotForCurrentPhoto.height}`;
     }
     
+    // Fallback jika slot tidak ditemukan
     return '16 / 9';
   }, [photoIndex, template.photoSlots, isRetakeMode, retakeForIndex]);
 
@@ -69,6 +79,9 @@ const CaptureScreen: React.FC<CaptureScreenProps> = ({
   const finalIpCameraUrl = useMemo(() => {
     if (!isIpCamera || !ipCameraUrl) return '';
     if (ipCameraUseProxy) {
+        // Use a standard CORS proxy wrapper. 
+        // corsproxy.io is a common public one. 
+        // Alternatives: 'https://api.allorigins.win/raw?url=' or self-hosted.
         return `https://corsproxy.io/?${encodeURIComponent(ipCameraUrl)}`;
     }
     return ipCameraUrl;
@@ -78,9 +91,13 @@ const CaptureScreen: React.FC<CaptureScreenProps> = ({
     let stream: MediaStream | null = null;
     
     if (isIpCamera) {
+        // For IP Camera, we just rely on the <img src> tag.
+        // We can optionally check if the image loads.
         const img = new Image();
         img.onload = () => setCameraError(null);
         img.onerror = () => {
+             // Don't set error immediately on first load fail for streams, sometimes it takes a moment
+             // But we can log it.
              console.warn("Stream might be failing to load or needs proxy.");
         };
         img.src = finalIpCameraUrl;
@@ -93,6 +110,8 @@ const CaptureScreen: React.FC<CaptureScreenProps> = ({
             video: { 
                 width: { ideal: 1920 },
                 height: { ideal: 1080 },
+                // If a specific device ID is selected (e.g., external USB), use it.
+                // Otherwise default to user facing camera.
                 ...(cameraDeviceId ? { deviceId: { exact: cameraDeviceId } } : { facingMode: 'user' })
             }
         };
@@ -117,87 +136,49 @@ const CaptureScreen: React.FC<CaptureScreenProps> = ({
 
   const takePicture = useCallback(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    // 1. DOWNSCALE RESOLUSI (Wajib untuk Android untuk mencegah Crash OOM)
-    // Batasi lebar maksimal. 1200px sudah cukup tajam untuk photobooth.
-    const MAX_WIDTH = 1200; 
-    let sourceWidth = 0;
-    let sourceHeight = 0;
-    let sourceElement: HTMLVideoElement | HTMLImageElement | null = null;
-
-    if (isIpCamera && ipCamImgRef.current) {
-        const img = ipCamImgRef.current;
-        sourceElement = img;
-        sourceWidth = img.naturalWidth || 640;
-        sourceHeight = img.naturalHeight || 480;
-    } else if (!isIpCamera && videoRef.current) {
-        const vid = videoRef.current;
-        sourceElement = vid;
-        sourceWidth = vid.videoWidth;
-        sourceHeight = vid.videoHeight;
-    }
-
-    if (!sourceElement || sourceWidth === 0 || sourceHeight === 0) return;
-
-    // Hitung rasio baru
-    let drawWidth = sourceWidth;
-    let drawHeight = sourceHeight;
-
-    if (drawWidth > MAX_WIDTH) {
-        const ratio = MAX_WIDTH / drawWidth;
-        drawWidth = MAX_WIDTH;
-        drawHeight = drawHeight * ratio;
-    }
-
-    canvas.width = drawWidth;
-    canvas.height = drawHeight;
-
-    // 2. MANTRA ANTI-CRASH CHROME: willReadFrequently: true
-    const context = canvas.getContext('2d', { willReadFrequently: true });
     
-    if (context) {
-        try {
-            // --- LANGKAH A: GAMBAR DASAR ---
-            context.drawImage(sourceElement, 0, 0, drawWidth, drawHeight);
-
-            // --- LANGKAH B: EFEK BEAUTY RINGAN (GPU BLENDING) ---
-            // Mencerahkan sedikit tanpa manipulasi pixel berat
-            context.save();
-            context.globalCompositeOperation = "screen"; // atau 'soft-light'
-            context.globalAlpha = 0.2; // 20% pencerahan (subtle beauty)
-            context.drawImage(sourceElement, 0, 0, drawWidth, drawHeight);
-            context.restore();
-
-            const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+    if (canvas) {
+      const context = canvas.getContext('2d');
+      if (context) {
+        if (isIpCamera && ipCamImgRef.current) {
+            const img = ipCamImgRef.current;
+            // Ensure we draw the natural size of the image
+            canvas.width = img.naturalWidth || 640;
+            canvas.height = img.naturalHeight || 480;
             
-            // --- LANGKAH C: BERSIHKAN MEMORI ---
-            // Paksa browser membuang sampah memori segera dengan mengecilkan canvas
-            setTimeout(() => {
-                if (canvas) {
-                    canvas.width = 1;
-                    canvas.height = 1;
-                }
-            }, 100);
-
-            if (isRetakeMode) {
-                onRetakeComplete(dataUrl);
-                return; 
+            // Try/Catch block for tainted canvas issues (CORS)
+            try {
+                context.drawImage(img, 0, 0, canvas.width, canvas.height);
+            } catch (e) {
+                console.error("Canvas tainted by cross-origin data", e);
+                setCameraError("Security Error: Unable to capture image due to CORS. Please enable the Proxy setting in Admin > Camera Source.");
+                return;
             }
-
-            const newImages = [...images, dataUrl];
-            setImages(newImages);
-            
-            if (newImages.length === totalPhotos) {
-              onCaptureComplete(newImages);
-            } else {
-              setPhotoIndex(photoIndex + 1);
-            }
-
-        } catch (e) {
-            console.error("Canvas tainted or error", e);
-            setCameraError("Capture Error: Please check camera permissions or CORS settings.");
+        } else if (!isIpCamera && videoRef.current) {
+            const video = videoRef.current;
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
+        } else {
+            return;
         }
+
+        const dataUrl = canvas.toDataURL('image/jpeg');
+        
+        if (isRetakeMode) {
+            onRetakeComplete(dataUrl);
+            return; // End here for retake
+        }
+
+        const newImages = [...images, dataUrl];
+        setImages(newImages);
+        
+        if (newImages.length === totalPhotos) {
+          onCaptureComplete(newImages);
+        } else {
+          setPhotoIndex(photoIndex + 1);
+        }
+      }
     }
   }, [images, onCaptureComplete, onRetakeComplete, photoIndex, totalPhotos, isRetakeMode, isIpCamera]);
 

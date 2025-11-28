@@ -41,8 +41,7 @@ const RetakePreviewScreen: React.FC<RetakePreviewScreenProps> = ({
       return;
     }
 
-    // Fix Chrome Android Aw Snap
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    const ctx = canvas.getContext('2d');
     if (!ctx) {
       setErrorMsg("Could not get canvas context.");
       setIsLoading(false);
@@ -143,15 +142,6 @@ const RetakePreviewScreen: React.FC<RetakePreviewScreenProps> = ({
       if(finalImageRef.current) {
           finalImageRef.current.src = finalImageDataUrl;
       }
-      
-      // Cleanup memory
-      setTimeout(() => {
-          if (canvas) {
-              canvas.width = 1;
-              canvas.height = 1;
-          }
-      }, 100);
-
       setIsLoading(false);
 
     } catch (error) {

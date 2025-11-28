@@ -384,8 +384,7 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
         return;
     }
 
-    // Fix Chrome Android Aw Snap
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    const ctx = canvas.getContext('2d');
     if (!ctx) {
         setErrorMsg("Tidak dapat memperoleh konteks kanvas.");
         setIsLoading(false);
@@ -475,15 +474,6 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
           handleDownload(finalImageDataUrl);
           downloadTriggeredRef.current = true;
       }
-      
-      // Cleanup memory
-      setTimeout(() => {
-          if (canvas) {
-              canvas.width = 1;
-              canvas.height = 1;
-          }
-      }, 100);
-
       setIsLoading(false);
 
     } catch (error) {
