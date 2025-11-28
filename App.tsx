@@ -1,14 +1,3 @@
-
-
-
-
-
-
-
-
-
-
-
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import WelcomeScreen from './components/WelcomeScreen';
 import TemplateSelection from './components/TemplateSelection';
@@ -238,6 +227,9 @@ const App: React.FC = () => {
   // Payment State
   const [selectedPriceList, setSelectedPriceList] = useState<PriceList | null>(null);
   const [currentPaymentId, setCurrentPaymentId] = useState<string | null>(null);
+  
+  // Ref to track if session creation is triggered to prevent duplicates
+  const isCreatingSessionRef = useRef(false);
 
   const cachingSessionRef = useRef(0);
 
@@ -361,6 +353,7 @@ const App: React.FC = () => {
     }
   }, [cacheImage]);
 
+  // Main Data Listener
   useEffect(() => {
     if (!currentTenantId) return;
 
@@ -386,9 +379,7 @@ const App: React.FC = () => {
     const settingsListener = onValue(settingsRef, (snapshot) => {
       if (snapshot.exists()) {
         const val = snapshot.val();
-        // Merge defaults to handle new fields like floatingObjects
         setSettings({ ...DEFAULT_SETTINGS, ...val });
-        // Cache QRIS image if exists
         if (val.qrisImageUrl) {
             cacheImage(val.qrisImageUrl);
         }
@@ -409,7 +400,35 @@ const App: React.FC = () => {
     const eventsListener = onValue(eventsRef, (snapshot) => setEvents(firebaseObjectToArray<Event>(snapshot.val())));
     const sessionKeysListener = onValue(sessionKeysRef, (snapshot) => setSessionKeys(firebaseObjectToArray<SessionKey>(snapshot.val())));
     const reviewsListener = onValue(reviewsRef, (snapshot) => setReviews(firebaseObjectToArray<Review>(snapshot.val()).sort((a, b) => Number(b.timestamp) - Number(a.timestamp))));
-    const paymentsListener = onValue(paymentsRef, (snapshot) => setPayments(firebaseObjectToArray<PaymentEntry>(snapshot.val()).sort((a,b) => b.timestamp - a.timestamp)));
+    
+    // Payment Listener with Auto-Expiration & Auto-Start
+    const paymentsListener = onValue(paymentsRef, (snapshot) => {
+        const fetchedPayments = firebaseObjectToArray<PaymentEntry>(snapshot.val()).sort((a,b) => b.timestamp - a.timestamp);
+        setPayments(fetchedPayments);
+
+        const now = Date.now();
+        const twoHours = 2 * 60 * 60 * 1000;
+
+        fetchedPayments.forEach(p => {
+            // 1. Auto-Expiration: Delete pending payments older than 2 hours
+            if (p.status === 'pending' && (now - p.timestamp > twoHours)) {
+                console.log(`Deleting expired payment: ${p.id}`);
+                remove(ref(db, `${dataPath}/payments/${p.id}`));
+            }
+
+            // 2. Auto-Redirect User if Admin Verified
+            if (
+                currentPaymentId === p.id && 
+                p.status === 'verified' && 
+                (appState === AppState.PAYMENT_SHOW || appState === AppState.PAYMENT_VERIFICATION) &&
+                !isCreatingSessionRef.current
+            ) {
+               // Trigger session creation just like verification
+               isCreatingSessionRef.current = true;
+               startPaidSession(p);
+            }
+        });
+    });
 
     return () => {
       off(settingsRef, 'value', settingsListener);
@@ -419,7 +438,7 @@ const App: React.FC = () => {
       off(reviewsRef, 'value', reviewsListener);
       off(paymentsRef, 'value', paymentsListener);
     };
-  }, [currentTenantId, cacheAllTemplates, cacheImage]);
+  }, [currentTenantId, cacheAllTemplates, cacheImage, currentPaymentId, appState]);
 
   useEffect(() => {
     document.documentElement.classList.toggle('light', settings.theme === 'light');
@@ -527,6 +546,9 @@ const App: React.FC = () => {
   const handleCreatePayment = useCallback(async (userName: string) => {
     if (!currentTenantId || !selectedPriceList) return;
     
+    // Reset session creation lock
+    isCreatingSessionRef.current = false;
+
     const paymentData: Omit<PaymentEntry, 'id'> = {
         userName,
         priceListId: selectedPriceList.id,
@@ -547,21 +569,26 @@ const App: React.FC = () => {
     setAppState(AppState.PAYMENT_VERIFICATION);
   }, []);
 
-  const handlePaymentVerified = useCallback(async (proofHash: string) => {
-    if (!currentTenantId || !currentPaymentId) return;
-    
-    // 1. Update Payment Status & Save Hash
-    await update(ref(db, `data/${currentTenantId}/payments/${currentPaymentId}`), { 
-        status: 'verified',
-        proofHash: proofHash 
-    });
-    
-    // 2. Start Session (Create a key)
-    setIsSessionLoading(true);
-    try {
+  // Shared function to start paid session (used by Verification Screen & Admin Acceptance)
+  const startPaidSession = useCallback(async (payment: PaymentEntry) => {
+      if (!currentTenantId) return;
+      
+      setIsSessionLoading(true);
+      try {
+        // Find max takes from price list derived from payment
+        // Note: selectedPriceList might be null if reloaded, ideally use payment.priceListName to lookup or store maxTakes in payment
+        // For robustness, if selectedPriceList is missing, default to 1 or try to find it
+        let sessionMaxTakes = 1;
+        if (selectedPriceList && selectedPriceList.id === payment.priceListId) {
+            sessionMaxTakes = selectedPriceList.maxTakes;
+        } else if (settings.priceLists) {
+            const pl = settings.priceLists.find(p => p.id === payment.priceListId);
+            if (pl) sessionMaxTakes = pl.maxTakes;
+        }
+
         const newKeyData: Omit<SessionKey, 'id'> = {
           code: `PAID-${Date.now().toString().slice(-4)}`, 
-          maxTakes: selectedPriceList?.maxTakes || 1, // Use configured takes from price list
+          maxTakes: sessionMaxTakes, 
           takesUsed: 1, 
           status: 'in_progress', 
           createdAt: Date.now(), 
@@ -580,15 +607,48 @@ const App: React.FC = () => {
         setAppState(AppState.WELCOME); // Fallback
     } finally {
         setIsSessionLoading(false);
+        isCreatingSessionRef.current = false; // Reset lock
     }
-  }, [currentTenantId, currentPaymentId, selectedPriceList]);
+  }, [currentTenantId, selectedPriceList, settings.priceLists]);
+
+  const handlePaymentVerified = useCallback(async (proofHash: string) => {
+    if (!currentTenantId || !currentPaymentId) return;
+    
+    // Prevent double invocation
+    if (isCreatingSessionRef.current) return;
+    isCreatingSessionRef.current = true;
+
+    // 1. Update Payment Status & Save Hash
+    await update(ref(db, `data/${currentTenantId}/payments/${currentPaymentId}`), { 
+        status: 'verified',
+        proofHash: proofHash 
+    });
+    
+    // 2. Start Session
+    // We fetch the current payment object to pass to startPaidSession
+    const payment = payments.find(p => p.id === currentPaymentId);
+    if (payment) {
+        startPaidSession(payment);
+    } else {
+        // Fallback with just current Payment ID reference logic inside startPaidSession logic if possible, 
+        // but since we need maxTakes, we rely on the state finding it.
+        // If payment isn't in state yet (rare race condition), wait for listener or fail.
+        // Simple fallback:
+        const tempPayment: any = { priceListId: selectedPriceList?.id };
+        startPaidSession(tempPayment);
+    }
+  }, [currentTenantId, currentPaymentId, payments, selectedPriceList, startPaidSession]);
+
+  const handleAcceptPayment = useCallback(async (paymentId: string) => {
+      if (!currentTenantId) return;
+      await update(ref(db, `data/${currentTenantId}/payments/${paymentId}`), {
+          status: 'verified'
+      });
+  }, [currentTenantId]);
 
   const validateProofHash = useCallback(async (hash: string): Promise<boolean> => {
       if (!currentTenantId) return false;
       try {
-          // Query payments to see if hash already exists
-          // Note: In a real heavy production app, this should be done via Cloud Functions or a dedicated index
-          // Client-side filtering for small-medium scale:
           const q = query(ref(db, `data/${currentTenantId}/payments`), orderByChild('proofHash'), equalTo(hash));
           const snapshot = await get(q);
           return snapshot.exists(); // If exists, it is a duplicate
@@ -1118,7 +1178,7 @@ const App: React.FC = () => {
             });
         }
         return <TemplateSelection templates={sortedTemplates} onSelect={handleTemplateSelect} onBack={handleBack} isAdminLoggedIn={isAdminLoggedIn} onAddTemplate={handleStartAddTemplate} onEditMetadata={handleStartEditTemplateMetadata} onEditLayout={handleStartEditLayout} onDelete={handleDeleteTemplate} />;
-      case AppState.SETTINGS: return <SettingsScreen settings={settings} onSettingsChange={handleSettingsChange} onManageTemplates={handleManageTemplates} onManageEvents={handleManageEvents} onManageSessions={handleManageSessions} onManageReviews={handleManageReviews} onViewHistory={handleViewHistory} onBack={handleBack} isMasterAdmin={isMasterAdmin} onManageTenants={handleManageTenants} payments={payments} onDeletePayment={handleDeletePayment} />;
+      case AppState.SETTINGS: return <SettingsScreen settings={settings} onSettingsChange={handleSettingsChange} onManageTemplates={handleManageTemplates} onManageEvents={handleManageEvents} onManageSessions={handleManageSessions} onManageReviews={handleManageReviews} onViewHistory={handleViewHistory} onBack={handleBack} isMasterAdmin={isMasterAdmin} onManageTenants={handleManageTenants} payments={payments} onDeletePayment={handleDeletePayment} onAcceptPayment={handleAcceptPayment} />;
       case AppState.MANAGE_TENANTS: if (!isMasterAdmin) { setAppState(AppState.WELCOME); return null; } return <ManageTenantsScreen tenants={tenants} onBack={handleBack} onAddTenant={handleAddTenant} onUpdateTenant={handleUpdateTenant} onDeleteTenant={handleDeleteTenant} />;
       case AppState.MANAGE_EVENTS: return <ManageEventsScreen events={events} onBack={handleBack} onAddEvent={handleAddEvent} onRenameEvent={handleStartRenameEvent} onDeleteEvent={handleDeleteEvent} onToggleArchive={handleToggleArchiveEvent} onAssignTemplates={handleStartAssigningTemplates} onQrCodeSettings={handleStartEditQrCode} />;
       case AppState.MANAGE_SESSIONS: if (!isAdminLoggedIn) { setAppState(AppState.WELCOME); return null; } return <ManageSessionsScreen sessionKeys={sessionKeys} onBack={handleBack} onAddKey={handleAddSessionKey} onDeleteKey={handleDeleteSessionKey} onDeleteAllKeys={handleDeleteAllSessionKeys} onDeleteFreeplayKeys={handleDeleteFreeplaySessionKeys} />;

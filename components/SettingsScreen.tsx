@@ -1,14 +1,3 @@
-
-
-
-
-
-
-
-
-
-
-
 import React, { useState, useEffect } from 'react';
 import { Settings, FloatingObject, PriceList, PaymentEntry, OnlineHistoryEntry } from '../types';
 import { BackIcon } from './icons/BackIcon';
@@ -50,6 +39,7 @@ interface SettingsScreenProps {
     onManageTenants: () => void;
     payments?: PaymentEntry[];
     onDeletePayment: (id: string) => void;
+    onAcceptPayment: (id: string) => void;
 }
 
 export const GOOGLE_FONTS = [
@@ -91,7 +81,7 @@ const CategoryButton: React.FC<{
 
 const SettingsScreen: React.FC<SettingsScreenProps> = ({ 
     settings, onSettingsChange, onManageTemplates, onManageEvents, onManageSessions, onManageReviews, onViewHistory, onBack,
-    isMasterAdmin, onManageTenants, payments = [], onDeletePayment
+    isMasterAdmin, onManageTenants, payments = [], onDeletePayment, onAcceptPayment
 }) => {
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState<SettingsCategory>('general');
@@ -104,6 +94,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const [newPriceDesc, setNewPriceDesc] = useState('');
   const [newPriceAmount, setNewPriceAmount] = useState('');
   const [newPriceTakes, setNewPriceTakes] = useState(1);
+  const [isRefreshingPayments, setIsRefreshingPayments] = useState(false);
 
   // View Payment Photo Gallery State
   const [viewingPhotos, setViewingPhotos] = useState<OnlineHistoryEntry[] | null>(null);
@@ -297,6 +288,15 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
               priceLists: (settings.priceLists || []).filter(p => p.id !== id)
           });
       }
+  };
+
+  const handleRefreshPayments = () => {
+      if (isRefreshingPayments) return;
+      setIsRefreshingPayments(true);
+      // Simulate network request/refresh delay since onValue is actually realtime
+      setTimeout(() => {
+          setIsRefreshingPayments(false);
+      }, 1000);
   };
 
   // Send WhatsApp Logic with Auto-Photo Clipboard & Link Inclusion
@@ -1539,62 +1539,91 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
 
                 {/* Payment History View */}
                 <div className="p-6 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] text-left space-y-4">
-                    <h3 className="text-xl font-bold text-[var(--color-text-accent)]">Recent Payments</h3>
-                     <div className="max-h-[600px] overflow-y-auto scrollbar-thin space-y-2">
-                         {payments.map(pay => (
-                             <div key={pay.id} className="p-3 bg-[var(--color-bg-tertiary)] rounded flex justify-between items-center text-sm">
-                                 <div>
-                                     <p className="font-bold">{pay.userName}</p>
-                                     <p className="text-xs text-[var(--color-text-muted)]">{pay.priceListName} - Rp {pay.amount.toLocaleString()}</p>
-                                     <p className="text-[10px] text-[var(--color-text-muted)]">{new Date(pay.timestamp).toLocaleString()}</p>
-                                     {pay.whatsappNumber && (
-                                         <p className="text-xs text-green-400 mt-1 flex items-center gap-1">
-                                             <WhatsAppIcon /> {pay.whatsappNumber}
-                                         </p>
-                                     )}
-                                 </div>
-                                 <div className="flex items-center gap-2">
-                                     <span className={`px-2 py-1 rounded text-xs font-bold uppercase ${pay.status === 'verified' ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
-                                         {pay.status}
-                                     </span>
-                                     <button 
-                                        onClick={() => handleViewPaymentPhoto(pay)}
-                                        className="p-2 bg-[var(--color-info)]/20 hover:bg-[var(--color-info)]/40 text-[var(--color-info)] rounded-full transition-colors disabled:opacity-50"
-                                        title="View Photos"
-                                        disabled={!!isFindingPhoto}
-                                     >
-                                         {isFindingPhoto === pay.id ? (
-                                             <div className="animate-spin h-4 w-4 border-2 border-[var(--color-info)] border-t-transparent rounded-full"></div>
-                                         ) : (
-                                             <EyeIcon />
-                                         )}
-                                     </button>
-                                     {pay.whatsappNumber && (
-                                         <button 
-                                            onClick={() => handleSendWhatsapp(pay)}
-                                            className="p-2 bg-green-500/20 hover:bg-green-500/40 text-green-500 rounded-full transition-colors disabled:opacity-50"
-                                            title="Send to WhatsApp (Auto-Copy Photo)"
-                                            disabled={!!sendingWhatsappId}
-                                         >
-                                             {sendingWhatsappId === pay.id ? (
-                                                 <div className="animate-spin h-4 w-4 border-2 border-green-500 border-t-transparent rounded-full"></div>
-                                             ) : (
-                                                 <WhatsAppIcon />
-                                             )}
-                                         </button>
-                                     )}
-                                     <button 
-                                        onClick={() => onDeletePayment(pay.id)}
-                                        className="p-2 bg-[var(--color-negative)]/20 hover:bg-[var(--color-negative)]/40 text-[var(--color-negative)] rounded-full transition-colors"
-                                        title="Delete Payment"
-                                     >
-                                         <TrashIcon />
-                                     </button>
-                                 </div>
-                             </div>
-                         ))}
-                         {payments.length === 0 && <p className="text-center text-[var(--color-text-muted)]">No payments yet.</p>}
-                     </div>
+                    <div className="flex justify-between items-center">
+                        <h3 className="text-xl font-bold text-[var(--color-text-accent)]">Recent Payments</h3>
+                        <button 
+                            onClick={handleRefreshPayments}
+                            className={`p-2 bg-[var(--color-bg-tertiary)] hover:bg-[var(--color-border-secondary)] rounded-full transition-all text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] ${isRefreshingPayments ? 'animate-spin text-[var(--color-accent-primary)]' : ''}`}
+                            title="Refresh List"
+                            disabled={isRefreshingPayments}
+                        >
+                            <RestartIcon />
+                        </button>
+                    </div>
+                    
+                    <div className="relative min-h-[150px]">
+                        {isRefreshingPayments && (
+                            <div className="absolute inset-0 bg-[var(--color-bg-secondary)]/80 backdrop-blur-sm z-10 flex flex-col items-center justify-center rounded-lg animate-fade-in">
+                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--color-accent-primary)] mb-2"></div>
+                                <p className="text-xs text-[var(--color-text-muted)] font-bold">Refreshing...</p>
+                            </div>
+                        )}
+                        
+                        <div className="max-h-[600px] overflow-y-auto scrollbar-thin space-y-2">
+                            {payments.map(pay => (
+                                <div key={pay.id} className="p-3 bg-[var(--color-bg-tertiary)] rounded flex justify-between items-center text-sm">
+                                    <div>
+                                        <p className="font-bold">{pay.userName}</p>
+                                        <p className="text-xs text-[var(--color-text-muted)]">{pay.priceListName} - Rp {pay.amount.toLocaleString()}</p>
+                                        <p className="text-[10px] text-[var(--color-text-muted)]">{new Date(pay.timestamp).toLocaleString()}</p>
+                                        {pay.whatsappNumber && (
+                                            <p className="text-xs text-green-400 mt-1 flex items-center gap-1">
+                                                <WhatsAppIcon /> {pay.whatsappNumber}
+                                            </p>
+                                        )}
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <span className={`px-2 py-1 rounded text-xs font-bold uppercase ${pay.status === 'verified' ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
+                                            {pay.status}
+                                        </span>
+                                        {pay.status === 'pending' && (
+                                            <button 
+                                                onClick={() => onAcceptPayment(pay.id)}
+                                                className="p-2 bg-green-500/20 hover:bg-green-500/40 text-green-500 rounded-full transition-colors"
+                                                title="Accept Payment"
+                                            >
+                                                <CheckIcon />
+                                            </button>
+                                        )}
+                                        <button 
+                                            onClick={() => handleViewPaymentPhoto(pay)}
+                                            className="p-2 bg-[var(--color-info)]/20 hover:bg-[var(--color-info)]/40 text-[var(--color-info)] rounded-full transition-colors disabled:opacity-50"
+                                            title="View Photos"
+                                            disabled={!!isFindingPhoto}
+                                        >
+                                            {isFindingPhoto === pay.id ? (
+                                                <div className="animate-spin h-4 w-4 border-2 border-[var(--color-info)] border-t-transparent rounded-full"></div>
+                                            ) : (
+                                                <EyeIcon />
+                                            )}
+                                        </button>
+                                        {pay.whatsappNumber && (
+                                            <button 
+                                                onClick={() => handleSendWhatsapp(pay)}
+                                                className="p-2 bg-green-500/20 hover:bg-green-500/40 text-green-500 rounded-full transition-colors disabled:opacity-50"
+                                                title="Send to WhatsApp (Auto-Copy Photo)"
+                                                disabled={!!sendingWhatsappId}
+                                            >
+                                                {sendingWhatsappId === pay.id ? (
+                                                    <div className="animate-spin h-4 w-4 border-2 border-green-500 border-t-transparent rounded-full"></div>
+                                                ) : (
+                                                    <WhatsAppIcon />
+                                                )}
+                                            </button>
+                                        )}
+                                        <button 
+                                            onClick={() => onDeletePayment(pay.id)}
+                                            className="p-2 bg-[var(--color-negative)]/20 hover:bg-[var(--color-negative)]/40 text-[var(--color-negative)] rounded-full transition-colors"
+                                            title="Delete Payment"
+                                        >
+                                            <TrashIcon />
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                            {payments.length === 0 && <p className="text-center text-[var(--color-text-muted)] py-10">No payments yet.</p>}
+                        </div>
+                    </div>
                 </div>
             </div>
         );
