@@ -1,3 +1,5 @@
+
+
 import React, { useState, useEffect } from 'react';
 import { Settings, FloatingObject, PriceList, PaymentEntry, OnlineHistoryEntry } from '../types';
 import { BackIcon } from './icons/BackIcon';
@@ -24,6 +26,7 @@ import { UploadingIcon } from './icons/UploadingIcon';
 import { DollarIcon } from './icons/DollarIcon';
 import { PrintIcon } from './icons/PrintIcon';
 import { CheckIcon } from './icons/CheckIcon';
+import { WhatsAppIcon } from './icons/WhatsAppIcon';
 
 interface SettingsScreenProps {
     settings: Settings;
@@ -284,6 +287,26 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
               priceLists: (settings.priceLists || []).filter(p => p.id !== id)
           });
       }
+  };
+
+  // Send WhatsApp Logic
+  const handleSendWhatsapp = (phone: string, name: string) => {
+      // 1. Clean number (remove non-digits)
+      let cleanNumber = phone.replace(/\D/g, '');
+      
+      // 2. Format to international 62
+      if (cleanNumber.startsWith('0')) {
+          cleanNumber = '62' + cleanNumber.substring(1);
+      }
+
+      // 3. Prepare message
+      const message = `Halo Kak ${name}, Terima kasih sudah menggunakan jasa photoboth dari Sans Photobooth! 📸✨ Ini softfile foto kakak ya. Ditunggu kedatangannya kembali! 🥰`;
+      
+      // 4. Encode
+      const url = `https://wa.me/${cleanNumber}?text=${encodeURIComponent(message)}`;
+      
+      // 5. Open
+      window.open(url, '_blank');
   };
 
   // Payment Photo Viewing Logic (Gallery Support)
@@ -1467,6 +1490,11 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                                      <p className="font-bold">{pay.userName}</p>
                                      <p className="text-xs text-[var(--color-text-muted)]">{pay.priceListName} - Rp {pay.amount.toLocaleString()}</p>
                                      <p className="text-[10px] text-[var(--color-text-muted)]">{new Date(pay.timestamp).toLocaleString()}</p>
+                                     {pay.whatsappNumber && (
+                                         <p className="text-xs text-green-400 mt-1 flex items-center gap-1">
+                                             <WhatsAppIcon /> {pay.whatsappNumber}
+                                         </p>
+                                     )}
                                  </div>
                                  <div className="flex items-center gap-2">
                                      <span className={`px-2 py-1 rounded text-xs font-bold uppercase ${pay.status === 'verified' ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
@@ -1484,6 +1512,15 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                                              <EyeIcon />
                                          )}
                                      </button>
+                                     {pay.whatsappNumber && (
+                                         <button 
+                                            onClick={() => handleSendWhatsapp(pay.whatsappNumber!, pay.userName)}
+                                            className="p-2 bg-green-500/20 hover:bg-green-500/40 text-green-500 rounded-full transition-colors"
+                                            title="Send to WhatsApp"
+                                         >
+                                             <WhatsAppIcon />
+                                         </button>
+                                     )}
                                      <button 
                                         onClick={() => onDeletePayment(pay.id)}
                                         className="p-2 bg-[var(--color-negative)]/20 hover:bg-[var(--color-negative)]/40 text-[var(--color-negative)] rounded-full transition-colors"

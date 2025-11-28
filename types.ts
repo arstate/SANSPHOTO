@@ -82,6 +82,7 @@ export interface PaymentEntry {
   status: 'pending' | 'verified' | 'failed';
   timestamp: number;
   proofHash?: string; // To prevent double spending
+  whatsappNumber?: string; // New: Stores user whatsapp number for manual sending
 }
 
 export interface Settings {

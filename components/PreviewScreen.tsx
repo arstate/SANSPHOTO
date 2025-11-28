@@ -1,10 +1,13 @@
 
+
+
 import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { DownloadIcon } from './icons/DownloadIcon';
 import { PrintIcon } from './icons/PrintIcon';
 import { CheckIcon } from './icons/CheckIcon';
 import { BackIcon } from './icons/BackIcon';
 import { RestartIcon } from './icons/RestartIcon';
+import { WhatsAppIcon } from './icons/WhatsAppIcon';
 import { Template, Event, Settings } from '../types';
 import { getCachedImage, storeImageInCache } from '../utils/db';
 
@@ -31,6 +34,8 @@ interface PreviewScreenProps {
   isDownloadButtonEnabled: boolean;
   isAutoDownloadEnabled: boolean;
   printSettings: PrintSettings;
+  onSaveWhatsapp?: (number: string) => void;
+  currentPaymentId?: string | null;
 }
 
 interface PrintModalProps {
@@ -40,6 +45,53 @@ interface PrintModalProps {
   imageSrc: string | null;
   settings: PrintSettings;
 }
+
+interface WhatsappModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    onSubmit: (number: string) => void;
+}
+
+const WhatsappModal: React.FC<WhatsappModalProps> = ({ isOpen, onClose, onSubmit }) => {
+    const [number, setNumber] = useState('');
+
+    if (!isOpen) return null;
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (number.trim()) {
+            onSubmit(number.trim());
+            onClose();
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={onClose}>
+            <div className="bg-[var(--color-bg-secondary)] rounded-lg shadow-xl p-6 w-full max-w-sm border border-[var(--color-border-primary)]" onClick={e => e.stopPropagation()}>
+                <h2 className="font-bebas text-3xl text-center mb-2">Kirim ke WhatsApp</h2>
+                <p className="text-center text-[var(--color-text-muted)] text-sm mb-4">Masukkan nomor WA kamu agar admin bisa mengirimkan softfile foto.</p>
+                <form onSubmit={handleSubmit}>
+                    <input 
+                        type="tel" 
+                        value={number} 
+                        onChange={(e) => setNumber(e.target.value)}
+                        placeholder="08xxxxxxxxxx"
+                        className="w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md py-3 px-4 text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[#25D366] mb-4 text-center text-xl font-bold"
+                        autoFocus
+                    />
+                    <div className="flex flex-col gap-2">
+                        <button type="submit" className="w-full bg-[#25D366] hover:bg-[#20b858] text-white font-bold py-3 px-4 rounded-full text-lg shadow-lg">
+                            Kirim Nomor
+                        </button>
+                        <button type="button" onClick={onClose} className="w-full bg-transparent hover:bg-[var(--color-bg-tertiary)] text-[var(--color-text-muted)] font-bold py-2 rounded-full text-sm">
+                            Batal
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+};
 
 const PrintModal: React.FC<PrintModalProps> = ({ isOpen, onClose, onConfirm, imageSrc, settings }) => {
   const [copies, setCopies] = useState(1);
@@ -141,7 +193,7 @@ const loadImage = (src: string): Promise<HTMLImageElement> => {
 
 const PreviewScreen: React.FC<PreviewScreenProps> = ({ 
     images, onRestart, onBack, template, onSaveHistory, event,
-    currentTake, maxTakes, onNextTake, isDownloadButtonEnabled, isAutoDownloadEnabled, printSettings
+    currentTake, maxTakes, onNextTake, isDownloadButtonEnabled, isAutoDownloadEnabled, printSettings, onSaveWhatsapp, currentPaymentId
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const finalImageRef = useRef<HTMLImageElement>(null);
@@ -151,7 +203,9 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
+  const [isWhatsappModalOpen, setIsWhatsappModalOpen] = useState(false);
   const [generatedQrUrl, setGeneratedQrUrl] = useState<string | null>(null);
+  const [whatsappSent, setWhatsappSent] = useState(false);
 
   const isLastTake = currentTake >= maxTakes;
   const isLandscape = template.orientation === 'landscape';
@@ -305,8 +359,6 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
     }
 
     // Cleanup iframe after a delay
-    // Note: If using Kiosk printing, it happens fast. If manual, it waits for dialog.
-    // 60 seconds is a safe buffer.
     setTimeout(() => {
         if (document.body.contains(iframe)) {
             document.body.removeChild(iframe);
@@ -315,6 +367,13 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
 
     setIsPrintModalOpen(false);
   }, [printSettings, template]);
+
+  const handleWhatsappSubmit = (number: string) => {
+      if (onSaveWhatsapp) {
+          onSaveWhatsapp(number);
+          setWhatsappSent(true);
+      }
+  };
 
   const drawCanvas = useCallback(async () => {
     setIsLoading(true);
@@ -425,6 +484,7 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
     // Reset refs for each new preview
     historySavedRef.current = false;
     downloadTriggeredRef.current = false;
+    setWhatsappSent(false);
     drawCanvas();
   }, [drawCanvas]);
 
@@ -436,6 +496,11 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
       onConfirm={handlePrint}
       imageSrc={finalImageRef.current?.src ?? null}
       settings={printSettings}
+    />
+    <WhatsappModal 
+        isOpen={isWhatsappModalOpen}
+        onClose={() => setIsWhatsappModalOpen(false)}
+        onSubmit={handleWhatsappSubmit}
     />
     <div className="relative flex flex-col items-center justify-center h-full w-full">
        <div className="absolute top-4 left-4">
@@ -522,6 +587,18 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
                 </button>
               )}
             </div>
+
+            {/* WhatsApp Button (Only shown if Payment ID exists) */}
+            {currentPaymentId && (
+                <button
+                    onClick={() => setIsWhatsappModalOpen(true)}
+                    disabled={isLoading || !!errorMsg || whatsappSent}
+                    className={`w-full font-bold py-3 px-8 rounded-full text-lg transition-transform transform hover:scale-105 flex items-center justify-center gap-3 shadow-lg ${whatsappSent ? 'bg-gray-600 cursor-default transform-none' : 'bg-[#25D366] hover:bg-[#20b858] text-white'}`}
+                >
+                    <WhatsAppIcon />
+                    <span>{whatsappSent ? 'Terkirim ke Admin' : 'Kirim ke WhatsApp'}</span>
+                </button>
+            )}
 
             {event?.isQrCodeEnabled && generatedQrUrl && (
                 <div className="p-4 bg-[var(--color-bg-secondary)] rounded-lg text-center">
