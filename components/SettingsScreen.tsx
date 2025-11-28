@@ -89,6 +89,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const [videoDevices, setVideoDevices] = useState<MediaDeviceInfo[]>([]);
   const [editingObjectId, setEditingObjectId] = useState<string | null>(null);
   const [showPrintConfigSuccess, setShowPrintConfigSuccess] = useState(false);
+  const [clipboardMessage, setClipboardMessage] = useState<string | null>(null);
   
   // Payment State
   const [newPriceName, setNewPriceName] = useState('');
@@ -310,7 +311,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
       window.open(link, '_blank');
   };
 
-  // Send WhatsApp Logic with Web Link
+  // Send WhatsApp Logic with Web Link AND Copy Photo to Clipboard
   const handleSendWhatsapp = async (payment: PaymentEntry) => {
       if (sendingWhatsappId) return;
       setSendingWhatsappId(payment.id);
@@ -328,9 +329,56 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
       }
 
       // Default message with Web Link
-      let message = `Halo Kak ${name}, Terima kasih sudah menggunakan jasa photoboth dari Sans Photobooth! \uD83D\uDCF8\u2728\n\nBerikut link galeri foto khusus untuk kakak:\n${webLink}\n\nFoto bisa didownload sepuasnya dari link tersebut. Ditunggu kedatangannya kembali! \uD83E\uDD70`;
+      const message = `Halo Kak ${name}, Terima kasih sudah menggunakan jasa photoboth dari Sans Photobooth! \uD83D\uDCF8\u2728\n\nBerikut link galeri foto khusus untuk kakak:\n${webLink}\n\nFoto bisa didownload sepuasnya dari link tersebut. Ditunggu kedatangannya kembali! \uD83E\uDD70`;
 
-      // Simulating a delay/process then opening WA
+      try {
+          // --- AUTO COPY PHOTO LOGIC ---
+          // 1. Fetch photo list from cloud
+          const response = await fetch(SCRIPT_URL_GET_HISTORY);
+          if (response.ok) {
+              const data: OnlineHistoryEntry[] = await response.json();
+              const cleanSearchTerm = name.replace(/[-_]/g, ' ').toLowerCase().trim();
+              
+              // Filter photos belonging to this client
+              const clientPhotos = data.filter(item => {
+                  const fileName = item.nama.toLowerCase().replace(/[-_]/g, ' ');
+                  return fileName.includes(cleanSearchTerm);
+              });
+
+              // Sort to get latest
+              clientPhotos.sort((a, b) => new Date(b.waktu).getTime() - new Date(a.waktu).getTime());
+
+              if (clientPhotos.length > 0) {
+                  const latestPhoto = clientPhotos[0];
+                  
+                  // 2. Fetch Blob via Proxy (to bypass CORS for Clipboard)
+                  const proxiedUrl = `https://images.weserv.nl/?url=${encodeURIComponent(latestPhoto.url)}`;
+                  const imgRes = await fetch(proxiedUrl);
+                  
+                  if (imgRes.ok) {
+                      const blob = await imgRes.blob();
+                      
+                      // 3. Write to Clipboard
+                      // 'ClipboardItem' is supported in secure contexts (HTTPS/localhost)
+                      if (navigator.clipboard && navigator.clipboard.write) {
+                          await navigator.clipboard.write([
+                              new ClipboardItem({
+                                  [blob.type]: blob
+                              })
+                          ]);
+                          
+                          setClipboardMessage("Foto disalin! Silakan Paste di WA.");
+                          setTimeout(() => setClipboardMessage(null), 3000);
+                      }
+                  }
+              }
+          }
+      } catch (err) {
+          console.error("Failed to copy photo to clipboard automatically", err);
+          // Non-blocking error, continue to open WhatsApp
+      }
+
+      // Open WhatsApp
       setTimeout(() => {
           setSendingWhatsappId(null);
           const url = `https://api.whatsapp.com/send?phone=${cleanNumber}&text=${encodeURIComponent(message)}`;
@@ -1762,6 +1810,14 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
         <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 bg-green-500 text-white px-6 py-3 rounded-full shadow-lg flex items-center gap-2 animate-bounce">
             <CheckIcon />
             <span className="font-bold">Settings Saved</span>
+        </div>
+      )}
+      
+      {/* Copy Toast Notification */}
+      {clipboardMessage && (
+        <div className="fixed bottom-10 left-1/2 transform -translate-x-1/2 z-50 bg-[var(--color-accent-primary)] text-white px-6 py-3 rounded-full shadow-lg flex items-center gap-2 animate-fade-in-up">
+            <CheckIcon />
+            <span className="font-bold">{clipboardMessage}</span>
         </div>
       )}
 
