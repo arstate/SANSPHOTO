@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { DownloadIcon } from './icons/DownloadIcon';
 import { PrintIcon } from './icons/PrintIcon';
@@ -35,7 +34,6 @@ interface PreviewScreenProps {
   onSaveWhatsapp?: (number: string) => void;
   currentPaymentId?: string | null;
   savedWhatsappNumber?: string;
-  selectedFilter?: string; // New Prop
 }
 
 interface PrintModalProps {
@@ -193,8 +191,7 @@ const loadImage = (src: string): Promise<HTMLImageElement> => {
 
 const PreviewScreen: React.FC<PreviewScreenProps> = ({ 
     images, onRestart, onBack, template, onSaveHistory, event,
-    currentTake, maxTakes, onNextTake, isDownloadButtonEnabled, isAutoDownloadEnabled, printSettings, onSaveWhatsapp, currentPaymentId, savedWhatsappNumber,
-    selectedFilter
+    currentTake, maxTakes, onNextTake, isDownloadButtonEnabled, isAutoDownloadEnabled, printSettings, onSaveWhatsapp, currentPaymentId, savedWhatsappNumber
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const finalImageRef = useRef<HTMLImageElement>(null);
@@ -417,11 +414,6 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
         
         ctx.save();
         
-        // --- APPLY FILTER ---
-        if (selectedFilter && selectedFilter !== 'none') {
-            ctx.filter = selectedFilter;
-        }
-
         const slotAspectRatio = slot.width / slot.height;
         const imgAspectRatio = img.width / img.height;
         
@@ -454,10 +446,10 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
             -slot.width / 2, -slot.height / 2, slot.width, slot.height
         );
         
-        ctx.restore(); // Restores context, including resetting filter
+        ctx.restore();
       });
 
-      // Gambar templat di atasnya (No Filter Applied here because restore() was called)
+      // Gambar templat di atasnya
       ctx.drawImage(templateImg, 0, 0, canvasWidth, canvasHeight);
       
       const finalImageDataUrl = canvas.toDataURL('image/png');
@@ -482,7 +474,7 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
       setErrorMsg("Tidak dapat menghasilkan gambar akhir. Templat mungkin tidak tersedia atau ada masalah jaringan.");
       setIsLoading(false);
     }
-  }, [images, template, onSaveHistory, handleDownload, TEMPLATE_WIDTH, TEMPLATE_HEIGHT, isAutoDownloadEnabled, selectedFilter]);
+  }, [images, template, onSaveHistory, handleDownload, TEMPLATE_WIDTH, TEMPLATE_HEIGHT, isAutoDownloadEnabled]);
 
   useEffect(() => {
     // Reset refs for each new preview
@@ -506,19 +498,15 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
         onSubmit={handleWhatsappSubmit}
     />
     <div className="relative flex flex-col items-center justify-center h-full w-full">
-       {/* Back Button Disabled/Hidden if coming from filter flow, strictly per request to not allow going back */}
-       {!selectedFilter && (
-           <div className="absolute top-4 left-4">
-            <button 
-                onClick={onBack}
-                className="bg-[var(--color-bg-secondary)]/50 hover:bg-[var(--color-bg-tertiary)]/70 text-[var(--color-text-primary)] font-bold p-3 rounded-full transition-colors"
-                aria-label="Kembali"
-            >
-                <BackIcon />
-            </button>
-            </div>
-       )}
-      
+       <div className="absolute top-4 left-4">
+        <button 
+          onClick={onBack}
+          className="bg-[var(--color-bg-secondary)]/50 hover:bg-[var(--color-bg-tertiary)]/70 text-[var(--color-text-primary)] font-bold p-3 rounded-full transition-colors"
+          aria-label="Kembali"
+        >
+          <BackIcon />
+        </button>
+      </div>
       <h2 className="font-bebas text-4xl mb-4">Ini Foto Anda! (Pengambilan {currentTake}/{maxTakes})</h2>
       
       <div className="w-full max-w-6xl flex flex-col lg:flex-row justify-center items-center lg:items-start gap-8">

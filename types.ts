@@ -17,7 +17,6 @@ export enum AppState {
   EDIT_TEMPLATE_LAYOUT,
   CAPTURE,
   RETAKE_PREVIEW,
-  FILTER_SELECTION, // New: Filter Selection Screen
   RATING,
   PREVIEW,
   HISTORY,
