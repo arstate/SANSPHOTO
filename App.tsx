@@ -1145,19 +1145,22 @@ const App: React.FC = () => {
   const handleStartRetake = useCallback((photoIndex: number) => { if (settings.maxRetakes === undefined || retakesUsed >= settings.maxRetakes) return; setRetakesUsed(prev => prev + 1); setRetakingPhotoIndex(photoIndex); setAppState(AppState.CAPTURE); }, [retakesUsed, settings.maxRetakes]);
   const handleRetakeComplete = useCallback((newImage: string) => { if (retakingPhotoIndex === null) return; setCapturedImages(prev => { const newImages = [...prev]; newImages[retakingPhotoIndex] = newImage; return newImages; }); setRetakingPhotoIndex(null); setAppState(AppState.RETAKE_PREVIEW); }, [retakingPhotoIndex]);
   const handleFinishRetakePreview = useCallback((imageDataUrl: string) => {
-    // Background upload if needed, but primary flow moves to Filter
-    handleUploadToDrive(imageDataUrl);
+    // Note: Upload moved to Filter Selection screen
     setAppState(AppState.FILTER_SELECTION);
-  }, [handleUploadToDrive]);
+  }, []);
 
-  const handleFilterSelectionComplete = useCallback((filterCss: string) => {
+  const handleFilterSelectionComplete = useCallback((filterCss: string, finalImage: string) => {
       setSelectedFilter(filterCss);
+      
+      // Auto Upload triggered here
+      handleUploadToDrive(finalImage);
+
       if (currentSessionKey && currentTakeCount >= currentSessionKey.maxTakes && !(currentSessionKey.hasBeenReviewed)) {
           setAppState(AppState.RATING);
       } else {
           setAppState(AppState.PREVIEW);
       }
-  }, [currentSessionKey, currentTakeCount]);
+  }, [currentSessionKey, currentTakeCount, handleUploadToDrive]);
 
   const handleStartNextTake = useCallback(() => { if (!currentSessionKey || currentTakeCount >= currentSessionKey.maxTakes) return; const nextTake = currentTakeCount + 1; setCurrentTakeCount(nextTake); if(currentTenantId) update(ref(db, `data/${currentTenantId}/sessionKeys/${currentSessionKey.id}`), { takesUsed: nextTake }); setCapturedImages([]); setSelectedTemplate(null); setRetakesUsed(0); setRetakingPhotoIndex(null); setSelectedFilter('none'); setAppState(AppState.TEMPLATE_SELECTION); }, [currentSessionKey, currentTakeCount, currentTenantId]);
   const handleSaveHistoryFromSession = useCallback(async (imageDataUrl: string) => {
