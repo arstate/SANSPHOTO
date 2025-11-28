@@ -85,7 +85,7 @@ const PaymentVerificationScreen: React.FC<PaymentVerificationScreenProps> = ({ t
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     
-    // FIX: Add willReadFrequently: true to prevent Chrome Android Aw Snap crashes
+    // Fix Chrome Android Aw Snap
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) return;
 

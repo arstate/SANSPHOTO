@@ -42,7 +42,7 @@ const FilterSelectionScreen: React.FC<FilterSelectionScreenProps> = ({
     const canvas = canvasRef.current;
     if (!canvas) throw new Error("Canvas not initialized");
 
-    // FIX: Add willReadFrequently: true to prevent Chrome Android Aw Snap crashes
+    // Fix Chrome Android Aw Snap: willReadFrequently
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) throw new Error("Canvas context not found");
 
@@ -143,7 +143,17 @@ const FilterSelectionScreen: React.FC<FilterSelectionScreenProps> = ({
         ctx.filter = 'none';
         ctx.drawImage(templateImg, 0, 0, TEMPLATE_WIDTH, TEMPLATE_HEIGHT);
 
-        return canvas.toDataURL('image/png');
+        const dataUrl = canvas.toDataURL('image/png');
+
+        // Clean up memory
+        setTimeout(() => {
+            if(canvas) {
+                canvas.width = 1; 
+                canvas.height = 1;
+            }
+        }, 100);
+
+        return dataUrl;
     } catch (error) {
         console.error("Error generating image:", error);
         throw error;
