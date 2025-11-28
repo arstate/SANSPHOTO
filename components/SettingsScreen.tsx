@@ -5,6 +5,8 @@
 
 
 
+
+
 import React, { useState, useEffect } from 'react';
 import { Settings, FloatingObject, PriceList, PaymentEntry, OnlineHistoryEntry } from '../types';
 import { BackIcon } from './icons/BackIcon';
@@ -311,8 +313,15 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
           cleanNumber = '62' + cleanNumber.substring(1);
       }
 
+      // Unicode Escape Sequences for Emojis
+      // Camera with Flash: \uD83D\uDCF8 (📸)
+      // Sparkles: \u2728 (✨)
+      // Smiling Face with Hearts: \uD83E\uDD70 (🥰)
+      // Open File Folder: \uD83D\uDCC2 (📂)
+      // Clipboard: \uD83D\uDCCB (📋)
+
       // Default message if fetch fails
-      let message = `Halo Kak ${name}, Terima kasih sudah menggunakan jasa photoboth dari Sans Photobooth! 📸✨\n\nIni softfile foto kakak ya. Ditunggu kedatangannya kembali! 🥰`;
+      let message = `Halo Kak ${name}, Terima kasih sudah menggunakan jasa photoboth dari Sans Photobooth! \uD83D\uDCF8\u2728\n\nIni softfile foto kakak ya. Ditunggu kedatangannya kembali! \uD83E\uDD70`;
 
       try {
           const safeUserName = name.replace(/[^a-zA-Z0-9\s-_]/g, '').trim().replace(/\s+/g, '_');
@@ -326,8 +335,8 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
               
               if (matchedPhoto) {
                   // --- ENHANCEMENT: Add Specific Drive Link ---
-                  message += `\n\n📂 *Link Foto HD:*\nSupaya hasilnya makin jernih, kakak bisa download file aslinya di link ini ya:\n${matchedPhoto.url}`;
-                  message += `\n\nTerima kasih! 🥰`;
+                  message += `\n\n\uD83D\uDCC2 *Link Foto HD:*\nSupaya hasilnya makin jernih, kakak bisa download file aslinya di link ini ya:\n${matchedPhoto.url}`;
+                  message += `\n\nTerima kasih! \uD83E\uDD70`;
 
                   // Fetch image blob via proxy for clipboard
                   const proxiedUrl = `https://images.weserv.nl/?url=${encodeURIComponent(matchedPhoto.url)}`;
@@ -342,7 +351,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                   ]);
                   
                   // Force alert to pause execution and notify user to paste
-                  alert(`Foto "${matchedPhoto.nama}" berhasil disalin ke Clipboard! 📋\n\nLink Google Drive juga sudah ditambahkan ke pesan.\n\nKlik OK untuk membuka WhatsApp, lalu tekan 'Ctrl + V' (Paste) di kolom chat.`);
+                  alert(`Foto "${matchedPhoto.nama}" berhasil disalin ke Clipboard! \uD83D\uDCCB\n\nLink Google Drive juga sudah ditambahkan ke pesan.\n\nKlik OK untuk membuka WhatsApp, lalu tekan 'Ctrl + V' (Paste) di kolom chat.`);
               } else {
                   console.log("Photo not found in cloud yet, opening chat text only.");
                   alert("Foto belum ditemukan di cloud (mungkin sedang upload). Membuka chat WhatsApp dengan teks standar.");
@@ -353,8 +362,8 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
           alert("Gagal memproses otomatisasi (Clipboard/Link). Membuka chat standar.");
       } finally {
           setSendingWhatsappId(null);
-          // 4. Encode URL and Open WhatsApp with the Final Message
-          const url = `https://wa.me/${cleanNumber}?text=${encodeURIComponent(message)}`;
+          // 4. Encode URL and Open WhatsApp using api.whatsapp.com for better robustness
+          const url = `https://api.whatsapp.com/send?phone=${cleanNumber}&text=${encodeURIComponent(message)}`;
           window.open(url, '_blank');
       }
   };
