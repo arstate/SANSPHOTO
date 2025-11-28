@@ -7,6 +7,8 @@
 
 
 
+
+
 import React, { useState, useEffect } from 'react';
 import { Settings, FloatingObject, PriceList, PaymentEntry, OnlineHistoryEntry } from '../types';
 import { BackIcon } from './icons/BackIcon';
@@ -1538,7 +1540,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 {/* Payment History View */}
                 <div className="p-6 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] text-left space-y-4">
                     <h3 className="text-xl font-bold text-[var(--color-text-accent)]">Recent Payments</h3>
-                     <div className="max-h-60 overflow-y-auto scrollbar-thin space-y-2">
+                     <div className="max-h-[600px] overflow-y-auto scrollbar-thin space-y-2">
                          {payments.map(pay => (
                              <div key={pay.id} className="p-3 bg-[var(--color-bg-tertiary)] rounded flex justify-between items-center text-sm">
                                  <div>
