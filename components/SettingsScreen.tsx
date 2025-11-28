@@ -3,6 +3,8 @@
 
 
 
+
+
 import React, { useState, useEffect } from 'react';
 import { Settings, FloatingObject, PriceList, PaymentEntry, OnlineHistoryEntry } from '../types';
 import { BackIcon } from './icons/BackIcon';
@@ -293,7 +295,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
       }
   };
 
-  // Send WhatsApp Logic with Auto-Photo Clipboard
+  // Send WhatsApp Logic with Auto-Photo Clipboard & Link Inclusion
   const handleSendWhatsapp = async (payment: PaymentEntry) => {
       if (sendingWhatsappId) return;
       setSendingWhatsappId(payment.id);
@@ -309,25 +311,25 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
           cleanNumber = '62' + cleanNumber.substring(1);
       }
 
-      // 3. Prepare message with proper emojis
-      // Encoding is crucial here. Emojis and newlines need encodeURIComponent.
-      const message = `Halo Kak ${name}, Terima kasih sudah menggunakan jasa photoboth dari Sans Photobooth! 📸✨ Ini softfile foto kakak ya. Ditunggu kedatangannya kembali! 🥰`;
-      
-      // 4. Encode URL
-      const url = `https://wa.me/${cleanNumber}?text=${encodeURIComponent(message)}`;
+      // Default message if fetch fails
+      let message = `Halo Kak ${name}, Terima kasih sudah menggunakan jasa photoboth dari Sans Photobooth! 📸✨\n\nIni softfile foto kakak ya. Ditunggu kedatangannya kembali! 🥰`;
 
       try {
-          // 5. Try to fetch and copy image to clipboard
           const safeUserName = name.replace(/[^a-zA-Z0-9\s-_]/g, '').trim().replace(/\s+/g, '_');
           
+          // Fetch data from Apps Script
           const response = await fetch(SCRIPT_URL_GET_HISTORY);
           if (response.ok) {
               const data: OnlineHistoryEntry[] = await response.json();
-              // Find matching photo (newest first usually, but check name)
+              // Find matching photo (check name)
               const matchedPhoto = data.find(item => item.nama.includes(safeUserName));
               
               if (matchedPhoto) {
-                  // Fetch image blob via proxy
+                  // --- ENHANCEMENT: Add Specific Drive Link ---
+                  message += `\n\n📂 *Link Foto HD:*\nSupaya hasilnya makin jernih, kakak bisa download file aslinya di link ini ya:\n${matchedPhoto.url}`;
+                  message += `\n\nTerima kasih! 🥰`;
+
+                  // Fetch image blob via proxy for clipboard
                   const proxiedUrl = `https://images.weserv.nl/?url=${encodeURIComponent(matchedPhoto.url)}`;
                   const imgResponse = await fetch(proxiedUrl);
                   const blob = await imgResponse.blob();
@@ -340,18 +342,19 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                   ]);
                   
                   // Force alert to pause execution and notify user to paste
-                  alert(`Foto "${matchedPhoto.nama}" berhasil disalin ke Clipboard! 📋\n\nKlik OK untuk membuka WhatsApp, lalu tekan 'Ctrl + V' (Paste) di kolom chat.`);
+                  alert(`Foto "${matchedPhoto.nama}" berhasil disalin ke Clipboard! 📋\n\nLink Google Drive juga sudah ditambahkan ke pesan.\n\nKlik OK untuk membuka WhatsApp, lalu tekan 'Ctrl + V' (Paste) di kolom chat.`);
               } else {
                   console.log("Photo not found in cloud yet, opening chat text only.");
-                  alert("Foto belum ditemukan di cloud (mungkin sedang upload). Membuka chat WhatsApp dengan teks saja.");
+                  alert("Foto belum ditemukan di cloud (mungkin sedang upload). Membuka chat WhatsApp dengan teks standar.");
               }
           }
       } catch (e) {
-          console.error("Failed to copy image to clipboard", e);
-          alert("Gagal menyalin foto otomatis. Silakan download manual jika perlu.");
+          console.error("Failed to process Whatsapp automation", e);
+          alert("Gagal memproses otomatisasi (Clipboard/Link). Membuka chat standar.");
       } finally {
           setSendingWhatsappId(null);
-          // 6. Open WhatsApp
+          // 4. Encode URL and Open WhatsApp with the Final Message
+          const url = `https://wa.me/${cleanNumber}?text=${encodeURIComponent(message)}`;
           window.open(url, '_blank');
       }
   };
