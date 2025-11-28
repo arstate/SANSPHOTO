@@ -31,6 +31,7 @@ import PaymentScreen from './components/PaymentScreen';
 import PaymentVerificationScreen from './components/PaymentVerificationScreen';
 import TutorialScreen from './components/TutorialScreen';
 import ClientGalleryScreen from './components/ClientGalleryScreen';
+import FilterSelectionScreen from './components/FilterSelectionScreen';
 
 import { AppState, PhotoSlot, Settings, Template, Event, HistoryEntry, SessionKey, Review, Tenant, FloatingObject, PriceList, PaymentEntry } from './types';
 import { db, ref, onValue, set, push, update, remove, firebaseObjectToArray, query, orderByChild, equalTo, get } from './firebase';
@@ -226,6 +227,7 @@ const App: React.FC = () => {
   
   const [retakesUsed, setRetakesUsed] = useState(0);
   const [retakingPhotoIndex, setRetakingPhotoIndex] = useState<number | null>(null);
+  const [selectedFilter, setSelectedFilter] = useState<string>('none'); // CSS Filter String
   
   // Payment State
   const [selectedPriceList, setSelectedPriceList] = useState<PriceList | null>(null);
@@ -471,6 +473,7 @@ const App: React.FC = () => {
         case AppState.EVENT_SELECTION: progress = 'Memilih Event'; break;
         case AppState.TEMPLATE_SELECTION: progress = 'Memilih Template'; break;
         case AppState.RETAKE_PREVIEW: progress = 'Meninjau Foto'; break;
+        case AppState.FILTER_SELECTION: progress = 'Memilih Filter'; break;
         case AppState.RATING: progress = 'Memberikan Ulasan'; break;
         case AppState.PREVIEW: progress = 'Melihat Pratinjau Akhir'; break;
         case AppState.PRICE_SELECTION: progress = 'Memilih Paket'; break;
@@ -753,6 +756,7 @@ const App: React.FC = () => {
   const handleTemplateSelect = useCallback((template: Template) => {
     setSelectedTemplate(template);
     setCapturedImages([]);
+    setSelectedFilter('none'); // Reset filter
     if (currentSessionKey && currentTenantId) {
         const totalPhotos = [...new Set(template.photoSlots.map(slot => slot.inputId))].length;
         update(ref(db, `data/${currentTenantId}/sessionKeys/${currentSessionKey.id}`), { progress: `Sesi Foto (1/${totalPhotos})`});
@@ -943,6 +947,7 @@ const App: React.FC = () => {
         case AppState.PREVIEW: (settings.maxRetakes ?? 0) > 0 ? setAppState(AppState.RETAKE_PREVIEW) : (setCapturedImages([]), setSelectedTemplate(null), setAppState(AppState.TEMPLATE_SELECTION)); break;
         case AppState.PAYMENT_SHOW: setAppState(AppState.PRICE_SELECTION); break;
         case AppState.PAYMENT_VERIFICATION: setAppState(AppState.PAYMENT_SHOW); break;
+        case AppState.FILTER_SELECTION: break; // Do nothing, cannot go back from Filter
         default: setAppState(AppState.WELCOME);
     }
   }, [appState, settings.maxRetakes]);
@@ -994,6 +999,7 @@ const App: React.FC = () => {
     setCurrentTakeCount(0);
     setRetakesUsed(0);
     setRetakingPhotoIndex(null);
+    setSelectedFilter('none');
     setAppState(AppState.WELCOME);
   }, [currentSessionKey, currentTenantId]);
 
@@ -1130,17 +1136,30 @@ const App: React.FC = () => {
   const handleManageTenants = useCallback(() => setAppState(AppState.MANAGE_TENANTS), []);
   // Capture/Retake callbacks
   const decideNextStepAfterCapture = useCallback(() => {
-    if (currentSessionKey && currentTakeCount >= currentSessionKey.maxTakes && !(currentSessionKey.hasBeenReviewed)) setAppState(AppState.RATING);
-    else setAppState(AppState.PREVIEW);
-  }, [currentSessionKey, currentTakeCount]);
+    // OLD Logic: if (currentSessionKey && currentTakeCount >= currentSessionKey.maxTakes && !(currentSessionKey.hasBeenReviewed)) setAppState(AppState.RATING); else setAppState(AppState.PREVIEW);
+    // NEW Logic: Go to Filter Selection after capture/retake flow
+    setAppState(AppState.FILTER_SELECTION);
+  }, []);
+
   const handleCaptureComplete = useCallback((images: string[]) => { setCapturedImages(images); if ((settings.maxRetakes ?? 0) > 0) setAppState(AppState.RETAKE_PREVIEW); else decideNextStepAfterCapture(); }, [settings.maxRetakes, decideNextStepAfterCapture]);
   const handleStartRetake = useCallback((photoIndex: number) => { if (settings.maxRetakes === undefined || retakesUsed >= settings.maxRetakes) return; setRetakesUsed(prev => prev + 1); setRetakingPhotoIndex(photoIndex); setAppState(AppState.CAPTURE); }, [retakesUsed, settings.maxRetakes]);
   const handleRetakeComplete = useCallback((newImage: string) => { if (retakingPhotoIndex === null) return; setCapturedImages(prev => { const newImages = [...prev]; newImages[retakingPhotoIndex] = newImage; return newImages; }); setRetakingPhotoIndex(null); setAppState(AppState.RETAKE_PREVIEW); }, [retakingPhotoIndex]);
   const handleFinishRetakePreview = useCallback((imageDataUrl: string) => {
+    // Background upload if needed, but primary flow moves to Filter
     handleUploadToDrive(imageDataUrl);
-    decideNextStepAfterCapture();
-  }, [handleUploadToDrive, decideNextStepAfterCapture]);
-  const handleStartNextTake = useCallback(() => { if (!currentSessionKey || currentTakeCount >= currentSessionKey.maxTakes) return; const nextTake = currentTakeCount + 1; setCurrentTakeCount(nextTake); if(currentTenantId) update(ref(db, `data/${currentTenantId}/sessionKeys/${currentSessionKey.id}`), { takesUsed: nextTake }); setCapturedImages([]); setSelectedTemplate(null); setRetakesUsed(0); setRetakingPhotoIndex(null); setAppState(AppState.TEMPLATE_SELECTION); }, [currentSessionKey, currentTakeCount, currentTenantId]);
+    setAppState(AppState.FILTER_SELECTION);
+  }, [handleUploadToDrive]);
+
+  const handleFilterSelectionComplete = useCallback((filterCss: string) => {
+      setSelectedFilter(filterCss);
+      if (currentSessionKey && currentTakeCount >= currentSessionKey.maxTakes && !(currentSessionKey.hasBeenReviewed)) {
+          setAppState(AppState.RATING);
+      } else {
+          setAppState(AppState.PREVIEW);
+      }
+  }, [currentSessionKey, currentTakeCount]);
+
+  const handleStartNextTake = useCallback(() => { if (!currentSessionKey || currentTakeCount >= currentSessionKey.maxTakes) return; const nextTake = currentTakeCount + 1; setCurrentTakeCount(nextTake); if(currentTenantId) update(ref(db, `data/${currentTenantId}/sessionKeys/${currentSessionKey.id}`), { takesUsed: nextTake }); setCapturedImages([]); setSelectedTemplate(null); setRetakesUsed(0); setRetakingPhotoIndex(null); setSelectedFilter('none'); setAppState(AppState.TEMPLATE_SELECTION); }, [currentSessionKey, currentTakeCount, currentTenantId]);
   const handleSaveHistoryFromSession = useCallback(async (imageDataUrl: string) => {
     const event = events.find(e => e.id === selectedEventId);
     if (!event) return;
@@ -1210,8 +1229,9 @@ const App: React.FC = () => {
       case AppState.EDIT_TEMPLATE_LAYOUT: if (!isAdminLoggedIn || !selectedTemplate) { setAppState(AppState.WELCOME); return null; } return <EditTemplateScreen template={selectedTemplate} onSave={handleTemplateLayoutSave} onCancel={handleEditLayoutCancel} />;
       case AppState.CAPTURE: if (!selectedTemplate) { setAppState(AppState.WELCOME); return null; } return <CaptureScreen template={selectedTemplate} countdownDuration={settings.countdownDuration} flashEffectEnabled={settings.flashEffectEnabled} cameraSourceType={settings.cameraSourceType} cameraDeviceId={settings.cameraDeviceId} ipCameraUrl={settings.ipCameraUrl} ipCameraUseProxy={settings.ipCameraUseProxy} onCaptureComplete={handleCaptureComplete} onRetakeComplete={handleRetakeComplete} retakeForIndex={retakingPhotoIndex} onProgressUpdate={handleCaptureProgressUpdate} existingImages={capturedImages} />;
       case AppState.RETAKE_PREVIEW: if (!selectedTemplate) { setAppState(AppState.WELCOME); return null; } return <RetakePreviewScreen images={capturedImages} template={selectedTemplate} onStartRetake={handleStartRetake} onDone={handleFinishRetakePreview} retakesUsed={retakesUsed} maxRetakes={settings.maxRetakes ?? 0} />;
+      case AppState.FILTER_SELECTION: if (!selectedTemplate) { setAppState(AppState.WELCOME); return null; } return <FilterSelectionScreen images={capturedImages} template={selectedTemplate} onFilterSelected={handleFilterSelectionComplete} />;
       case AppState.RATING: if (!selectedEvent || !currentSessionKey || currentSessionKey.hasBeenReviewed) { setAppState(AppState.PREVIEW); return null; } return <RatingScreen eventName={selectedEvent.name} onSubmit={handleSaveReview} onSkip={handleSkipReview} settings={settings} />;
-      case AppState.PREVIEW: if (!selectedTemplate || !currentSessionKey) { setAppState(AppState.WELCOME); return null; } return <PreviewScreen images={capturedImages} onRestart={handleSessionEnd} onBack={handleBack} template={selectedTemplate} onSaveHistory={handleSaveHistoryFromSession} event={selectedEvent} currentTake={currentTakeCount} maxTakes={currentSessionKey.maxTakes} onNextTake={handleStartNextTake} isDownloadButtonEnabled={settings.isDownloadButtonEnabled ?? true} isAutoDownloadEnabled={settings.isAutoDownloadEnabled ?? true} printSettings={{ isEnabled: settings.isPrintButtonEnabled ?? true, paperSize: settings.printPaperSize ?? '4x6', colorMode: settings.printColorMode ?? 'color', isCopyInputEnabled: settings.isPrintCopyInputEnabled ?? true, maxCopies: settings.printMaxCopies ?? 5, }} onSaveWhatsapp={handleSaveWhatsappNumber} currentPaymentId={currentPaymentId} savedWhatsappNumber={currentPayment?.whatsappNumber} />;
+      case AppState.PREVIEW: if (!selectedTemplate || !currentSessionKey) { setAppState(AppState.WELCOME); return null; } return <PreviewScreen images={capturedImages} onRestart={handleSessionEnd} onBack={handleBack} template={selectedTemplate} onSaveHistory={handleSaveHistoryFromSession} event={selectedEvent} currentTake={currentTakeCount} maxTakes={currentSessionKey.maxTakes} onNextTake={handleStartNextTake} isDownloadButtonEnabled={settings.isDownloadButtonEnabled ?? true} isAutoDownloadEnabled={settings.isAutoDownloadEnabled ?? true} printSettings={{ isEnabled: settings.isPrintButtonEnabled ?? true, paperSize: settings.printPaperSize ?? '4x6', colorMode: settings.printColorMode ?? 'color', isCopyInputEnabled: settings.isPrintCopyInputEnabled ?? true, maxCopies: settings.printMaxCopies ?? 5, }} onSaveWhatsapp={handleSaveWhatsappNumber} currentPaymentId={currentPaymentId} savedWhatsappNumber={currentPayment?.whatsappNumber} selectedFilter={selectedFilter} />;
       default: return <WelcomeScreen onStart={handleStartSession} onSettingsClick={handleGoToSettings} onViewHistory={handleViewHistory} onViewOnlineHistory={handleViewOnlineHistory} isAdminLoggedIn={isAdminLoggedIn} isCaching={isCaching} cachingProgress={cachingProgress} onAdminLoginClick={handleOpenAdminLogin} onAdminLogoutClick={handleAdminLogout} isLoading={isSessionLoading} settings={settings} reviews={reviews} />;
     }
   };

@@ -17,6 +17,7 @@ export enum AppState {
   EDIT_TEMPLATE_LAYOUT,
   CAPTURE,
   RETAKE_PREVIEW,
+  FILTER_SELECTION, // New: Filter Selection Screen
   RATING,
   PREVIEW,
   HISTORY,
@@ -64,6 +65,12 @@ export interface FloatingObject {
   // Animation
   isSpinning: boolean;
   spinSpeed: number; // 0.001 to 0.1
+}
+
+export interface FilterOption {
+  id: string;
+  name: string;
+  cssFilter: string;
 }
 
 export interface PriceList {

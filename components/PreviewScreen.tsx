@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { DownloadIcon } from './icons/DownloadIcon';
 import { PrintIcon } from './icons/PrintIcon';
@@ -34,6 +35,7 @@ interface PreviewScreenProps {
   onSaveWhatsapp?: (number: string) => void;
   currentPaymentId?: string | null;
   savedWhatsappNumber?: string;
+  selectedFilter?: string; // New Prop for Filter
 }
 
 interface PrintModalProps {
@@ -191,7 +193,7 @@ const loadImage = (src: string): Promise<HTMLImageElement> => {
 
 const PreviewScreen: React.FC<PreviewScreenProps> = ({ 
     images, onRestart, onBack, template, onSaveHistory, event,
-    currentTake, maxTakes, onNextTake, isDownloadButtonEnabled, isAutoDownloadEnabled, printSettings, onSaveWhatsapp, currentPaymentId, savedWhatsappNumber
+    currentTake, maxTakes, onNextTake, isDownloadButtonEnabled, isAutoDownloadEnabled, printSettings, onSaveWhatsapp, currentPaymentId, savedWhatsappNumber, selectedFilter
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const finalImageRef = useRef<HTMLImageElement>(null);
@@ -414,6 +416,11 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
         
         ctx.save();
         
+        // Apply Filter to Photo (if supported by browser canvas ctx)
+        if (selectedFilter && selectedFilter !== 'none') {
+            ctx.filter = selectedFilter;
+        }
+
         const slotAspectRatio = slot.width / slot.height;
         const imgAspectRatio = img.width / img.height;
         
@@ -449,7 +456,7 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
         ctx.restore();
       });
 
-      // Gambar templat di atasnya
+      // Gambar templat di atasnya (No Filter)
       ctx.drawImage(templateImg, 0, 0, canvasWidth, canvasHeight);
       
       const finalImageDataUrl = canvas.toDataURL('image/png');
@@ -474,7 +481,7 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
       setErrorMsg("Tidak dapat menghasilkan gambar akhir. Templat mungkin tidak tersedia atau ada masalah jaringan.");
       setIsLoading(false);
     }
-  }, [images, template, onSaveHistory, handleDownload, TEMPLATE_WIDTH, TEMPLATE_HEIGHT, isAutoDownloadEnabled]);
+  }, [images, template, onSaveHistory, handleDownload, TEMPLATE_WIDTH, TEMPLATE_HEIGHT, isAutoDownloadEnabled, selectedFilter]);
 
   useEffect(() => {
     // Reset refs for each new preview
