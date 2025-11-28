@@ -25,6 +25,7 @@ import { DollarIcon } from './icons/DollarIcon';
 import { PrintIcon } from './icons/PrintIcon';
 import { CheckIcon } from './icons/CheckIcon';
 import { WhatsAppIcon } from './icons/WhatsAppIcon';
+import { GlobeIcon } from './icons/GlobeIcon';
 
 interface SettingsScreenProps {
     settings: Settings;
@@ -299,13 +300,24 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
       }, 1000);
   };
 
-  // Send WhatsApp Logic with Auto-Photo Clipboard & Link Inclusion
+  const generateClientWebLink = (userName: string) => {
+      const safeName = userName.replace(/[^a-zA-Z0-9\s-_]/g, '').trim().replace(/\s+/g, '_');
+      return `${window.location.origin}/#/${safeName}`;
+  };
+
+  const handleOpenClientWeb = (userName: string) => {
+      const link = generateClientWebLink(userName);
+      window.open(link, '_blank');
+  };
+
+  // Send WhatsApp Logic with Web Link
   const handleSendWhatsapp = async (payment: PaymentEntry) => {
       if (sendingWhatsappId) return;
       setSendingWhatsappId(payment.id);
 
       const phone = payment.whatsappNumber!;
       const name = payment.userName;
+      const webLink = generateClientWebLink(name);
 
       // 1. Clean number (remove non-digits)
       let cleanNumber = phone.replace(/\D/g, '');
@@ -315,59 +327,15 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
           cleanNumber = '62' + cleanNumber.substring(1);
       }
 
-      // Unicode Escape Sequences for Emojis
-      // Camera with Flash: \uD83D\uDCF8 (📸)
-      // Sparkles: \u2728 (✨)
-      // Smiling Face with Hearts: \uD83E\uDD70 (🥰)
-      // Open File Folder: \uD83D\uDCC2 (📂)
-      // Clipboard: \uD83D\uDCCB (📋)
+      // Default message with Web Link
+      let message = `Halo Kak ${name}, Terima kasih sudah menggunakan jasa photoboth dari Sans Photobooth! \uD83D\uDCF8\u2728\n\nBerikut link galeri foto khusus untuk kakak:\n${webLink}\n\nFoto bisa didownload sepuasnya dari link tersebut. Ditunggu kedatangannya kembali! \uD83E\uDD70`;
 
-      // Default message if fetch fails
-      let message = `Halo Kak ${name}, Terima kasih sudah menggunakan jasa photoboth dari Sans Photobooth! \uD83D\uDCF8\u2728\n\nIni softfile foto kakak ya. Ditunggu kedatangannya kembali! \uD83E\uDD70`;
-
-      try {
-          const safeUserName = name.replace(/[^a-zA-Z0-9\s-_]/g, '').trim().replace(/\s+/g, '_');
-          
-          // Fetch data from Apps Script
-          const response = await fetch(SCRIPT_URL_GET_HISTORY);
-          if (response.ok) {
-              const data: OnlineHistoryEntry[] = await response.json();
-              // Find matching photo (check name)
-              const matchedPhoto = data.find(item => item.nama.includes(safeUserName));
-              
-              if (matchedPhoto) {
-                  // --- ENHANCEMENT: Add Specific Drive Link ---
-                  message += `\n\n\uD83D\uDCC2 *Link Foto HD:*\nSupaya hasilnya makin jernih, kakak bisa download file aslinya di link ini ya:\n${matchedPhoto.url}`;
-                  message += `\n\nTerima kasih! \uD83E\uDD70`;
-
-                  // Fetch image blob via proxy for clipboard
-                  const proxiedUrl = `https://images.weserv.nl/?url=${encodeURIComponent(matchedPhoto.url)}`;
-                  const imgResponse = await fetch(proxiedUrl);
-                  const blob = await imgResponse.blob();
-                  
-                  // Write to clipboard
-                  await navigator.clipboard.write([
-                      new ClipboardItem({
-                          [blob.type]: blob
-                      })
-                  ]);
-                  
-                  // Force alert to pause execution and notify user to paste
-                  alert(`Foto "${matchedPhoto.nama}" berhasil disalin ke Clipboard! \uD83D\uDCCB\n\nLink Google Drive juga sudah ditambahkan ke pesan.\n\nKlik OK untuk membuka WhatsApp, lalu tekan 'Ctrl + V' (Paste) di kolom chat.`);
-              } else {
-                  console.log("Photo not found in cloud yet, opening chat text only.");
-                  alert("Foto belum ditemukan di cloud (mungkin sedang upload). Membuka chat WhatsApp dengan teks standar.");
-              }
-          }
-      } catch (e) {
-          console.error("Failed to process Whatsapp automation", e);
-          alert("Gagal memproses otomatisasi (Clipboard/Link). Membuka chat standar.");
-      } finally {
+      // Simulating a delay/process then opening WA
+      setTimeout(() => {
           setSendingWhatsappId(null);
-          // 4. Encode URL and Open WhatsApp using api.whatsapp.com for better robustness
           const url = `https://api.whatsapp.com/send?phone=${cleanNumber}&text=${encodeURIComponent(message)}`;
           window.open(url, '_blank');
-      }
+      }, 1000);
   };
 
   // Payment Photo Viewing Logic (Gallery Support)
@@ -1597,11 +1565,18 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                                                 <EyeIcon />
                                             )}
                                         </button>
+                                        <button 
+                                            onClick={() => handleOpenClientWeb(pay.userName)}
+                                            className="p-2 bg-purple-500/20 hover:bg-purple-500/40 text-purple-400 rounded-full transition-colors"
+                                            title="Open Web Link"
+                                        >
+                                            <GlobeIcon />
+                                        </button>
                                         {pay.whatsappNumber && (
                                             <button 
                                                 onClick={() => handleSendWhatsapp(pay)}
                                                 className="p-2 bg-green-500/20 hover:bg-green-500/40 text-green-500 rounded-full transition-colors disabled:opacity-50"
-                                                title="Send to WhatsApp (Auto-Copy Photo)"
+                                                title="Send Web Link to WhatsApp"
                                                 disabled={!!sendingWhatsappId}
                                             >
                                                 {sendingWhatsappId === pay.id ? (

@@ -22,6 +22,7 @@ export enum AppState {
   HISTORY,
   ONLINE_HISTORY,
   MANAGE_TENANTS,
+  CLIENT_GALLERY, // New: Client specific gallery page
 }
 
 export interface PhotoSlot {

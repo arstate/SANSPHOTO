@@ -29,6 +29,7 @@ import PriceSelectionScreen from './components/PriceSelectionScreen';
 import PaymentScreen from './components/PaymentScreen';
 import PaymentVerificationScreen from './components/PaymentVerificationScreen';
 import TutorialScreen from './components/TutorialScreen';
+import ClientGalleryScreen from './components/ClientGalleryScreen';
 
 import { AppState, PhotoSlot, Settings, Template, Event, HistoryEntry, SessionKey, Review, Tenant, FloatingObject, PriceList, PaymentEntry } from './types';
 import { db, ref, onValue, off, set, push, update, remove, firebaseObjectToArray, query, orderByChild, equalTo, get } from './firebase';
@@ -210,6 +211,7 @@ const App: React.FC = () => {
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [currentTenantId, setCurrentTenantId] = useState<string | null>(null);
   const [tenantNotFound, setTenantNotFound] = useState(false);
+  const [clientGalleryName, setClientGalleryName] = useState<string | null>(null);
 
   const [currentSessionKey, setCurrentSessionKey] = useState<SessionKey | null>(null);
   const [currentTakeCount, setCurrentTakeCount] = useState(0);
@@ -246,14 +248,23 @@ const App: React.FC = () => {
         if (path === '') {
             setCurrentTenantId('master');
             setTenantNotFound(false);
+            setClientGalleryName(null);
         } else {
             const tenant = allTenants.find(t => t.path === path);
             if (tenant && tenant.isActive) {
                 setCurrentTenantId(tenant.id);
                 setTenantNotFound(false);
+                setClientGalleryName(null);
+            } else if (path.length > 0 && path !== 'master') {
+                // If path is not a tenant, treat it as a Client Gallery URL
+                setClientGalleryName(path);
+                setAppState(AppState.CLIENT_GALLERY);
+                setTenantNotFound(false);
+                setCurrentTenantId(null); 
             } else {
                 setCurrentTenantId(null);
                 setTenantNotFound(true);
+                setClientGalleryName(null);
             }
         }
     };
@@ -266,7 +277,9 @@ const App: React.FC = () => {
     });
 
     window.addEventListener('hashchange', checkPath);
-    checkPath(); // Initial check on load
+    // checkPath(); // Initial check on load - Handled by the listener first emit or manual call below if needed
+    // Actually, we need to wait for tenants to load to check path correctly.
+    // The onValue fires immediately with current data, so we are good.
 
     return () => {
         off(tenantsRef, 'value', onValueListener);
@@ -446,7 +459,8 @@ const App: React.FC = () => {
   
   useEffect(() => {
     const container = document.getElementById('app-container');
-    container?.classList.toggle('responsive-mode', appState === AppState.ONLINE_HISTORY);
+    const isResponsive = appState === AppState.ONLINE_HISTORY || appState === AppState.CLIENT_GALLERY;
+    container?.classList.toggle('responsive-mode', isResponsive);
   }, [appState]);
 
   useEffect(() => {
@@ -1136,6 +1150,11 @@ const App: React.FC = () => {
   }, [events, selectedEventId]);
 
   const renderContent = () => {
+    // If we're in Client Gallery Mode, skip tenant checks (as it relies on external script)
+    if (appState === AppState.CLIENT_GALLERY && clientGalleryName) {
+        return <ClientGalleryScreen clientName={clientGalleryName} />;
+    }
+
     if (tenantNotFound) return <TenantNotFoundScreen />;
     if (!currentTenantId) return <div className="flex items-center justify-center h-full"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div></div>;
     
