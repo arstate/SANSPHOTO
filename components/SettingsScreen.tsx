@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useEffect } from 'react';
 import { Settings, FloatingObject, PriceList, PaymentEntry, OnlineHistoryEntry } from '../types';
 import { BackIcon } from './icons/BackIcon';
@@ -99,6 +100,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
   // View Payment Photo Gallery State
   const [viewingPhotos, setViewingPhotos] = useState<OnlineHistoryEntry[] | null>(null);
   const [isFindingPhoto, setIsFindingPhoto] = useState<string | null>(null); // Stores ID of payment being searched
+  const [sendingWhatsappId, setSendingWhatsappId] = useState<string | null>(null); // Stores ID of payment being sent to WA
   const [downloadingPhotoIds, setDownloadingPhotoIds] = useState<string[]>([]);
 
   const isLight = settings.theme === 'light';
@@ -289,8 +291,14 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
       }
   };
 
-  // Send WhatsApp Logic
-  const handleSendWhatsapp = (phone: string, name: string) => {
+  // Send WhatsApp Logic with Auto-Photo Clipboard
+  const handleSendWhatsapp = async (payment: PaymentEntry) => {
+      if (sendingWhatsappId) return;
+      setSendingWhatsappId(payment.id);
+
+      const phone = payment.whatsappNumber!;
+      const name = payment.userName;
+
       // 1. Clean number (remove non-digits)
       let cleanNumber = phone.replace(/\D/g, '');
       
@@ -299,14 +307,48 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
           cleanNumber = '62' + cleanNumber.substring(1);
       }
 
-      // 3. Prepare message
+      // 3. Prepare message with proper emojis
       const message = `Halo Kak ${name}, Terima kasih sudah menggunakan jasa photoboth dari Sans Photobooth! 📸✨ Ini softfile foto kakak ya. Ditunggu kedatangannya kembali! 🥰`;
       
-      // 4. Encode
+      // 4. Encode URL
       const url = `https://wa.me/${cleanNumber}?text=${encodeURIComponent(message)}`;
-      
-      // 5. Open
-      window.open(url, '_blank');
+
+      try {
+          // 5. Try to fetch and copy image to clipboard
+          const safeUserName = name.replace(/[^a-zA-Z0-9\s-_]/g, '').trim().replace(/\s+/g, '_');
+          
+          const response = await fetch(SCRIPT_URL_GET_HISTORY);
+          if (response.ok) {
+              const data: OnlineHistoryEntry[] = await response.json();
+              // Find matching photo
+              const matchedPhoto = data.find(item => item.nama.includes(safeUserName));
+              
+              if (matchedPhoto) {
+                  // Fetch image blob via proxy
+                  const proxiedUrl = `https://images.weserv.nl/?url=${encodeURIComponent(matchedPhoto.url)}`;
+                  const imgResponse = await fetch(proxiedUrl);
+                  const blob = await imgResponse.blob();
+                  
+                  // Write to clipboard
+                  await navigator.clipboard.write([
+                      new ClipboardItem({
+                          [blob.type]: blob
+                      })
+                  ]);
+                  
+                  alert(`Foto "${matchedPhoto.nama}" berhasil disalin! Silakan Paste (Ctrl+V) di chat WhatsApp.`);
+              } else {
+                  console.log("Photo not found in cloud yet, opening chat text only.");
+              }
+          }
+      } catch (e) {
+          console.error("Failed to copy image to clipboard", e);
+          // Continue opening WhatsApp even if image copy fails
+      } finally {
+          setSendingWhatsappId(null);
+          // 6. Open WhatsApp
+          window.open(url, '_blank');
+      }
   };
 
   // Payment Photo Viewing Logic (Gallery Support)
@@ -325,14 +367,11 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
           const data: OnlineHistoryEntry[] = await response.json();
           
           // Filter photos that match the username
-          // Logic: The filename includes the sanitized username at the end
-          // Format: sans-photo-{timestamp}-{username}.png
           const matchedPhotos = data.filter(item => 
               item.nama.includes(safeUserName)
           );
 
           if (matchedPhotos.length > 0) {
-              // Sort descending by name (timestamp likely in name) or rely on API order
               matchedPhotos.sort((a, b) => b.nama.localeCompare(a.nama));
               setViewingPhotos(matchedPhotos);
           } else {
@@ -1183,7 +1222,6 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
             </div>
            </div>
         );
-// ... rest of the file (Security, Content, Payment, Reviews, Master cases remain unchanged) ...
       case 'security':
         return (
            <div className="space-y-6">
@@ -1514,11 +1552,16 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                                      </button>
                                      {pay.whatsappNumber && (
                                          <button 
-                                            onClick={() => handleSendWhatsapp(pay.whatsappNumber!, pay.userName)}
-                                            className="p-2 bg-green-500/20 hover:bg-green-500/40 text-green-500 rounded-full transition-colors"
-                                            title="Send to WhatsApp"
+                                            onClick={() => handleSendWhatsapp(pay)}
+                                            className="p-2 bg-green-500/20 hover:bg-green-500/40 text-green-500 rounded-full transition-colors disabled:opacity-50"
+                                            title="Send to WhatsApp (Auto-Copy Photo)"
+                                            disabled={!!sendingWhatsappId}
                                          >
-                                             <WhatsAppIcon />
+                                             {sendingWhatsappId === pay.id ? (
+                                                 <div className="animate-spin h-4 w-4 border-2 border-green-500 border-t-transparent rounded-full"></div>
+                                             ) : (
+                                                 <WhatsAppIcon />
+                                             )}
                                          </button>
                                      )}
                                      <button 
