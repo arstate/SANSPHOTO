@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import WelcomeScreen from './components/WelcomeScreen';
 import TemplateSelection from './components/TemplateSelection';
@@ -32,7 +33,7 @@ import TutorialScreen from './components/TutorialScreen';
 import ClientGalleryScreen from './components/ClientGalleryScreen';
 
 import { AppState, PhotoSlot, Settings, Template, Event, HistoryEntry, SessionKey, Review, Tenant, FloatingObject, PriceList, PaymentEntry } from './types';
-import { db, ref, onValue, off, set, push, update, remove, firebaseObjectToArray, query, orderByChild, equalTo, get } from './firebase';
+import { db, ref, onValue, set, push, update, remove, firebaseObjectToArray, query, orderByChild, equalTo, get } from './firebase';
 import { getAllHistoryEntries, addHistoryEntry, deleteHistoryEntry, getCachedImage, storeImageInCache } from './utils/db';
 import { FullscreenIcon } from './components/icons/FullscreenIcon';
 import useFullscreenLock from './hooks/useFullscreenLock';
@@ -269,7 +270,7 @@ const App: React.FC = () => {
         }
     };
 
-    const onValueListener = onValue(tenantsRef, (snapshot) => {
+    const unsubscribeTenants = onValue(tenantsRef, (snapshot) => {
         const fetchedTenants = firebaseObjectToArray<Tenant>(snapshot.val());
         setTenants(fetchedTenants);
         allTenants = fetchedTenants;
@@ -277,12 +278,9 @@ const App: React.FC = () => {
     });
 
     window.addEventListener('hashchange', checkPath);
-    // checkPath(); // Initial check on load - Handled by the listener first emit or manual call below if needed
-    // Actually, we need to wait for tenants to load to check path correctly.
-    // The onValue fires immediately with current data, so we are good.
 
     return () => {
-        off(tenantsRef, 'value', onValueListener);
+        unsubscribeTenants();
         window.removeEventListener('hashchange', checkPath);
     };
   }, []);
@@ -389,7 +387,7 @@ const App: React.FC = () => {
     const reviewsRef = ref(db, `${dataPath}/reviews`);
     const paymentsRef = ref(db, `${dataPath}/payments`);
 
-    const settingsListener = onValue(settingsRef, (snapshot) => {
+    const unsubscribeSettings = onValue(settingsRef, (snapshot) => {
       if (snapshot.exists()) {
         const val = snapshot.val();
         setSettings({ ...DEFAULT_SETTINGS, ...val });
@@ -399,7 +397,8 @@ const App: React.FC = () => {
       }
       else set(settingsRef, DEFAULT_SETTINGS);
     });
-    const templatesListener = onValue(templatesRef, (snapshot) => {
+    
+    const unsubscribeTemplates = onValue(templatesRef, (snapshot) => {
         if (snapshot.exists()) {
             const fetchedTemplates = firebaseObjectToArray<Template>(snapshot.val());
             setTemplates(fetchedTemplates);
@@ -410,12 +409,13 @@ const App: React.FC = () => {
             setTemplates([]);
         }
     });
-    const eventsListener = onValue(eventsRef, (snapshot) => setEvents(firebaseObjectToArray<Event>(snapshot.val())));
-    const sessionKeysListener = onValue(sessionKeysRef, (snapshot) => setSessionKeys(firebaseObjectToArray<SessionKey>(snapshot.val())));
-    const reviewsListener = onValue(reviewsRef, (snapshot) => setReviews(firebaseObjectToArray<Review>(snapshot.val()).sort((a, b) => Number(b.timestamp) - Number(a.timestamp))));
+    
+    const unsubscribeEvents = onValue(eventsRef, (snapshot) => setEvents(firebaseObjectToArray<Event>(snapshot.val())));
+    const unsubscribeSessionKeys = onValue(sessionKeysRef, (snapshot) => setSessionKeys(firebaseObjectToArray<SessionKey>(snapshot.val())));
+    const unsubscribeReviews = onValue(reviewsRef, (snapshot) => setReviews(firebaseObjectToArray<Review>(snapshot.val()).sort((a, b) => Number(b.timestamp) - Number(a.timestamp))));
     
     // Payment Listener with Auto-Expiration & Auto-Start
-    const paymentsListener = onValue(paymentsRef, (snapshot) => {
+    const unsubscribePayments = onValue(paymentsRef, (snapshot) => {
         const fetchedPayments = firebaseObjectToArray<PaymentEntry>(snapshot.val()).sort((a,b) => b.timestamp - a.timestamp);
         setPayments(fetchedPayments);
 
@@ -445,12 +445,12 @@ const App: React.FC = () => {
     });
 
     return () => {
-      off(settingsRef, 'value', settingsListener);
-      off(templatesRef, 'value', templatesListener);
-      off(eventsRef, 'value', eventsListener);
-      off(sessionKeysRef, 'value', sessionKeysListener);
-      off(reviewsRef, 'value', reviewsListener);
-      off(paymentsRef, 'value', paymentsListener);
+      unsubscribeSettings();
+      unsubscribeTemplates();
+      unsubscribeEvents();
+      unsubscribeSessionKeys();
+      unsubscribeReviews();
+      unsubscribePayments();
     };
   }, [currentTenantId, cacheAllTemplates, cacheImage, currentPaymentId, appState, currentSessionKey]);
 
