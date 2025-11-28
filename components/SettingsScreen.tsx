@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Settings, FloatingObject, PriceList, PaymentEntry, OnlineHistoryEntry } from '../types';
 import { BackIcon } from './icons/BackIcon';
@@ -27,8 +26,6 @@ import { PrintIcon } from './icons/PrintIcon';
 import { CheckIcon } from './icons/CheckIcon';
 import { WhatsAppIcon } from './icons/WhatsAppIcon';
 import { GlobeIcon } from './icons/GlobeIcon';
-import { WifiIcon } from './icons/WifiIcon';
-import NetworkTestScreen from './NetworkTestScreen';
 
 interface SettingsScreenProps {
     settings: Settings;
@@ -58,7 +55,7 @@ export const GOOGLE_FONTS = [
   { name: 'Roboto Mono', value: "'Roboto Mono', monospace" },
 ];
 
-type SettingsCategory = 'general' | 'appearance' | 'security' | 'content' | 'payment' | 'reviews' | 'master' | 'network';
+type SettingsCategory = 'general' | 'appearance' | 'security' | 'content' | 'payment' | 'reviews' | 'master';
 
 // URL to fetch list of photos (Same as OnlineHistoryScreen)
 const SCRIPT_URL_GET_HISTORY = 'https://script.google.com/macros/s/AKfycbwbnlO9vk95yTKeHFFilhJbfFcjibH80sFzsA5II3BAkuNudCTabRNdBUhYlCEHHO5CYQ/exec';
@@ -1801,8 +1798,6 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
             </div>
           </div>
         ) : null;
-      case 'network':
-        return <NetworkTestScreen />;
       default:
         return null;
     }
@@ -1936,12 +1931,6 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                  icon={<ReviewsIcon />}
                  isActive={activeCategory === 'reviews'}
                  onClick={() => setActiveCategory('reviews')}
-               />
-               <CategoryButton 
-                 label="Network"
-                 icon={<WifiIcon />}
-                 isActive={activeCategory === 'network'}
-                 onClick={() => setActiveCategory('network')}
                />
                {isMasterAdmin && (
                   <CategoryButton 
