@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Settings, FloatingObject, PriceList, PaymentEntry, OnlineHistoryEntry } from '../types';
 import { BackIcon } from './icons/BackIcon';
@@ -25,7 +24,6 @@ import { UploadingIcon } from './icons/UploadingIcon';
 import { DollarIcon } from './icons/DollarIcon';
 import { PrintIcon } from './icons/PrintIcon';
 import { CheckIcon } from './icons/CheckIcon';
-import { WhatsAppIcon } from './icons/WhatsAppIcon';
 
 interface SettingsScreenProps {
     settings: Settings;
@@ -288,28 +286,31 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
       }
   };
 
-  // Logic to fetch photos for admin usage (send to WA)
-  const fetchPhotosForPayment = async (payment: PaymentEntry): Promise<OnlineHistoryEntry[]> => {
-      const safeUserName = payment.userName.replace(/[^a-zA-Z0-9\s-_]/g, '').trim().replace(/\s+/g, '_');
-      if (!safeUserName) return [];
-
-      const response = await fetch(SCRIPT_URL_GET_HISTORY);
-      if (!response.ok) throw new Error("Failed to fetch photo list");
-      
-      const data: OnlineHistoryEntry[] = await response.json();
-      const matchedPhotos = data.filter(item => item.nama.includes(safeUserName));
-      return matchedPhotos.sort((a, b) => b.nama.localeCompare(a.nama));
-  };
-
   // Payment Photo Viewing Logic (Gallery Support)
   const handleViewPaymentPhoto = async (payment: PaymentEntry) => {
       if (isFindingPhoto) return;
       setIsFindingPhoto(payment.id);
 
       try {
-          const matchedPhotos = await fetchPhotosForPayment(payment);
+          const safeUserName = payment.userName.replace(/[^a-zA-Z0-9\s-_]/g, '').trim().replace(/\s+/g, '_');
+          if (!safeUserName) throw new Error("Invalid username format");
+
+          // Fetch list from Google Apps Script
+          const response = await fetch(SCRIPT_URL_GET_HISTORY);
+          if (!response.ok) throw new Error("Failed to fetch photo list");
+          
+          const data: OnlineHistoryEntry[] = await response.json();
+          
+          // Filter photos that match the username
+          // Logic: The filename includes the sanitized username at the end
+          // Format: sans-photo-{timestamp}-{username}.png
+          const matchedPhotos = data.filter(item => 
+              item.nama.includes(safeUserName)
+          );
 
           if (matchedPhotos.length > 0) {
+              // Sort descending by name (timestamp likely in name) or rely on API order
+              matchedPhotos.sort((a, b) => b.nama.localeCompare(a.nama));
               setViewingPhotos(matchedPhotos);
           } else {
               alert(`Photos for user "${payment.userName}" not found in cloud storage. They might not be uploaded yet.`);
@@ -347,44 +348,6 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
       } finally {
           setDownloadingPhotoIds(prev => prev.filter(id => id !== photo.nama));
       }
-  };
-
-  const handleSendWhatsApp = async (payment: PaymentEntry) => {
-      if (!payment.whatsappNumber) return;
-      
-      // 1. Sanitize number (Replace 08... with 628...)
-      let phone = payment.whatsappNumber.replace(/\D/g, ''); // Remove non-numeric
-      if (phone.startsWith('0')) {
-          phone = '62' + phone.slice(1);
-      }
-
-      // 2. Prepare Message
-      const message = `Halo Kak ${payment.userName}, 
-      
-Terima kasih telah menggunakan jasa Sans Photobooth! 
-Berikut adalah softfile foto kakak. 
-
-Semoga suka ya! Jangan lupa tag kami di sosial media! 📸✨`;
-
-      const encodedMessage = encodeURIComponent(message);
-      
-      // 3. Auto-download photo so admin can drag-drop
-      // We'll try to fetch the most recent photo
-      try {
-          const photos = await fetchPhotosForPayment(payment);
-          if (photos.length > 0) {
-              const recentPhoto = photos[0];
-              // Trigger download
-              await handleDownloadPhoto(recentPhoto);
-          } else {
-              alert("Foto belum tersedia di server. Chat akan dibuka tanpa foto otomatis.");
-          }
-      } catch (e) {
-          console.error("Failed to auto-download for WA", e);
-      }
-
-      // 4. Open WhatsApp
-      window.open(`https://wa.me/${phone}?text=${encodedMessage}`, '_blank');
   };
 
   const handleConfigurePrinter = () => {
@@ -510,25 +473,6 @@ Semoga suka ya! Jangan lupa tag kami di sosial media! 📸✨`;
                         min="0"
                         className="mt-1 block w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md shadow-sm py-2 px-3 text-[var(--color-text-primary)] focus:outline-none focus:ring-[var(--color-border-focus)] focus:border-[var(--color-border-focus)] sm:text-sm"
                     />
-                </div>
-                <div className="border-t border-[var(--color-border-primary)] pt-4">
-                  <label htmlFor="isAutoFullscreenEnabled" className="flex items-center justify-between cursor-pointer">
-                      <div>
-                          <span className="block text-sm font-medium text-[var(--color-text-secondary)]">Auto Fullscreen on Start</span>
-                          <p className="text-xs text-[var(--color-text-muted)]">Automatically enters fullscreen mode on the first click/touch.</p>
-                      </div>
-                      <div className="relative">
-                          <input
-                              type="checkbox"
-                              id="isAutoFullscreenEnabled"
-                              name="isAutoFullscreenEnabled"
-                              checked={settings.isAutoFullscreenEnabled ?? false}
-                              onChange={handleSettingsInputChange}
-                              className="sr-only peer"
-                          />
-                          <div className="w-11 h-6 bg-[var(--color-bg-tertiary)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--color-accent-primary)]"></div>
-                      </div>
-                  </label>
                 </div>
             </div>
 
@@ -1528,18 +1472,6 @@ Semoga suka ya! Jangan lupa tag kami di sosial media! 📸✨`;
                                      <span className={`px-2 py-1 rounded text-xs font-bold uppercase ${pay.status === 'verified' ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
                                          {pay.status}
                                      </span>
-                                     
-                                     {/* WhatsApp Button for Admin */}
-                                     {pay.whatsappNumber && (
-                                         <button 
-                                            onClick={() => handleSendWhatsApp(pay)}
-                                            className="p-2 bg-[#25D366]/20 hover:bg-[#25D366]/40 text-[#25D366] rounded-full transition-colors"
-                                            title="Send to WhatsApp"
-                                         >
-                                             <WhatsAppIcon />
-                                         </button>
-                                     )}
-
                                      <button 
                                         onClick={() => handleViewPaymentPhoto(pay)}
                                         className="p-2 bg-[var(--color-info)]/20 hover:bg-[var(--color-info)]/40 text-[var(--color-info)] rounded-full transition-colors disabled:opacity-50"
@@ -1865,7 +1797,7 @@ Semoga suka ya! Jangan lupa tag kami di sosial media! 📸✨`;
                 padding: 0.5rem 0.75rem;
                 color: var(--color-text-primary);
             }
-            .input-style {
+            .input-style:focus {
                 outline: none;
                 --tw-ring-color: var(--color-border-focus);
                 --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);

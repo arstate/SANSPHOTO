@@ -1,4 +1,12 @@
 
+
+
+
+
+
+
+
+
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import WelcomeScreen from './components/WelcomeScreen';
 import TemplateSelection from './components/TemplateSelection';
@@ -30,13 +38,13 @@ import PriceSelectionScreen from './components/PriceSelectionScreen';
 import PaymentScreen from './components/PaymentScreen';
 import PaymentVerificationScreen from './components/PaymentVerificationScreen';
 import TutorialScreen from './components/TutorialScreen';
-import PaymentMethodSelectionScreen from './components/PaymentMethodSelectionScreen';
 
 import { AppState, PhotoSlot, Settings, Template, Event, HistoryEntry, SessionKey, Review, Tenant, FloatingObject, PriceList, PaymentEntry } from './types';
 import { db, ref, onValue, off, set, push, update, remove, firebaseObjectToArray, query, orderByChild, equalTo, get } from './firebase';
 import { getAllHistoryEntries, addHistoryEntry, deleteHistoryEntry, getCachedImage, storeImageInCache } from './utils/db';
 import { FullscreenIcon } from './components/icons/FullscreenIcon';
 import useFullscreenLock from './hooks/useFullscreenLock';
+
 // URL Google Apps Script untuk menangani unggahan
 const SCRIPT_URL_RETAKE = 'https://script.google.com/macros/s/AKfycbwZY1besq9swP1LsqIlHAiekq5MAr4pJ_DAJtbPTDSD-U_hPngd4tztkYJtnAHdVT0J9w/exec';
 
@@ -76,7 +84,6 @@ const DEFAULT_SETTINGS: Settings = {
   isPinLockEnabled: false,
   fullscreenPin: '1234',
   isStrictKioskMode: false,
-  isAutoFullscreenEnabled: false,
   isSessionCodeEnabled: true,
   isPaymentEnabled: false, // Default off
   freePlayMaxTakes: 1,
@@ -229,36 +236,10 @@ const App: React.FC = () => {
   // Payment State
   const [selectedPriceList, setSelectedPriceList] = useState<PriceList | null>(null);
   const [currentPaymentId, setCurrentPaymentId] = useState<string | null>(null);
-  const [tempUserName, setTempUserName] = useState<string>('');
 
   const cachingSessionRef = useRef(0);
 
   useFullscreenLock(!!settings.isStrictKioskMode);
-
-  // Auto-fullscreen on first interaction logic
-  useEffect(() => {
-    const handleFirstInteraction = () => {
-      if (settings.isAutoFullscreenEnabled && !document.fullscreenElement) {
-        const appContainer = document.getElementById('app-container');
-        appContainer?.requestFullscreen().catch(() => {
-           // Silent catch if fails (e.g. not user triggered enough)
-        });
-      }
-      // Remove listeners after first attempt
-      window.removeEventListener('click', handleFirstInteraction);
-      window.removeEventListener('touchstart', handleFirstInteraction);
-    };
-
-    if (settings.isAutoFullscreenEnabled) {
-      window.addEventListener('click', handleFirstInteraction);
-      window.addEventListener('touchstart', handleFirstInteraction);
-    }
-
-    return () => {
-      window.removeEventListener('click', handleFirstInteraction);
-      window.removeEventListener('touchstart', handleFirstInteraction);
-    };
-  }, [settings.isAutoFullscreenEnabled]);
 
   // Tenant detection from URL hash to fix SPA routing issues
   useEffect(() => {
@@ -541,31 +522,11 @@ const App: React.FC = () => {
     setSelectedPriceList(priceList);
   }, []);
 
-  // Updated to handle mixed modes
-  const handlePriceSelectionNext = useCallback((userName: string) => {
-      setTempUserName(userName);
-      
-      // If BOTH Session Code AND Payment Mode are enabled, show selection screen
-      if (settings.isSessionCodeEnabled && settings.isPaymentEnabled) {
-          setAppState(AppState.PAYMENT_METHOD_SELECTION);
-      } else {
-          // Otherwise, assume QRIS payment flow (since we are in price selection)
-          handleCreatePayment(userName);
-      }
-  }, [settings.isSessionCodeEnabled, settings.isPaymentEnabled]);
-
-  const handleSelectCashier = useCallback(() => {
-      setAppState(AppState.KEY_CODE_ENTRY);
-  }, []);
-
   const handleCreatePayment = useCallback(async (userName: string) => {
     if (!currentTenantId || !selectedPriceList) return;
     
-    // Fallback if userName passed is empty (from button click instead of form)
-    const finalUserName = userName || tempUserName;
-
     const paymentData: Omit<PaymentEntry, 'id'> = {
-        userName: finalUserName,
+        userName,
         priceListId: selectedPriceList.id,
         priceListName: selectedPriceList.name,
         amount: selectedPriceList.price,
@@ -578,7 +539,7 @@ const App: React.FC = () => {
         setCurrentPaymentId(newPaymentRef.key);
         setAppState(AppState.PAYMENT_SHOW);
     }
-  }, [currentTenantId, selectedPriceList, tempUserName]);
+  }, [currentTenantId, selectedPriceList]);
 
   const handlePaymentPaid = useCallback(() => {
     setAppState(AppState.PAYMENT_VERIFICATION);
@@ -639,14 +600,6 @@ const App: React.FC = () => {
       if (!currentTenantId || !window.confirm("Are you sure you want to delete this payment record?")) return;
       await remove(ref(db, `data/${currentTenantId}/payments/${paymentId}`));
   }, [currentTenantId]);
-
-  const handleSaveWhatsAppNumber = useCallback(async (phoneNumber: string) => {
-      if (currentTenantId && currentPaymentId) {
-          await update(ref(db, `data/${currentTenantId}/payments/${currentPaymentId}`), { whatsappNumber: phoneNumber });
-      } else {
-          console.warn("Cannot save WhatsApp number: No active payment session found.");
-      }
-  }, [currentTenantId, currentPaymentId]);
 
 
   const handleKeyCodeSubmit = useCallback(async (code: string) => {
@@ -908,7 +861,6 @@ const App: React.FC = () => {
         case AppState.PREVIEW: (settings.maxRetakes ?? 0) > 0 ? setAppState(AppState.RETAKE_PREVIEW) : (setCapturedImages([]), setSelectedTemplate(null), setAppState(AppState.TEMPLATE_SELECTION)); break;
         case AppState.PAYMENT_SHOW: setAppState(AppState.PRICE_SELECTION); break;
         case AppState.PAYMENT_VERIFICATION: setAppState(AppState.PAYMENT_SHOW); break;
-        case AppState.PAYMENT_METHOD_SELECTION: setAppState(AppState.PRICE_SELECTION); break; // Back to price select
         default: setAppState(AppState.WELCOME);
     }
   }, [appState, settings.maxRetakes]);
@@ -1135,8 +1087,7 @@ const App: React.FC = () => {
       case AppState.KEY_CODE_ENTRY: return <KeyCodeScreen onKeyCodeSubmit={handleKeyCodeSubmit} onBack={handleBack} error={keyCodeError} isLoading={isSessionLoading} />;
       
       // Payment Flow
-      case AppState.PRICE_SELECTION: return <PriceSelectionScreen priceLists={settings.priceLists || []} onSelect={handlePriceSelect} onBack={handleBack} onNext={handlePriceSelectionNext} />;
-      case AppState.PAYMENT_METHOD_SELECTION: return <PaymentMethodSelectionScreen onSelectQris={() => handleCreatePayment(tempUserName)} onSelectCashier={handleSelectCashier} onBack={handleBack} />;
+      case AppState.PRICE_SELECTION: return <PriceSelectionScreen priceLists={settings.priceLists || []} onSelect={handlePriceSelect} onBack={handleBack} onNext={(name) => handleCreatePayment(name)} />;
       case AppState.PAYMENT_SHOW: 
           if (!selectedPriceList) { setAppState(AppState.WELCOME); return null; }
           return <PaymentScreen priceList={selectedPriceList} qrisImageUrl={settings.qrisImageUrl} onPaid={handlePaymentPaid} onBack={handleBack} />;
@@ -1172,7 +1123,7 @@ const App: React.FC = () => {
       case AppState.CAPTURE: if (!selectedTemplate) { setAppState(AppState.WELCOME); return null; } return <CaptureScreen template={selectedTemplate} countdownDuration={settings.countdownDuration} flashEffectEnabled={settings.flashEffectEnabled} cameraSourceType={settings.cameraSourceType} cameraDeviceId={settings.cameraDeviceId} ipCameraUrl={settings.ipCameraUrl} ipCameraUseProxy={settings.ipCameraUseProxy} onCaptureComplete={handleCaptureComplete} onRetakeComplete={handleRetakeComplete} retakeForIndex={retakingPhotoIndex} onProgressUpdate={handleCaptureProgressUpdate} existingImages={capturedImages} />;
       case AppState.RETAKE_PREVIEW: if (!selectedTemplate) { setAppState(AppState.WELCOME); return null; } return <RetakePreviewScreen images={capturedImages} template={selectedTemplate} onStartRetake={handleStartRetake} onDone={handleFinishRetakePreview} retakesUsed={retakesUsed} maxRetakes={settings.maxRetakes ?? 0} />;
       case AppState.RATING: if (!selectedEvent || !currentSessionKey || currentSessionKey.hasBeenReviewed) { setAppState(AppState.PREVIEW); return null; } return <RatingScreen eventName={selectedEvent.name} onSubmit={handleSaveReview} onSkip={handleSkipReview} settings={settings} />;
-      case AppState.PREVIEW: if (!selectedTemplate || !currentSessionKey) { setAppState(AppState.WELCOME); return null; } return <PreviewScreen images={capturedImages} onRestart={handleSessionEnd} onBack={handleBack} template={selectedTemplate} onSaveHistory={handleSaveHistoryFromSession} event={selectedEvent} currentTake={currentTakeCount} maxTakes={currentSessionKey.maxTakes} onNextTake={handleStartNextTake} isDownloadButtonEnabled={settings.isDownloadButtonEnabled ?? true} isAutoDownloadEnabled={settings.isAutoDownloadEnabled ?? true} printSettings={{ isEnabled: settings.isPrintButtonEnabled ?? true, paperSize: settings.printPaperSize ?? '4x6', colorMode: settings.printColorMode ?? 'color', isCopyInputEnabled: settings.isPrintCopyInputEnabled ?? true, maxCopies: settings.printMaxCopies ?? 5, }} onWhatsAppSubmit={handleSaveWhatsAppNumber} />;
+      case AppState.PREVIEW: if (!selectedTemplate || !currentSessionKey) { setAppState(AppState.WELCOME); return null; } return <PreviewScreen images={capturedImages} onRestart={handleSessionEnd} onBack={handleBack} template={selectedTemplate} onSaveHistory={handleSaveHistoryFromSession} event={selectedEvent} currentTake={currentTakeCount} maxTakes={currentSessionKey.maxTakes} onNextTake={handleStartNextTake} isDownloadButtonEnabled={settings.isDownloadButtonEnabled ?? true} isAutoDownloadEnabled={settings.isAutoDownloadEnabled ?? true} printSettings={{ isEnabled: settings.isPrintButtonEnabled ?? true, paperSize: settings.printPaperSize ?? '4x6', colorMode: settings.printColorMode ?? 'color', isCopyInputEnabled: settings.isPrintCopyInputEnabled ?? true, maxCopies: settings.printMaxCopies ?? 5, }} />;
       default: return <WelcomeScreen onStart={handleStartSession} onSettingsClick={handleGoToSettings} onViewHistory={handleViewHistory} onViewOnlineHistory={handleViewOnlineHistory} isAdminLoggedIn={isAdminLoggedIn} isCaching={isCaching} cachingProgress={cachingProgress} onAdminLoginClick={handleOpenAdminLogin} onAdminLogoutClick={handleAdminLogout} isLoading={isSessionLoading} settings={settings} reviews={reviews} />;
     }
   };
