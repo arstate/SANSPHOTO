@@ -42,7 +42,8 @@ const FilterSelectionScreen: React.FC<FilterSelectionScreenProps> = ({
     const canvas = canvasRef.current;
     if (!canvas) throw new Error("Canvas not initialized");
 
-    const ctx = canvas.getContext('2d');
+    // FIX: Add willReadFrequently: true to prevent Chrome Android Aw Snap crashes
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) throw new Error("Canvas context not found");
 
     canvas.width = TEMPLATE_WIDTH;

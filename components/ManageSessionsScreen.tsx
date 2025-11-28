@@ -43,7 +43,8 @@ const QrPreviewModal: React.FC<QrPreviewModalProps> = ({ sessionKey, onClose }) 
         if (!qrDataUrl) return;
 
         const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
+        // FIX: Add willReadFrequently: true to prevent Chrome Android Aw Snap crashes
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
         const width = 600;
         const height = 800;
         

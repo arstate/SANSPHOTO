@@ -1,7 +1,4 @@
 
-
-
-
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { CameraIcon } from './icons/CameraIcon';
 import { Template } from '../types';
@@ -138,7 +135,8 @@ const CaptureScreen: React.FC<CaptureScreenProps> = ({
     const canvas = canvasRef.current;
     
     if (canvas) {
-      const context = canvas.getContext('2d');
+      // FIX: Add willReadFrequently: true to prevent Chrome Android Aw Snap crashes
+      const context = canvas.getContext('2d', { willReadFrequently: true });
       if (context) {
         if (isIpCamera && ipCamImgRef.current) {
             const img = ipCamImgRef.current;

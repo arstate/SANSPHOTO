@@ -384,7 +384,8 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
         return;
     }
 
-    const ctx = canvas.getContext('2d');
+    // FIX: Add willReadFrequently: true to prevent Chrome Android Aw Snap crashes
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) {
         setErrorMsg("Tidak dapat memperoleh konteks kanvas.");
         setIsLoading(false);
