@@ -1,6 +1,3 @@
-
-
-
 import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { DownloadIcon } from './icons/DownloadIcon';
 import { PrintIcon } from './icons/PrintIcon';
@@ -36,6 +33,7 @@ interface PreviewScreenProps {
   printSettings: PrintSettings;
   onSaveWhatsapp?: (number: string) => void;
   currentPaymentId?: string | null;
+  savedWhatsappNumber?: string;
 }
 
 interface PrintModalProps {
@@ -193,7 +191,7 @@ const loadImage = (src: string): Promise<HTMLImageElement> => {
 
 const PreviewScreen: React.FC<PreviewScreenProps> = ({ 
     images, onRestart, onBack, template, onSaveHistory, event,
-    currentTake, maxTakes, onNextTake, isDownloadButtonEnabled, isAutoDownloadEnabled, printSettings, onSaveWhatsapp, currentPaymentId
+    currentTake, maxTakes, onNextTake, isDownloadButtonEnabled, isAutoDownloadEnabled, printSettings, onSaveWhatsapp, currentPaymentId, savedWhatsappNumber
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const finalImageRef = useRef<HTMLImageElement>(null);
@@ -205,7 +203,6 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [isWhatsappModalOpen, setIsWhatsappModalOpen] = useState(false);
   const [generatedQrUrl, setGeneratedQrUrl] = useState<string | null>(null);
-  const [whatsappSent, setWhatsappSent] = useState(false);
 
   const isLastTake = currentTake >= maxTakes;
   const isLandscape = template.orientation === 'landscape';
@@ -371,7 +368,6 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
   const handleWhatsappSubmit = (number: string) => {
       if (onSaveWhatsapp) {
           onSaveWhatsapp(number);
-          setWhatsappSent(true);
       }
   };
 
@@ -484,7 +480,6 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
     // Reset refs for each new preview
     historySavedRef.current = false;
     downloadTriggeredRef.current = false;
-    setWhatsappSent(false);
     drawCanvas();
   }, [drawCanvas]);
 
@@ -592,11 +587,11 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
             {currentPaymentId && (
                 <button
                     onClick={() => setIsWhatsappModalOpen(true)}
-                    disabled={isLoading || !!errorMsg || whatsappSent}
-                    className={`w-full font-bold py-3 px-8 rounded-full text-lg transition-transform transform hover:scale-105 flex items-center justify-center gap-3 shadow-lg ${whatsappSent ? 'bg-gray-600 cursor-default transform-none' : 'bg-[#25D366] hover:bg-[#20b858] text-white'}`}
+                    disabled={isLoading || !!errorMsg || !!savedWhatsappNumber}
+                    className={`w-full font-bold py-3 px-8 rounded-full text-lg transition-transform transform hover:scale-105 flex items-center justify-center gap-3 shadow-lg ${savedWhatsappNumber ? 'bg-gray-600 cursor-default transform-none' : 'bg-[#25D366] hover:bg-[#20b858] text-white'}`}
                 >
                     <WhatsAppIcon />
-                    <span>{whatsappSent ? 'Terkirim ke Admin' : 'Kirim ke WhatsApp'}</span>
+                    <span>{savedWhatsappNumber ? 'Terkirim ke Admin' : 'Kirim ke WhatsApp'}</span>
                 </button>
             )}
 

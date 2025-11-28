@@ -434,7 +434,8 @@ const App: React.FC = () => {
                 currentPaymentId === p.id && 
                 p.status === 'verified' && 
                 (appState === AppState.PAYMENT_SHOW || appState === AppState.PAYMENT_VERIFICATION) &&
-                !isCreatingSessionRef.current
+                !isCreatingSessionRef.current &&
+                !currentSessionKey // CRITICAL: Ensure we are not already in a session to prevent loop
             ) {
                // Trigger session creation just like verification
                isCreatingSessionRef.current = true;
@@ -451,7 +452,7 @@ const App: React.FC = () => {
       off(reviewsRef, 'value', reviewsListener);
       off(paymentsRef, 'value', paymentsListener);
     };
-  }, [currentTenantId, cacheAllTemplates, cacheImage, currentPaymentId, appState]);
+  }, [currentTenantId, cacheAllTemplates, cacheImage, currentPaymentId, appState, currentSessionKey]);
 
   useEffect(() => {
     document.documentElement.classList.toggle('light', settings.theme === 'light');
@@ -1160,6 +1161,7 @@ const App: React.FC = () => {
     
     const selectedEvent = events.find(e => e.id === selectedEventId) || null;
     const isAppClosed = settings.isClosedModeEnabled && settings.reopenTimestamp && Date.now() < settings.reopenTimestamp;
+    const currentPayment = payments.find(p => p.id === currentPaymentId);
 
     if (isAppClosed && !isAdminLoggedIn) {
         return <ClosedScreen reopenTimestamp={settings.reopenTimestamp || 0} onAdminLoginClick={handleOpenAdminLogin} />;
@@ -1209,7 +1211,7 @@ const App: React.FC = () => {
       case AppState.CAPTURE: if (!selectedTemplate) { setAppState(AppState.WELCOME); return null; } return <CaptureScreen template={selectedTemplate} countdownDuration={settings.countdownDuration} flashEffectEnabled={settings.flashEffectEnabled} cameraSourceType={settings.cameraSourceType} cameraDeviceId={settings.cameraDeviceId} ipCameraUrl={settings.ipCameraUrl} ipCameraUseProxy={settings.ipCameraUseProxy} onCaptureComplete={handleCaptureComplete} onRetakeComplete={handleRetakeComplete} retakeForIndex={retakingPhotoIndex} onProgressUpdate={handleCaptureProgressUpdate} existingImages={capturedImages} />;
       case AppState.RETAKE_PREVIEW: if (!selectedTemplate) { setAppState(AppState.WELCOME); return null; } return <RetakePreviewScreen images={capturedImages} template={selectedTemplate} onStartRetake={handleStartRetake} onDone={handleFinishRetakePreview} retakesUsed={retakesUsed} maxRetakes={settings.maxRetakes ?? 0} />;
       case AppState.RATING: if (!selectedEvent || !currentSessionKey || currentSessionKey.hasBeenReviewed) { setAppState(AppState.PREVIEW); return null; } return <RatingScreen eventName={selectedEvent.name} onSubmit={handleSaveReview} onSkip={handleSkipReview} settings={settings} />;
-      case AppState.PREVIEW: if (!selectedTemplate || !currentSessionKey) { setAppState(AppState.WELCOME); return null; } return <PreviewScreen images={capturedImages} onRestart={handleSessionEnd} onBack={handleBack} template={selectedTemplate} onSaveHistory={handleSaveHistoryFromSession} event={selectedEvent} currentTake={currentTakeCount} maxTakes={currentSessionKey.maxTakes} onNextTake={handleStartNextTake} isDownloadButtonEnabled={settings.isDownloadButtonEnabled ?? true} isAutoDownloadEnabled={settings.isAutoDownloadEnabled ?? true} printSettings={{ isEnabled: settings.isPrintButtonEnabled ?? true, paperSize: settings.printPaperSize ?? '4x6', colorMode: settings.printColorMode ?? 'color', isCopyInputEnabled: settings.isPrintCopyInputEnabled ?? true, maxCopies: settings.printMaxCopies ?? 5, }} onSaveWhatsapp={handleSaveWhatsappNumber} currentPaymentId={currentPaymentId} />;
+      case AppState.PREVIEW: if (!selectedTemplate || !currentSessionKey) { setAppState(AppState.WELCOME); return null; } return <PreviewScreen images={capturedImages} onRestart={handleSessionEnd} onBack={handleBack} template={selectedTemplate} onSaveHistory={handleSaveHistoryFromSession} event={selectedEvent} currentTake={currentTakeCount} maxTakes={currentSessionKey.maxTakes} onNextTake={handleStartNextTake} isDownloadButtonEnabled={settings.isDownloadButtonEnabled ?? true} isAutoDownloadEnabled={settings.isAutoDownloadEnabled ?? true} printSettings={{ isEnabled: settings.isPrintButtonEnabled ?? true, paperSize: settings.printPaperSize ?? '4x6', colorMode: settings.printColorMode ?? 'color', isCopyInputEnabled: settings.isPrintCopyInputEnabled ?? true, maxCopies: settings.printMaxCopies ?? 5, }} onSaveWhatsapp={handleSaveWhatsappNumber} currentPaymentId={currentPaymentId} savedWhatsappNumber={currentPayment?.whatsappNumber} />;
       default: return <WelcomeScreen onStart={handleStartSession} onSettingsClick={handleGoToSettings} onViewHistory={handleViewHistory} onViewOnlineHistory={handleViewOnlineHistory} isAdminLoggedIn={isAdminLoggedIn} isCaching={isCaching} cachingProgress={cachingProgress} onAdminLoginClick={handleOpenAdminLogin} onAdminLogoutClick={handleAdminLogout} isLoading={isSessionLoading} settings={settings} reviews={reviews} />;
     }
   };
