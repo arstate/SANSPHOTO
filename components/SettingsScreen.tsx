@@ -1,6 +1,8 @@
 
 
 
+
+
 import React, { useState, useEffect } from 'react';
 import { Settings, FloatingObject, PriceList, PaymentEntry, OnlineHistoryEntry } from '../types';
 import { BackIcon } from './icons/BackIcon';
@@ -308,6 +310,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
       }
 
       // 3. Prepare message with proper emojis
+      // Encoding is crucial here. Emojis and newlines need encodeURIComponent.
       const message = `Halo Kak ${name}, Terima kasih sudah menggunakan jasa photoboth dari Sans Photobooth! 📸✨ Ini softfile foto kakak ya. Ditunggu kedatangannya kembali! 🥰`;
       
       // 4. Encode URL
@@ -320,7 +323,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
           const response = await fetch(SCRIPT_URL_GET_HISTORY);
           if (response.ok) {
               const data: OnlineHistoryEntry[] = await response.json();
-              // Find matching photo
+              // Find matching photo (newest first usually, but check name)
               const matchedPhoto = data.find(item => item.nama.includes(safeUserName));
               
               if (matchedPhoto) {
@@ -336,14 +339,16 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                       })
                   ]);
                   
-                  alert(`Foto "${matchedPhoto.nama}" berhasil disalin! Silakan Paste (Ctrl+V) di chat WhatsApp.`);
+                  // Force alert to pause execution and notify user to paste
+                  alert(`Foto "${matchedPhoto.nama}" berhasil disalin ke Clipboard! 📋\n\nKlik OK untuk membuka WhatsApp, lalu tekan 'Ctrl + V' (Paste) di kolom chat.`);
               } else {
                   console.log("Photo not found in cloud yet, opening chat text only.");
+                  alert("Foto belum ditemukan di cloud (mungkin sedang upload). Membuka chat WhatsApp dengan teks saja.");
               }
           }
       } catch (e) {
           console.error("Failed to copy image to clipboard", e);
-          // Continue opening WhatsApp even if image copy fails
+          alert("Gagal menyalin foto otomatis. Silakan download manual jika perlu.");
       } finally {
           setSendingWhatsappId(null);
           // 6. Open WhatsApp
