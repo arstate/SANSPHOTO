@@ -12,11 +12,11 @@ interface FilterSelectionScreenProps {
 interface FilterOption {
   name: string;
   value: string;
-  previewColor?: string; // Optional color for button border/accent
+  previewColor?: string;
 }
 
 const FILTERS: FilterOption[] = [
-  { name: 'Original', value: 'none' },
+  { name: 'Normal', value: 'none' },
   { name: 'B&W', value: 'grayscale(100%)' },
   { name: 'Sepia', value: 'sepia(100%)' },
   { name: 'Warm', value: 'sepia(30%) saturate(140%)' },
@@ -31,12 +31,11 @@ const FilterSelectionScreen: React.FC<FilterSelectionScreenProps> = ({ images, t
   const [selectedFilter, setSelectedFilter] = useState('none');
   
   const isLandscape = template.orientation === 'landscape';
-  // Use specific dimensions to calculate strict aspect ratio
+  // Note: We use these for positioning calculations, but the main container size is driven by the <img> tag
   const TEMPLATE_WIDTH = isLandscape ? 1800 : 1200;
   const TEMPLATE_HEIGHT = isLandscape ? 1200 : 1800;
 
   // Use the first captured image as the thumbnail for filters
-  // If no images (shouldn't happen), fallback to gray
   const thumbnailImage = images.length > 0 ? images[0] : null;
 
   // Drag to Scroll Refs for Slider
@@ -78,66 +77,76 @@ const FilterSelectionScreen: React.FC<FilterSelectionScreenProps> = ({ images, t
   };
 
   return (
-    <div className="relative flex flex-col items-center h-full w-full p-4 bg-[var(--color-bg-primary)] overflow-hidden">
-      <header className="text-center shrink-0 mb-4 mt-2">
-        <h2 className="font-bebas text-4xl text-[var(--color-text-primary)] tracking-wider">Pilih Filter</h2>
-        <p className="text-[var(--color-text-muted)] text-sm">Geser di bawah untuk mengubah nuansa foto</p>
+    <div className="relative flex flex-col items-center h-full w-full bg-[var(--color-bg-primary)] overflow-hidden">
+      <header className="text-center shrink-0 py-4 px-4 z-20">
+        <h2 className="font-bebas text-3xl sm:text-4xl text-[var(--color-text-primary)] tracking-wider">Pilih Filter</h2>
+        <p className="text-[var(--color-text-muted)] text-sm">Geser untuk mengubah efek foto</p>
       </header>
 
       {/* Main Preview Area */}
-      <main className="w-full flex-grow flex items-center justify-center min-h-0 relative overflow-hidden">
-        {/* Container for the preview consisting of Template + Photos */}
-        <div 
-            className="relative shadow-2xl overflow-hidden bg-white"
-            style={{ 
-                aspectRatio: `${TEMPLATE_WIDTH} / ${TEMPLATE_HEIGHT}`,
-                height: isLandscape ? 'auto' : '95%', // Max height for portrait
-                width: isLandscape ? '95%' : 'auto',  // Max width for landscape
-                maxHeight: '100%',
-                maxWidth: '100%'
-            }}
-        >
-            {/* Layer 1: Captured Images (Affected by Filter) */}
-            {/* We map slots exactly like Capture/Preview screens to ensure alignment */}
-            {images.map((imgSrc, index) => {
-                const inputId = index + 1;
-                // Find all slots for this input ID
-                const slots = template.photoSlots.filter(slot => slot.inputId === inputId);
-                
-                return slots.map(slot => (
-                    <img
-                        key={`filter-preview-${slot.id}`}
-                        src={imgSrc}
-                        alt={`Preview ${inputId}`}
-                        className="absolute object-cover origin-center"
-                        style={{
-                            left: `${(slot.x / TEMPLATE_WIDTH) * 100}%`,
-                            top: `${(slot.y / TEMPLATE_HEIGHT) * 100}%`,
-                            width: `${(slot.width / TEMPLATE_WIDTH) * 100}%`,
-                            height: `${(slot.height / TEMPLATE_HEIGHT) * 100}%`,
-                            transform: `rotate(${slot.rotation || 0}deg) scaleX(-1)`, // Maintain mirroring if used in capture
-                            filter: selectedFilter, // APPLY FILTER HERE
-                            zIndex: 1 // Below template
-                        }}
-                    />
-                ));
-            })}
+      <main className="flex-grow flex items-center justify-center w-full min-h-0 p-4 relative z-10 overflow-hidden">
+        
+        {/* 
+           Layout Fix: Use the template image as the relative parent.
+           This ensures the aspect ratio is always perfect based on the image's intrinsic dimensions.
+           The div wrapper shrink-wraps the image.
+        */}
+        <div className="relative inline-flex shadow-2xl bg-white p-1 md:p-2 rounded-sm max-w-full max-h-full">
+            <div className="relative">
+                {/* 
+                    Layer 1 (Top): Template Image 
+                    It dictates the size of the container. 
+                    z-20 ensures it's above the photos (acting as a frame).
+                */}
+                <img 
+                    src={template.imageUrl} 
+                    alt="Template Frame" 
+                    className="block max-w-full object-contain relative z-20 pointer-events-none select-none" 
+                    style={{ 
+                        maxHeight: 'calc(100vh - 280px)', // Reserve space for header (approx 80px) and footer/slider (approx 200px)
+                        width: 'auto'
+                    }}
+                />
 
-            {/* Layer 2: Template Overlay (NOT Affected by Filter) */}
-            <img 
-                src={template.imageUrl} 
-                alt="Template Frame" 
-                className="absolute inset-0 w-full h-full pointer-events-none" 
-                style={{ zIndex: 10 }}
-            />
+                {/* 
+                    Layer 2 (Bottom): Captured Photos 
+                    Absolute position matches the Template Image exactly.
+                    z-10 ensures they are below the template frame.
+                */}
+                <div className="absolute inset-0 z-10 w-full h-full">
+                    {images.map((imgSrc, index) => {
+                        const inputId = index + 1;
+                        const slots = template.photoSlots.filter(slot => slot.inputId === inputId);
+                        
+                        return slots.map(slot => (
+                            <img
+                                key={`filter-preview-${slot.id}`}
+                                src={imgSrc}
+                                alt={`Preview ${inputId}`}
+                                className="absolute object-cover origin-center"
+                                style={{
+                                    left: `${(slot.x / TEMPLATE_WIDTH) * 100}%`,
+                                    top: `${(slot.y / TEMPLATE_HEIGHT) * 100}%`,
+                                    width: `${(slot.width / TEMPLATE_WIDTH) * 100}%`,
+                                    height: `${(slot.height / TEMPLATE_HEIGHT) * 100}%`,
+                                    transform: `rotate(${slot.rotation || 0}deg) scaleX(-1)`, // Mirror effect consistent with capture
+                                    filter: selectedFilter, // Apply live filter here
+                                }}
+                            />
+                        ));
+                    })}
+                </div>
+            </div>
         </div>
       </main>
 
-      {/* Filter Slider */}
-      <div className="w-full max-w-6xl shrink-0 mt-4 mb-4">
+      {/* Footer Area: Filter Slider & Finish Button */}
+      <div className="shrink-0 w-full max-w-6xl flex flex-col gap-4 z-20 bg-[var(--color-bg-primary)] pb-6">
+        
+        {/* Filter Slider */}
         <div 
             ref={sliderRef}
-            className="flex overflow-x-auto space-x-6 py-4 px-4 scrollbar-thin cursor-grab select-none active:cursor-grabbing items-center justify-start md:justify-center"
+            className="flex overflow-x-auto space-x-6 py-2 px-4 scrollbar-thin cursor-grab select-none active:cursor-grabbing items-center justify-start md:justify-center"
             onMouseDown={handleMouseDown}
             onMouseLeave={handleMouseLeave}
             onMouseUp={handleMouseUp}
@@ -150,7 +159,7 @@ const FilterSelectionScreen: React.FC<FilterSelectionScreenProps> = ({ images, t
                     className={`shrink-0 flex flex-col items-center gap-2 group transition-all duration-200 focus:outline-none transform ${selectedFilter === filter.value ? 'scale-110' : 'hover:scale-105'}`}
                 >
                     <div 
-                        className={`w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden border-4 transition-all duration-200 ${selectedFilter === filter.value ? 'border-[var(--color-accent-primary)] ring-4 ring-[var(--color-accent-primary)]/30' : 'border-[var(--color-border-secondary)]'}`}
+                        className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden border-4 transition-all duration-200 ${selectedFilter === filter.value ? 'border-[var(--color-accent-primary)] ring-4 ring-[var(--color-accent-primary)]/30' : 'border-[var(--color-border-secondary)]'}`}
                     >
                         {thumbnailImage ? (
                             <img 
@@ -160,26 +169,26 @@ const FilterSelectionScreen: React.FC<FilterSelectionScreenProps> = ({ images, t
                                 style={{ filter: filter.value }}
                             />
                         ) : (
-                            <div className="w-full h-full bg-gray-300" />
+                            <div className="w-full h-full bg-gray-500" />
                         )}
                     </div>
-                    <span className={`text-sm font-bold uppercase tracking-wider px-2 py-1 rounded-full ${selectedFilter === filter.value ? 'bg-[var(--color-accent-primary)] text-white' : 'text-[var(--color-text-secondary)]'}`}>
+                    <span className={`text-xs sm:text-sm font-bold uppercase tracking-wider px-2 py-1 rounded-full ${selectedFilter === filter.value ? 'bg-[var(--color-accent-primary)] text-white' : 'text-[var(--color-text-secondary)]'}`}>
                         {filter.name}
                     </span>
                 </button>
             ))}
         </div>
-      </div>
 
-      {/* Footer Action */}
-      <div className="shrink-0 w-full max-w-sm mb-2">
-        <button
-            onClick={() => onNext(selectedFilter)}
-            className="w-full bg-[var(--color-positive)] hover:bg-[var(--color-positive-hover)] text-[var(--color-positive-text)] font-bold py-4 px-8 rounded-full text-xl transition-transform transform hover:scale-105 flex items-center justify-center gap-3 shadow-lg hover:shadow-xl"
-        >
-            <CheckIcon />
-            <span>Finish & Print</span>
-        </button>
+        {/* Action Button */}
+        <div className="w-full flex justify-center px-4">
+            <button
+                onClick={() => onNext(selectedFilter)}
+                className="w-full max-w-sm bg-[var(--color-positive)] hover:bg-[var(--color-positive-hover)] text-[var(--color-positive-text)] font-bold py-4 px-8 rounded-full text-xl transition-transform transform hover:scale-105 flex items-center justify-center gap-3 shadow-lg hover:shadow-xl"
+            >
+                <CheckIcon />
+                <span>Finish & Print</span>
+            </button>
+        </div>
       </div>
     </div>
   );
