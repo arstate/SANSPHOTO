@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useRef } from 'react';
 import { Settings, FloatingObject, PriceList, PaymentEntry, OnlineHistoryEntry } from '../types';
 import { BackIcon } from './icons/BackIcon';
 import { KeyIcon } from './icons/KeyIcon';
@@ -26,6 +27,7 @@ import { PrintIcon } from './icons/PrintIcon';
 import { CheckIcon } from './icons/CheckIcon';
 import { WhatsAppIcon } from './icons/WhatsAppIcon';
 import { GlobeIcon } from './icons/GlobeIcon';
+import { WifiIcon } from './icons/WifiIcon';
 
 interface SettingsScreenProps {
     settings: Settings;
@@ -55,7 +57,7 @@ export const GOOGLE_FONTS = [
   { name: 'Roboto Mono', value: "'Roboto Mono', monospace" },
 ];
 
-type SettingsCategory = 'general' | 'appearance' | 'security' | 'content' | 'payment' | 'reviews' | 'master';
+type SettingsCategory = 'general' | 'appearance' | 'security' | 'content' | 'payment' | 'reviews' | 'master' | 'network';
 
 // URL to fetch list of photos (Same as OnlineHistoryScreen)
 const SCRIPT_URL_GET_HISTORY = 'https://script.google.com/macros/s/AKfycbwbnlO9vk95yTKeHFFilhJbfFcjibH80sFzsA5II3BAkuNudCTabRNdBUhYlCEHHO5CYQ/exec';
@@ -103,6 +105,14 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const [isFindingPhoto, setIsFindingPhoto] = useState<string | null>(null); // Stores ID of payment being searched
   const [sendingWhatsappId, setSendingWhatsappId] = useState<string | null>(null); // Stores ID of payment being sent to WA
   const [downloadingPhotoIds, setDownloadingPhotoIds] = useState<string[]>([]);
+
+  // Network Test State
+  const [netTestStatus, setNetTestStatus] = useState<'idle' | 'running' | 'complete'>('idle');
+  const [netPhase, setNetPhase] = useState<'idle' | 'ping' | 'download' | 'upload'>('idle');
+  const [pingResult, setPingResult] = useState<number>(0);
+  const [downloadSpeed, setDownloadSpeed] = useState<number>(0);
+  const [uploadSpeed, setUploadSpeed] = useState<number>(0);
+  const [testProgress, setTestProgress] = useState<number>(0); // 0-100
 
   const isLight = settings.theme === 'light';
 
@@ -508,6 +518,102 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
     }
   };
 
+  const handleRunNetworkTest = async () => {
+      setNetTestStatus('running');
+      setTestProgress(0);
+      setPingResult(0);
+      setDownloadSpeed(0);
+      setUploadSpeed(0);
+
+      try {
+          // 1. PING TEST
+          setNetPhase('ping');
+          setTestProgress(10);
+          const pingStart = Date.now();
+          // Use a small generic resource, disable cache
+          await fetch('https://www.google.com/favicon.ico?t=' + Date.now(), { mode: 'no-cors', cache: 'no-store' });
+          const pingEnd = Date.now();
+          setPingResult(pingEnd - pingStart);
+          setTestProgress(20);
+
+          // 2. DOWNLOAD TEST (Realtime using Streams)
+          setNetPhase('download');
+          // ~10MB dummy file from Wikimedia (CORS friendly)
+          const dlUrl = 'https://upload.wikimedia.org/wikipedia/commons/f/ff/Pizigani_1367_Chart_10MB.jpg?t=' + Date.now();
+          const response = await fetch(dlUrl);
+          const reader = response.body?.getReader();
+          const contentLength = +(response.headers.get('Content-Length') || 10 * 1024 * 1024);
+          
+          if (reader) {
+              let receivedLength = 0;
+              const startTime = Date.now();
+              
+              while(true) {
+                  const { done, value } = await reader.read();
+                  if (done) break;
+                  receivedLength += value.length;
+                  const currentTime = Date.now();
+                  const duration = (currentTime - startTime) / 1000;
+                  
+                  // Calculate instantaneous speed
+                  if (duration > 0) {
+                      const bps = (receivedLength * 8) / duration;
+                      const mbps = bps / 1000000;
+                      setDownloadSpeed(parseFloat(mbps.toFixed(2)));
+                  }
+                  
+                  // Update progress (20% to 60%)
+                  const percentComplete = (receivedLength / contentLength) * 40;
+                  setTestProgress(20 + percentComplete);
+              }
+          }
+          setTestProgress(60);
+
+          // 3. UPLOAD TEST (Realtime using XHR)
+          setNetPhase('upload');
+          // Generate 2MB Blob
+          const uploadSize = 2 * 1024 * 1024; 
+          const uploadData = new Blob([new Array(uploadSize).fill('a').join('')]);
+          
+          await new Promise<void>((resolve, reject) => {
+              const xhr = new XMLHttpRequest();
+              const startTime = Date.now();
+              
+              xhr.upload.onprogress = (e) => {
+                  if (e.lengthComputable) {
+                      const duration = (Date.now() - startTime) / 1000;
+                      if (duration > 0) {
+                          const bps = (e.loaded * 8) / duration;
+                          const mbps = bps / 1000000;
+                          setUploadSpeed(parseFloat(mbps.toFixed(2)));
+                      }
+                      // Update progress (60% to 100%)
+                      const percentComplete = (e.loaded / e.total) * 40;
+                      setTestProgress(60 + percentComplete);
+                  }
+              };
+
+              xhr.onload = () => resolve();
+              xhr.onerror = () => {
+                  // Fallback if XHR fails (e.g. CORS on httpbin), just resolve to end test
+                  console.warn("Upload test XHR error (likely CORS), finishing.");
+                  resolve(); 
+              };
+
+              // Use httpbin for echo (generic endpoint)
+              xhr.open('POST', 'https://httpbin.org/post');
+              xhr.send(uploadData);
+          });
+
+      } catch (err) {
+          console.error("Speed test failed", err);
+      } finally {
+          setNetTestStatus('complete');
+          setNetPhase('idle');
+          setTestProgress(100);
+      }
+  };
+
   
   // Konversi timestamp ke format yang diterima oleh input datetime-local
   const formatTimestampForInput = (timestamp: number | undefined): string => {
@@ -833,6 +939,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
           </div>
         );
       case 'appearance':
+        // ... (existing appearance code) ...
         const currentFloatingObjects = settings.floatingObjects || [];
         const editingObject = editingObjectId ? currentFloatingObjects.find(o => o.id === editingObjectId) : null;
         
@@ -1798,6 +1905,83 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
             </div>
           </div>
         ) : null;
+      case 'network':
+        return (
+            <div className="space-y-6">
+                <div className="p-6 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] text-left space-y-6">
+                    <h3 className="text-2xl font-bold text-[var(--color-text-accent)] flex items-center gap-2">
+                        <WifiIcon /> Realtime Network Test
+                    </h3>
+                    <p className="text-[var(--color-text-muted)]">
+                        Test your internet connection speed specifically for the photo booth operations (Download/Upload).
+                    </p>
+
+                    {/* Dashboard */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {/* Download Meter */}
+                        <div className="bg-[var(--color-bg-tertiary)] p-6 rounded-xl border border-[var(--color-border-secondary)] text-center relative overflow-hidden">
+                            <p className="text-[var(--color-text-muted)] uppercase tracking-widest text-xs font-bold mb-2">Download</p>
+                            <div className="text-5xl font-bebas text-[var(--color-positive)] flex items-baseline justify-center gap-1">
+                                <span>{downloadSpeed.toFixed(1)}</span>
+                                <span className="text-xl text-[var(--color-text-secondary)]">Mbps</span>
+                            </div>
+                            {netPhase === 'download' && <div className="absolute bottom-0 left-0 h-1 bg-[var(--color-positive)] animate-pulse w-full"></div>}
+                        </div>
+
+                        {/* Upload Meter */}
+                        <div className="bg-[var(--color-bg-tertiary)] p-6 rounded-xl border border-[var(--color-border-secondary)] text-center relative overflow-hidden">
+                            <p className="text-[var(--color-text-muted)] uppercase tracking-widest text-xs font-bold mb-2">Upload</p>
+                            <div className="text-5xl font-bebas text-purple-400 flex items-baseline justify-center gap-1">
+                                <span>{uploadSpeed.toFixed(1)}</span>
+                                <span className="text-xl text-[var(--color-text-secondary)]">Mbps</span>
+                            </div>
+                            {netPhase === 'upload' && <div className="absolute bottom-0 left-0 h-1 bg-purple-400 animate-pulse w-full"></div>}
+                        </div>
+
+                        {/* Ping Meter */}
+                        <div className="bg-[var(--color-bg-tertiary)] p-6 rounded-xl border border-[var(--color-border-secondary)] text-center relative overflow-hidden">
+                            <p className="text-[var(--color-text-muted)] uppercase tracking-widest text-xs font-bold mb-2">Ping</p>
+                            <div className="text-5xl font-bebas text-yellow-400 flex items-baseline justify-center gap-1">
+                                <span>{pingResult}</span>
+                                <span className="text-xl text-[var(--color-text-secondary)]">ms</span>
+                            </div>
+                            {netPhase === 'ping' && <div className="absolute bottom-0 left-0 h-1 bg-yellow-400 animate-pulse w-full"></div>}
+                        </div>
+                    </div>
+
+                    {/* Progress Bar */}
+                    {netTestStatus === 'running' && (
+                        <div className="w-full bg-[var(--color-bg-tertiary)] rounded-full h-4 overflow-hidden border border-[var(--color-border-secondary)]">
+                            <div 
+                                className="bg-[var(--color-accent-primary)] h-full transition-all duration-300 ease-out" 
+                                style={{ width: `${testProgress}%` }}
+                            ></div>
+                        </div>
+                    )}
+
+                    {/* Action Button */}
+                    <div className="flex justify-center pt-4">
+                        <button
+                            onClick={handleRunNetworkTest}
+                            disabled={netTestStatus === 'running'}
+                            className="bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-[var(--color-accent-primary-text)] font-bold py-4 px-12 rounded-full text-xl transition-all transform hover:scale-105 shadow-lg flex items-center gap-3 disabled:bg-[var(--color-bg-tertiary)] disabled:cursor-wait disabled:transform-none"
+                        >
+                            {netTestStatus === 'running' ? (
+                                <>
+                                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                                    <span>Testing...</span>
+                                </>
+                            ) : (
+                                <>
+                                    <RestartIcon />
+                                    <span>Start Speed Test</span>
+                                </>
+                            )}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
       default:
         return null;
     }
@@ -1931,6 +2115,12 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                  icon={<ReviewsIcon />}
                  isActive={activeCategory === 'reviews'}
                  onClick={() => setActiveCategory('reviews')}
+               />
+               <CategoryButton 
+                 label="Network"
+                 icon={<WifiIcon />}
+                 isActive={activeCategory === 'network'}
+                 onClick={() => setActiveCategory('network')}
                />
                {isMasterAdmin && (
                   <CategoryButton 
