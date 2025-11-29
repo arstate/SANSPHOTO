@@ -5,12 +5,13 @@ import { BackIcon } from './icons/BackIcon';
 import { DownloadIcon } from './icons/DownloadIcon';
 import { UploadingIcon } from './icons/UploadingIcon';
 import { CloseIcon } from './icons/CloseIcon';
+import { GOOGLE_SCRIPT_URL } from '../config';
 
 interface OnlineHistoryScreenProps {
   onBack: () => void;
 }
 
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwbnlO9vk95yTKeHFFilhJbfFcjibH80sFzsA5II3BAkuNudCTabRNdBUhYlCEHHO5CYQ/exec';
+const SCRIPT_URL = GOOGLE_SCRIPT_URL;
 
 const PhotoPreviewModal: React.FC<{
   photo: OnlineHistoryEntry;

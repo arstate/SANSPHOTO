@@ -28,6 +28,7 @@ import { CheckIcon } from './icons/CheckIcon';
 import { WhatsAppIcon } from './icons/WhatsAppIcon';
 import { GlobeIcon } from './icons/GlobeIcon';
 import { SpeedIcon } from './icons/SpeedIcon';
+import { GOOGLE_SCRIPT_URL } from '../config';
 
 interface SettingsScreenProps {
     settings: Settings;
@@ -61,7 +62,7 @@ export const GOOGLE_FONTS = [
 type SettingsCategory = 'general' | 'appearance' | 'security' | 'content' | 'payment' | 'reviews' | 'network' | 'master';
 
 // URL to fetch list of photos (Same as OnlineHistoryScreen)
-const SCRIPT_URL_GET_HISTORY = 'https://script.google.com/macros/s/AKfycbwbnlO9vk95yTKeHFFilhJbfFcjibH80sFzsA5II3BAkuNudCTabRNdBUhYlCEHHO5CYQ/exec';
+const SCRIPT_URL_GET_HISTORY = GOOGLE_SCRIPT_URL;
 
 const CategoryButton: React.FC<{
   label: string;

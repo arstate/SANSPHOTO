@@ -38,9 +38,10 @@ import { db, ref, onValue, set, push, update, remove, firebaseObjectToArray, que
 import { getAllHistoryEntries, addHistoryEntry, deleteHistoryEntry, getCachedImage, storeImageInCache } from './utils/db';
 import { FullscreenIcon } from './components/icons/FullscreenIcon';
 import useFullscreenLock from './hooks/useFullscreenLock';
+import { GOOGLE_SCRIPT_URL } from './config';
 
-// URL Google Apps Script untuk menangani unggahan
-const SCRIPT_URL_RETAKE = 'https://script.google.com/macros/s/AKfycbwZY1besq9swP1LsqIlHAiekq5MAr4pJ_DAJtbPTDSD-U_hPngd4tztkYJtnAHdVT0J9w/exec';
+// URL Google Apps Script untuk menangani unggahan (Diambil dari config.ts)
+const SCRIPT_URL_RETAKE = GOOGLE_SCRIPT_URL;
 
 const INITIAL_PHOTO_SLOTS: PhotoSlot[] = [
   { id: 1, inputId: 1, x: 90,  y: 70,   width: 480, height: 480 },
@@ -158,11 +159,11 @@ const GlobalUploadIndicator: React.FC<{ status: 'uploading' | 'success' | 'error
 
     switch (status) {
         case 'uploading':
-            message = `Uploading to Gallery... ${Math.round(progress)}%`;
+            message = `Uploading to Gallery & Sending WA... ${Math.round(progress)}%`;
             bgColor = 'bg-[var(--color-info)]';
             break;
         case 'success':
-            message = 'Upload successful!';
+            message = 'Upload & Send Successful!';
             bgColor = 'bg-[var(--color-positive)]';
             break;
         case 'error':
@@ -561,7 +562,7 @@ const App: React.FC = () => {
     setSelectedPriceList(priceList);
   }, []);
 
-  const handleCreatePayment = useCallback(async (userName: string) => {
+  const handleCreatePayment = useCallback(async (userName: string, whatsappNumber: string) => {
     if (!currentTenantId || !selectedPriceList) return;
     
     // Reset session creation lock
@@ -569,6 +570,7 @@ const App: React.FC = () => {
 
     const paymentData: Omit<PaymentEntry, 'id'> = {
         userName,
+        whatsappNumber, // Save WA number
         priceListId: selectedPriceList.id,
         priceListName: selectedPriceList.name,
         amount: selectedPriceList.price,
@@ -594,8 +596,6 @@ const App: React.FC = () => {
       setIsSessionLoading(true);
       try {
         // Find max takes from price list derived from payment
-        // Note: selectedPriceList might be null if reloaded, ideally use payment.priceListName to lookup or store maxTakes in payment
-        // For robustness, if selectedPriceList is missing, default to 1 or try to find it
         let sessionMaxTakes = 1;
         if (selectedPriceList && selectedPriceList.id === payment.priceListId) {
             sessionMaxTakes = selectedPriceList.maxTakes;
@@ -648,10 +648,6 @@ const App: React.FC = () => {
     if (payment) {
         startPaidSession(payment);
     } else {
-        // Fallback with just current Payment ID reference logic inside startPaidSession logic if possible, 
-        // but since we need maxTakes, we rely on the state finding it.
-        // If payment isn't in state yet (rare race condition), wait for listener or fail.
-        // Simple fallback:
         const tempPayment: any = { priceListId: selectedPriceList?.id };
         startPaidSession(tempPayment);
     }
@@ -714,9 +710,8 @@ const App: React.FC = () => {
         const sessionKey: SessionKey = { id: keyId, ...data[keyId] };
 
         if (sessionKey.isUnlimited) {
-           // Create a NEW generated session based on this unlimited key
            const newSessionData: Omit<SessionKey, 'id'> = {
-             code: `${sessionKey.code}-${Date.now()}`, // Unique internal code, user doesn't see this
+             code: `${sessionKey.code}-${Date.now()}`,
              originalCode: sessionKey.code,
              maxTakes: sessionKey.maxTakes,
              takesUsed: 1,
@@ -735,7 +730,6 @@ const App: React.FC = () => {
              setKeyCodeError("Gagal membuat sesi baru.");
            }
         } else {
-          // Standard One-Time Key Logic
           if (sessionKey.status !== 'available') {
               setKeyCodeError(`Kode ini telah ${sessionKey.status === 'completed' ? 'digunakan' : 'sedang berjalan'}.`);
               setIsSessionLoading(false);
@@ -836,12 +830,10 @@ const App: React.FC = () => {
 
     templates.forEach(t => {
       if (assignedTemplateIds.includes(t.id)) {
-        // If template is in the new list, but not assigned to this event yet, assign it
         if (t.eventId !== eventId) {
           updates[`/data/${currentTenantId}/templates/${t.id}/eventId`] = eventId;
         }
       } else if (t.eventId === eventId) {
-        // If template was for this event but is not in the new list, unassign it
         updates[`/data/${currentTenantId}/templates/${t.id}/eventId`] = null;
       }
     });
@@ -970,13 +962,11 @@ const App: React.FC = () => {
   
   const handleAdminLogin = useCallback((tenant?: Tenant) => {
     if (tenant) {
-      // Tenant login from master page
       setIsAdminLoggedIn(true);
       setIsMasterAdmin(false);
       setIsLoginModalOpen(false);
       window.location.hash = `#/${tenant.path}`;
     } else {
-      // Master admin login
       setIsAdminLoggedIn(true);
       setIsMasterAdmin(true);
       setIsLoginModalOpen(false);
@@ -1090,7 +1080,9 @@ const App: React.FC = () => {
     (async () => {
         try {
             let filename = `sans-photo-${Date.now()}.png`;
+            let whatsappNumber = ''; // Capture user's phone number
             
+            // Get data from current payment record if exists
             if (currentPaymentId) {
                 const payment = payments.find(p => p.id === currentPaymentId);
                 if (payment && payment.userName) {
@@ -1098,10 +1090,17 @@ const App: React.FC = () => {
                     if (safeUserName) {
                         filename = `sans-photo-${Date.now()}-${safeUserName}.png`;
                     }
+                    if (payment.whatsappNumber) {
+                        whatsappNumber = payment.whatsappNumber;
+                    }
                 }
             }
 
-            const payload = JSON.stringify({ foto: imageDataUrl, nama: filename });
+            const payload = JSON.stringify({ 
+                foto: imageDataUrl, 
+                nama: filename,
+                noHp: whatsappNumber // Send phone number to GAS for Fonnte integration
+            });
 
             await fetch(SCRIPT_URL_RETAKE, {
                 method: 'POST',
@@ -1208,7 +1207,7 @@ const App: React.FC = () => {
       case AppState.KEY_CODE_ENTRY: return <KeyCodeScreen onKeyCodeSubmit={handleKeyCodeSubmit} onBack={handleBack} error={keyCodeError} isLoading={isSessionLoading} />;
       
       // Payment Flow
-      case AppState.PRICE_SELECTION: return <PriceSelectionScreen priceLists={settings.priceLists || []} onSelect={handlePriceSelect} onBack={handleBack} onNext={(name) => handleCreatePayment(name)} />;
+      case AppState.PRICE_SELECTION: return <PriceSelectionScreen priceLists={settings.priceLists || []} onSelect={handlePriceSelect} onBack={handleBack} onNext={(name, wa) => handleCreatePayment(name, wa)} />;
       case AppState.PAYMENT_SHOW: 
           if (!selectedPriceList) { setAppState(AppState.WELCOME); return null; }
           return <PaymentScreen priceList={selectedPriceList} qrisImageUrl={settings.qrisImageUrl} onPaid={handlePaymentPaid} onBack={handleBack} />;
