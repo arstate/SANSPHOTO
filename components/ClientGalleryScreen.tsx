@@ -82,40 +82,43 @@ const ClientGalleryScreen: React.FC<ClientGalleryScreenProps> = ({ clientName })
 
       try {
         // --- STEP 1: VERIFY ACCESS VIA FIREBASE ---
-        // Karena kita tidak tahu tenantId dari URL public, kita harus mencari di semua tenant
-        // untuk menemukan pembayaran yang cocok dengan nama klien.
         let isAuthorized = false;
         
         try {
+            // 1. Prepare list of Tenant IDs to check. ALWAYS include 'master'.
+            const tenantIdsToCheck = ['master'];
+
+            // 2. Fetch other tenants from DB
             const tenantsSnapshot = await get(ref(db, 'tenants'));
             if (tenantsSnapshot.exists()) {
-                const tenants = tenantsSnapshot.val();
-                
-                // Loop through all tenants
-                for (const tenantId in tenants) {
-                    if (isAuthorized) break; // Exit if found
+                const tenantsData = tenantsSnapshot.val();
+                Object.keys(tenantsData).forEach(key => {
+                    tenantIdsToCheck.push(key);
+                });
+            }
+            
+            // 3. Loop through Master AND all Tenants to find the payment
+            for (const tenantId of tenantIdsToCheck) {
+                if (isAuthorized) break; // Exit loop if found
 
-                    const paymentsSnapshot = await get(ref(db, `data/${tenantId}/payments`));
-                    if (paymentsSnapshot.exists()) {
-                        const payments = Object.values(paymentsSnapshot.val()) as any[];
-                        
-                        // Check if any payment's generated slug matches the clientName in URL
-                        const match = payments.find(p => {
-                            const slug = generateSlug(p.userName || '');
-                            // Compare slugs case-insensitively
-                            return slug.toLowerCase() === clientName.toLowerCase();
-                        });
+                const paymentsSnapshot = await get(ref(db, `data/${tenantId}/payments`));
+                if (paymentsSnapshot.exists()) {
+                    const payments = Object.values(paymentsSnapshot.val()) as any[];
+                    
+                    // Check if any payment's generated slug matches the clientName in URL
+                    const match = payments.find(p => {
+                        const slug = generateSlug(p.userName || '');
+                        // Compare slugs case-insensitively
+                        return slug.toLowerCase() === clientName.toLowerCase();
+                    });
 
-                        if (match) {
-                            isAuthorized = true;
-                        }
+                    if (match) {
+                        isAuthorized = true;
                     }
                 }
             }
         } catch (fbError) {
             console.error("Firebase verification failed:", fbError);
-            // Fallback: If firebase fails, do we block? 
-            // For security requests ("gallery also will disappear"), we should block if we can't verify.
             throw new Error("Gagal memverifikasi akses galeri.");
         }
 
