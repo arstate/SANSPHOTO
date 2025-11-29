@@ -4,6 +4,7 @@ import { OnlineHistoryEntry } from '../types';
 import { DownloadIcon } from './icons/DownloadIcon';
 import { UploadingIcon } from './icons/UploadingIcon';
 import { CloseIcon } from './icons/CloseIcon';
+import { db, ref, get } from '../firebase';
 
 interface ClientGalleryScreenProps {
   clientName: string;
@@ -64,15 +65,69 @@ const ClientGalleryScreen: React.FC<ClientGalleryScreenProps> = ({ clientName })
   const [error, setError] = useState<string | null>(null);
   const [downloading, setDownloading] = useState<string | null>(null);
   const [selectedPhoto, setSelectedPhoto] = useState<OnlineHistoryEntry | null>(null);
+  const [isAccessAllowed, setIsAccessAllowed] = useState(false);
 
   // Format clean name for display (replace _ or - with space)
   const displayName = clientName.replace(/[-_]/g, ' ').toUpperCase();
 
+  // Helper to generate normalized slug from DB username for comparison
+  const generateSlug = (userName: string) => {
+      return userName.replace(/[^a-zA-Z0-9\s-_]/g, '').trim().replace(/\s+/g, '_');
+  };
+
   useEffect(() => {
-    const fetchHistory = async () => {
+    const verifyAndFetch = async () => {
       setIsLoading(true);
       setError(null);
+
       try {
+        // --- STEP 1: VERIFY ACCESS VIA FIREBASE ---
+        // Karena kita tidak tahu tenantId dari URL public, kita harus mencari di semua tenant
+        // untuk menemukan pembayaran yang cocok dengan nama klien.
+        let isAuthorized = false;
+        
+        try {
+            const tenantsSnapshot = await get(ref(db, 'tenants'));
+            if (tenantsSnapshot.exists()) {
+                const tenants = tenantsSnapshot.val();
+                
+                // Loop through all tenants
+                for (const tenantId in tenants) {
+                    if (isAuthorized) break; // Exit if found
+
+                    const paymentsSnapshot = await get(ref(db, `data/${tenantId}/payments`));
+                    if (paymentsSnapshot.exists()) {
+                        const payments = Object.values(paymentsSnapshot.val()) as any[];
+                        
+                        // Check if any payment's generated slug matches the clientName in URL
+                        const match = payments.find(p => {
+                            const slug = generateSlug(p.userName || '');
+                            // Compare slugs case-insensitively
+                            return slug.toLowerCase() === clientName.toLowerCase();
+                        });
+
+                        if (match) {
+                            isAuthorized = true;
+                        }
+                    }
+                }
+            }
+        } catch (fbError) {
+            console.error("Firebase verification failed:", fbError);
+            // Fallback: If firebase fails, do we block? 
+            // For security requests ("gallery also will disappear"), we should block if we can't verify.
+            throw new Error("Gagal memverifikasi akses galeri.");
+        }
+
+        if (!isAuthorized) {
+            setIsAccessAllowed(false);
+            setIsLoading(false);
+            return; // Stop here, do not fetch photos
+        }
+
+        setIsAccessAllowed(true);
+
+        // --- STEP 2: FETCH PHOTOS IF AUTHORIZED ---
         const response = await fetch(SCRIPT_URL);
         if (!response.ok) {
           throw new Error(`Failed to fetch gallery.`);
@@ -80,7 +135,6 @@ const ClientGalleryScreen: React.FC<ClientGalleryScreenProps> = ({ clientName })
         const data: OnlineHistoryEntry[] = await response.json();
         
         // Filter photos that contain the client name (case insensitive)
-        // Note: Filenames usually are "sans-photo-timestamp-Name.png"
         const cleanSearchTerm = clientName.replace(/[-_]/g, ' ').toLowerCase().trim();
         
         const filteredData = data.filter(item => {
@@ -91,15 +145,16 @@ const ClientGalleryScreen: React.FC<ClientGalleryScreenProps> = ({ clientName })
         // Sort by newest
         const sortedData = filteredData.sort((a, b) => new Date(b.waktu).getTime() - new Date(a.waktu).getTime());
         setPhotos(sortedData);
-      } catch (err) {
+
+      } catch (err: any) {
         console.error("Error fetching client history:", err);
-        setError("Tidak dapat memuat galeri foto. Silakan coba lagi nanti.");
+        setError(err.message || "Tidak dapat memuat galeri foto. Silakan coba lagi nanti.");
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchHistory();
+    verifyAndFetch();
   }, [clientName]);
   
   const handleDownload = async (entry: OnlineHistoryEntry) => {
@@ -128,6 +183,24 @@ const ClientGalleryScreen: React.FC<ClientGalleryScreenProps> = ({ clientName })
     }
   };
 
+  // Rendering for Unauthorized Access
+  if (!isLoading && !isAccessAllowed && !error) {
+      return (
+        <div className="flex flex-col items-center justify-center h-full text-center p-4 bg-[var(--color-bg-primary)]">
+            <div className="bg-[var(--color-bg-secondary)] p-8 rounded-2xl shadow-xl border border-red-500/30 max-w-md">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-20 w-20 mx-auto mb-4 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+                <h2 className="text-2xl font-bold text-[var(--color-text-primary)] mb-2">Akses Galeri Kadaluarsa</h2>
+                <p className="text-[var(--color-text-secondary)]">
+                    Maaf, galeri foto untuk <strong>{displayName}</strong> tidak ditemukan atau telah dihapus oleh admin.
+                </p>
+                <p className="text-xs text-[var(--color-text-muted)] mt-4">Silakan hubungi admin jika ini adalah kesalahan.</p>
+            </div>
+        </div>
+      );
+  }
+
   return (
     <>
       {selectedPhoto && (
@@ -148,7 +221,7 @@ const ClientGalleryScreen: React.FC<ClientGalleryScreenProps> = ({ clientName })
             {isLoading ? (
                 <div className="flex flex-col items-center justify-center h-full text-center text-[var(--color-text-muted)]">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--color-accent-primary)] mb-4"></div>
-                    <p>Mencari foto kakak...</p>
+                    <p>Memverifikasi akses & memuat foto...</p>
                 </div>
             ) : error ? (
                 <div className="flex flex-col items-center justify-center h-full text-center text-red-400">

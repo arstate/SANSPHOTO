@@ -677,8 +677,18 @@ const App: React.FC = () => {
   }, [currentTenantId]);
 
   const handleDeletePayment = useCallback(async (paymentId: string) => {
-      if (!currentTenantId || !window.confirm("Are you sure you want to delete this payment record?")) return;
+      if (!currentTenantId || !window.confirm("Are you sure you want to delete this payment record? This will revoke access to the generated gallery link.")) return;
       await remove(ref(db, `data/${currentTenantId}/payments/${paymentId}`));
+  }, [currentTenantId]);
+
+  const handleDeleteAllPayments = useCallback(async () => {
+      if (!currentTenantId || !window.confirm("WARNING: This will delete ALL payment records and revoke access to all client galleries. This action cannot be undone. Are you sure?")) return;
+      try {
+          await remove(ref(db, `data/${currentTenantId}/payments`));
+      } catch (error) {
+          console.error("Error deleting all payments:", error);
+          alert("Failed to delete all payments.");
+      }
   }, [currentTenantId]);
 
   const handleSaveWhatsappNumber = useCallback(async (whatsappNumber: string) => {
@@ -1222,7 +1232,7 @@ const App: React.FC = () => {
             });
         }
         return <TemplateSelection templates={sortedTemplates} onSelect={handleTemplateSelect} onBack={handleBack} isAdminLoggedIn={isAdminLoggedIn} onAddTemplate={handleStartAddTemplate} onEditMetadata={handleStartEditTemplateMetadata} onEditLayout={handleStartEditLayout} onDelete={handleDeleteTemplate} />;
-      case AppState.SETTINGS: return <SettingsScreen settings={settings} onSettingsChange={handleSettingsChange} onManageTemplates={handleManageTemplates} onManageEvents={handleManageEvents} onManageSessions={handleManageSessions} onManageReviews={handleManageReviews} onViewHistory={handleViewHistory} onBack={handleBack} isMasterAdmin={isMasterAdmin} onManageTenants={handleManageTenants} payments={payments} onDeletePayment={handleDeletePayment} onAcceptPayment={handleAcceptPayment} />;
+      case AppState.SETTINGS: return <SettingsScreen settings={settings} onSettingsChange={handleSettingsChange} onManageTemplates={handleManageTemplates} onManageEvents={handleManageEvents} onManageSessions={handleManageSessions} onManageReviews={handleManageReviews} onViewHistory={handleViewHistory} onBack={handleBack} isMasterAdmin={isMasterAdmin} onManageTenants={handleManageTenants} payments={payments} onDeletePayment={handleDeletePayment} onAcceptPayment={handleAcceptPayment} onDeleteAllPayments={handleDeleteAllPayments} />;
       case AppState.MANAGE_TENANTS: if (!isMasterAdmin) { setAppState(AppState.WELCOME); return null; } return <ManageTenantsScreen tenants={tenants} onBack={handleBack} onAddTenant={handleAddTenant} onUpdateTenant={handleUpdateTenant} onDeleteTenant={handleDeleteTenant} />;
       case AppState.MANAGE_EVENTS: return <ManageEventsScreen events={events} onBack={handleBack} onAddEvent={handleAddEvent} onRenameEvent={handleStartRenameEvent} onDeleteEvent={handleDeleteEvent} onToggleArchive={handleToggleArchiveEvent} onAssignTemplates={handleStartAssigningTemplates} onQrCodeSettings={handleStartEditQrCode} />;
       case AppState.MANAGE_SESSIONS: if (!isAdminLoggedIn) { setAppState(AppState.WELCOME); return null; } return <ManageSessionsScreen sessionKeys={sessionKeys} onBack={handleBack} onAddKey={handleAddSessionKey} onDeleteKey={handleDeleteSessionKey} onDeleteAllKeys={handleDeleteAllSessionKeys} onDeleteFreeplayKeys={handleDeleteFreeplaySessionKeys} />;

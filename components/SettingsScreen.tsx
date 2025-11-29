@@ -43,6 +43,7 @@ interface SettingsScreenProps {
     payments?: PaymentEntry[];
     onDeletePayment: (id: string) => void;
     onAcceptPayment: (id: string) => void;
+    onDeleteAllPayments: () => void; // New Prop
 }
 
 export const GOOGLE_FONTS = [
@@ -84,7 +85,7 @@ const CategoryButton: React.FC<{
 
 const SettingsScreen: React.FC<SettingsScreenProps> = ({ 
     settings, onSettingsChange, onManageTemplates, onManageEvents, onManageSessions, onManageReviews, onViewHistory, onBack,
-    isMasterAdmin, onManageTenants, payments = [], onDeletePayment, onAcceptPayment
+    isMasterAdmin, onManageTenants, payments = [], onDeletePayment, onAcceptPayment, onDeleteAllPayments
 }) => {
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState<SettingsCategory>('general');
@@ -1755,6 +1756,17 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                             {payments.length === 0 && <p className="text-center text-[var(--color-text-muted)] py-10">No payments yet.</p>}
                         </div>
                     </div>
+                    {payments.length > 0 && (
+                        <div className="flex justify-end pt-4 border-t border-[var(--color-border-primary)]">
+                            <button
+                                onClick={onDeleteAllPayments}
+                                className="bg-[var(--color-negative)] hover:bg-[var(--color-negative-hover)] text-[var(--color-negative-text)] font-bold py-2 px-6 rounded-full text-sm transition-transform transform hover:scale-105 flex items-center justify-center gap-2"
+                            >
+                                <TrashIcon />
+                                Hapus Semua Riwayat
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
         );
