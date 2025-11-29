@@ -7,13 +7,12 @@ interface PriceSelectionScreenProps {
   priceLists: PriceList[];
   onSelect: (priceList: PriceList) => void;
   onBack: () => void;
-  onNext: (userName: string, whatsappNumber: string) => void;
+  onNext: (userName: string) => void;
 }
 
 const PriceSelectionScreen: React.FC<PriceSelectionScreenProps> = ({ priceLists, onSelect, onBack, onNext }) => {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [userName, setUserName] = useState('');
-  const [whatsappNumber, setWhatsappNumber] = useState('');
 
   const handleSelect = (pkg: PriceList) => {
       setSelectedId(pkg.id);
@@ -22,8 +21,7 @@ const PriceSelectionScreen: React.FC<PriceSelectionScreenProps> = ({ priceLists,
 
   const handleNext = () => {
       if (selectedId && userName.trim()) {
-          // Pass empty string if WA is optional, or enforce validation here
-          onNext(userName.trim(), whatsappNumber.trim());
+          onNext(userName.trim());
       }
   };
 
@@ -58,39 +56,23 @@ const PriceSelectionScreen: React.FC<PriceSelectionScreenProps> = ({ priceLists,
         </div>
 
         {selectedId && (
-            <div className="w-full max-w-md px-4 animate-fade-in bg-[var(--color-bg-secondary)] p-6 rounded-xl border border-[var(--color-border-primary)] shadow-xl">
-                <div className="space-y-4">
-                    <div>
-                        <label className="block text-sm font-bold mb-2 text-[var(--color-text-secondary)]">Nama Pesanan</label>
-                        <input
-                            type="text"
-                            value={userName}
-                            onChange={(e) => setUserName(e.target.value)}
-                            placeholder="Masukkan Nama Anda"
-                            className="w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-lg py-3 px-4 text-lg text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent-primary)]"
-                        />
-                    </div>
-                    
-                    <div>
-                        <label className="block text-sm font-bold mb-2 text-[var(--color-text-secondary)]">Nomor WhatsApp (Untuk kirim foto)</label>
-                        <input
-                            type="tel"
-                            value={whatsappNumber}
-                            onChange={(e) => setWhatsappNumber(e.target.value)}
-                            placeholder="Contoh: 08123456789"
-                            className="w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-lg py-3 px-4 text-lg text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[#25D366]"
-                        />
-                        <p className="text-xs text-[var(--color-text-muted)] mt-1">Foto akan dikirim otomatis ke nomor ini setelah sesi selesai.</p>
-                    </div>
-
-                    <button
-                        onClick={handleNext}
-                        disabled={!userName.trim()}
-                        className="w-full bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-[var(--color-accent-primary-text)] font-bold py-4 px-8 rounded-full text-xl transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed mt-4"
-                    >
-                        Lanjut ke Pembayaran
-                    </button>
-                </div>
+            <div className="w-full max-w-md px-4 animate-fade-in">
+                <label className="block text-sm font-bold mb-2 text-[var(--color-text-secondary)]">Nama Pesanan</label>
+                <input
+                    type="text"
+                    value={userName}
+                    onChange={(e) => setUserName(e.target.value)}
+                    placeholder="Masukkan Nama Anda"
+                    className="w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-lg py-3 px-4 text-lg text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent-primary)] mb-4"
+                />
+                
+                <button
+                    onClick={handleNext}
+                    disabled={!userName.trim()}
+                    className="w-full bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-[var(--color-accent-primary-text)] font-bold py-4 px-8 rounded-full text-xl transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    Lanjut ke Pembayaran
+                </button>
             </div>
         )}
     </div>
