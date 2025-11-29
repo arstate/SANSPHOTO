@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Settings, FloatingObject, PriceList, PaymentEntry, OnlineHistoryEntry } from '../types';
 import { BackIcon } from './icons/BackIcon';
@@ -26,6 +27,7 @@ import { PrintIcon } from './icons/PrintIcon';
 import { CheckIcon } from './icons/CheckIcon';
 import { WhatsAppIcon } from './icons/WhatsAppIcon';
 import { GlobeIcon } from './icons/GlobeIcon';
+import { SpeedIcon } from './icons/SpeedIcon';
 
 interface SettingsScreenProps {
     settings: Settings;
@@ -55,7 +57,7 @@ export const GOOGLE_FONTS = [
   { name: 'Roboto Mono', value: "'Roboto Mono', monospace" },
 ];
 
-type SettingsCategory = 'general' | 'appearance' | 'security' | 'content' | 'payment' | 'reviews' | 'master';
+type SettingsCategory = 'general' | 'appearance' | 'security' | 'content' | 'payment' | 'reviews' | 'network' | 'master';
 
 // URL to fetch list of photos (Same as OnlineHistoryScreen)
 const SCRIPT_URL_GET_HISTORY = 'https://script.google.com/macros/s/AKfycbwbnlO9vk95yTKeHFFilhJbfFcjibH80sFzsA5II3BAkuNudCTabRNdBUhYlCEHHO5CYQ/exec';
@@ -103,6 +105,12 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const [isFindingPhoto, setIsFindingPhoto] = useState<string | null>(null); // Stores ID of payment being searched
   const [sendingWhatsappId, setSendingWhatsappId] = useState<string | null>(null); // Stores ID of payment being sent to WA
   const [downloadingPhotoIds, setDownloadingPhotoIds] = useState<string[]>([]);
+
+  // Speed Test State
+  const [testStatus, setTestStatus] = useState<'idle' | 'ping' | 'download' | 'upload'>('idle');
+  const [pingResult, setPingResult] = useState<number | null>(null);
+  const [downloadResult, setDownloadResult] = useState<string | null>(null);
+  const [uploadResult, setUploadResult] = useState<string | null>(null);
 
   const isLight = settings.theme === 'light';
 
@@ -445,6 +453,106 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
       } finally {
           setDownloadingPhotoIds(prev => prev.filter(id => id !== photo.nama));
       }
+  };
+
+  const runSpeedTest = async () => {
+    setPingResult(null);
+    setDownloadResult(null);
+    setUploadResult(null);
+
+    // 1. PING TEST
+    setTestStatus('ping');
+    const startPing = performance.now();
+    try {
+        await fetch('https://www.gstatic.com/generate_204?t=' + Date.now(), { mode: 'no-cors', cache: 'no-store' });
+        const endPing = performance.now();
+        setPingResult(Math.round(endPing - startPing));
+    } catch (e) {
+        setPingResult(0);
+    }
+
+    // 2. DOWNLOAD TEST (Parallel Streams using Cloudflare)
+    setTestStatus('download');
+    setDownloadResult('0.00');
+
+    const concurrency = 4; // Use 4 simultaneous connections to saturate bandwidth
+    const targetUrl = 'https://speed.cloudflare.com/__down?bytes=50000000'; // 50MB dummy file
+    const abortController = new AbortController();
+    const signal = abortController.signal;
+
+    let totalBytesReceived = 0;
+    const startTime = performance.now();
+    let activeStreams = 0;
+
+    // Worker function for a single stream
+    const downloadStream = async () => {
+        activeStreams++;
+        try {
+            const response = await fetch(targetUrl, { signal });
+            if (!response.body) return;
+            const reader = response.body.getReader();
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                if (value) {
+                    totalBytesReceived += value.length;
+                }
+            }
+        } catch (e) {
+            // Ignore abort errors or fetch errors
+        } finally {
+            activeStreams--;
+        }
+    };
+
+    // Start concurrent streams
+    const promises = [];
+    for (let i = 0; i < concurrency; i++) {
+        promises.push(downloadStream());
+    }
+
+    // Interval to calculate speed every 150ms
+    await new Promise<void>((resolve) => {
+        const intervalId = setInterval(() => {
+            const now = performance.now();
+            const durationSec = (now - startTime) / 1000;
+
+            if (durationSec > 0) {
+                const bits = totalBytesReceived * 8;
+                const mbps = (bits / durationSec) / 1_000_000;
+                setDownloadResult(mbps.toFixed(2));
+            }
+
+            // Stop condition: Run for ~8 seconds or if all streams finished early
+            if (durationSec >= 8 || activeStreams === 0) {
+                clearInterval(intervalId);
+                abortController.abort(); // Cancel remaining downloads
+                resolve();
+            }
+        }, 150);
+    });
+
+    // 3. UPLOAD TEST (Posting 2MB dummy data to HttpBin)
+    setTestStatus('upload');
+    const ulSize = 2000000; // 2 MB
+    const ulData = new Uint8Array(ulSize); 
+    const ulStart = performance.now();
+    try {
+        await fetch('https://httpbin.org/post', {
+            method: 'POST',
+            body: ulData
+        });
+        const ulEnd = performance.now();
+        const ulDuration = (ulEnd - ulStart) / 1000;
+        const ulSpeed = ((ulSize * 8) / ulDuration) / 1000000;
+        setUploadResult(ulSpeed.toFixed(2));
+    } catch (e) {
+        // Fallback for upload error (often CORS on httpbin)
+        setUploadResult("Error/Blocked");
+    }
+
+    setTestStatus('idle');
   };
 
   const handleConfigurePrinter = () => {
@@ -1782,6 +1890,73 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
             </div>
           </div>
         );
+      case 'network':
+        return (
+            <div className="space-y-6">
+                <div className="p-6 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] text-left">
+                    <h3 className="text-xl font-bold text-[var(--color-text-accent)] mb-4 flex items-center gap-2">
+                        <SpeedIcon /> Internet Speed Test
+                    </h3>
+                    <p className="text-[var(--color-text-muted)] mb-6">
+                        Test your connection speed (Ping, Download, Upload) to ensure smooth photo uploading.
+                    </p>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                        {/* Ping Gauge */}
+                        <div className="bg-[var(--color-bg-tertiary)] p-4 rounded-lg flex flex-col items-center justify-center border border-[var(--color-border-secondary)]">
+                            <span className="text-[var(--color-text-secondary)] text-sm uppercase tracking-wider mb-2">Ping</span>
+                            <div className="flex items-end gap-1">
+                                {testStatus === 'ping' ? (
+                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--color-accent-primary)] mb-2"></div>
+                                ) : (
+                                    <span className="text-4xl font-bebas text-[var(--color-text-primary)]">{pingResult !== null ? pingResult : '-'}</span>
+                                )}
+                                <span className="text-sm text-[var(--color-text-muted)] mb-1">ms</span>
+                            </div>
+                        </div>
+
+                        {/* Download Gauge */}
+                        <div className="bg-[var(--color-bg-tertiary)] p-4 rounded-lg flex flex-col items-center justify-center border border-[var(--color-border-secondary)]">
+                            <span className="text-[var(--color-text-secondary)] text-sm uppercase tracking-wider mb-2">Download</span>
+                            <div className="flex items-end gap-1">
+                                {testStatus === 'download' ? (
+                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500 mb-2"></div>
+                                ) : (
+                                    <span className="text-4xl font-bebas text-[var(--color-text-primary)]">{downloadResult !== null ? downloadResult : '-'}</span>
+                                )}
+                                <span className="text-sm text-[var(--color-text-muted)] mb-1">Mbps</span>
+                            </div>
+                        </div>
+
+                        {/* Upload Gauge */}
+                        <div className="bg-[var(--color-bg-tertiary)] p-4 rounded-lg flex flex-col items-center justify-center border border-[var(--color-border-secondary)]">
+                            <span className="text-[var(--color-text-secondary)] text-sm uppercase tracking-wider mb-2">Upload</span>
+                            <div className="flex items-end gap-1">
+                                {testStatus === 'upload' ? (
+                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mb-2"></div>
+                                ) : (
+                                    <span className="text-4xl font-bebas text-[var(--color-text-primary)]">{uploadResult !== null ? uploadResult : '-'}</span>
+                                )}
+                                <span className="text-sm text-[var(--color-text-muted)] mb-1">Mbps</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="text-center">
+                        <button
+                            onClick={runSpeedTest}
+                            disabled={testStatus !== 'idle'}
+                            className="bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-[var(--color-accent-primary-text)] font-bold py-3 px-8 rounded-full text-xl transition-transform transform hover:scale-105 flex items-center justify-center gap-2 mx-auto disabled:bg-[var(--color-bg-tertiary)] disabled:cursor-wait"
+                        >
+                            {testStatus !== 'idle' ? 'Running Test...' : 'Start Speed Test'}
+                        </button>
+                        {testStatus !== 'idle' && (
+                            <p className="mt-4 text-xs text-[var(--color-text-muted)] animate-pulse">Testing {testStatus} speed...</p>
+                        )}
+                    </div>
+                </div>
+            </div>
+        );
       case 'master':
         return isMasterAdmin ? (
           <div className="space-y-6">
@@ -1931,6 +2106,12 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                  icon={<ReviewsIcon />}
                  isActive={activeCategory === 'reviews'}
                  onClick={() => setActiveCategory('reviews')}
+               />
+               <CategoryButton 
+                 label="Network"
+                 icon={<SpeedIcon />}
+                 isActive={activeCategory === 'network'}
+                 onClick={() => setActiveCategory('network')}
                />
                {isMasterAdmin && (
                   <CategoryButton 
