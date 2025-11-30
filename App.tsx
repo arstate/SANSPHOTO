@@ -41,6 +41,7 @@ import useFullscreenLock from './hooks/useFullscreenLock';
 
 // URL Google Apps Script untuk menangani unggahan
 const SCRIPT_URL_RETAKE = 'https://script.google.com/macros/s/AKfycbyaHTCbrYvk4JtiZInyZilCLhYmi4dcaXmasPpV365UqdsUtftJ1FIscd1Nc4fkRYD5BA/exec';
+const FONNTE_API_KEY = 'pP5bEpfrqJ7ii2j2jwha';
 
 const INITIAL_PHOTO_SLOTS: PhotoSlot[] = [
   { id: 1, inputId: 1, x: 90,  y: 70,   width: 480, height: 480 },
@@ -691,10 +692,64 @@ const App: React.FC = () => {
       }
   }, [currentTenantId]);
 
+  const generateClientWebLink = (userName: string) => {
+      const safeName = userName.replace(/[^a-zA-Z0-9\s-_]/g, '').trim().replace(/\s+/g, '_');
+      return `${window.location.origin}/#/${safeName}`;
+  };
+
   const handleSaveWhatsappNumber = useCallback(async (whatsappNumber: string) => {
       if (!currentTenantId || !currentPaymentId) return;
-      await update(ref(db, `data/${currentTenantId}/payments/${currentPaymentId}`), { whatsappNumber });
-  }, [currentTenantId, currentPaymentId]);
+
+      try {
+          // 1. Get current payment details to get the name
+          const payment = payments.find(p => p.id === currentPaymentId);
+          if (!payment) {
+              console.error("Payment not found for WA logic");
+              return;
+          }
+
+          const userName = payment.userName;
+          
+          // 2. Generate Gallery Link
+          const galleryUrl = generateClientWebLink(userName);
+
+          // 3. Update Firebase with Whatsapp Number AND Generated Link
+          await update(ref(db, `data/${currentTenantId}/payments/${currentPaymentId}`), { 
+              whatsappNumber,
+              galleryUrl 
+          });
+
+          // 4. Construct Message
+          const message = `Halo Kak ${userName}, Terima kasih sudah menggunakan jasa photoboth dari Sans Photobooth! 📸✨\n\nBerikut link galeri foto khusus untuk kakak:\n${galleryUrl}\n\nFoto bisa didownload sepuasnya dari link tersebut. Ditunggu kedatangannya kembali! 🥰`;
+
+          // 5. Send Fonnte Message
+          const data = new FormData();
+          data.append("target", whatsappNumber);
+          data.append("message", message);
+          data.append("countryCode", "62"); // Assuming Indonesia
+
+          const response = await fetch("https://api.fonnte.com/send", {
+              method: "POST",
+              headers: new Headers({
+                  Authorization: FONNTE_API_KEY,
+              }),
+              body: data,
+          });
+
+          const result = await response.json();
+          if (result.status) {
+              // Success handled by UI showing tick or closing modal via Promise resolve
+              console.log("Fonnte success:", result);
+          } else {
+              console.error("Fonnte error response:", result);
+              alert("Gagal mengirim pesan otomatis, namun nomor telah disimpan.");
+          }
+
+      } catch (error) {
+          console.error("Error saving Whatsapp or Sending Message:", error);
+          alert("Terjadi kesalahan saat memproses data WhatsApp.");
+      }
+  }, [currentTenantId, currentPaymentId, payments]);
 
 
   const handleKeyCodeSubmit = useCallback(async (code: string) => {

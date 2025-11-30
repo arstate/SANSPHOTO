@@ -32,7 +32,7 @@ interface PreviewScreenProps {
   isDownloadButtonEnabled: boolean;
   isAutoDownloadEnabled: boolean;
   printSettings: PrintSettings;
-  onSaveWhatsapp?: (number: string) => void;
+  onSaveWhatsapp?: (number: string) => Promise<void>; // Updated to return Promise
   currentPaymentId?: string | null;
   savedWhatsappNumber?: string;
   selectedFilter?: string; // New Prop for Filter
@@ -49,19 +49,25 @@ interface PrintModalProps {
 interface WhatsappModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSubmit: (number: string) => void;
+    onSubmit: (number: string) => Promise<void>;
 }
 
 const WhatsappModal: React.FC<WhatsappModalProps> = ({ isOpen, onClose, onSubmit }) => {
     const [number, setNumber] = useState('');
+    const [isSending, setIsSending] = useState(false);
 
     if (!isOpen) return null;
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (number.trim()) {
-            onSubmit(number.trim());
-            onClose();
+            setIsSending(true);
+            try {
+                await onSubmit(number.trim());
+                onClose();
+            } finally {
+                setIsSending(false);
+            }
         }
     };
 
@@ -69,7 +75,7 @@ const WhatsappModal: React.FC<WhatsappModalProps> = ({ isOpen, onClose, onSubmit
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={onClose}>
             <div className="bg-[var(--color-bg-secondary)] rounded-lg shadow-xl p-6 w-full max-w-sm border border-[var(--color-border-primary)]" onClick={e => e.stopPropagation()}>
                 <h2 className="font-bebas text-3xl text-center mb-2">Kirim ke WhatsApp</h2>
-                <p className="text-center text-[var(--color-text-muted)] text-sm mb-4">Masukkan nomor WA kamu agar admin bisa mengirimkan softfile foto.</p>
+                <p className="text-center text-[var(--color-text-muted)] text-sm mb-4">Masukkan nomor WA kamu agar admin bisa mengirimkan softfile foto secara otomatis.</p>
                 <form onSubmit={handleSubmit}>
                     <input 
                         type="tel" 
@@ -78,12 +84,29 @@ const WhatsappModal: React.FC<WhatsappModalProps> = ({ isOpen, onClose, onSubmit
                         placeholder="08xxxxxxxxxx"
                         className="w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md py-3 px-4 text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[#25D366] mb-4 text-center text-xl font-bold"
                         autoFocus
+                        disabled={isSending}
                     />
                     <div className="flex flex-col gap-2">
-                        <button type="submit" className="w-full bg-[#25D366] hover:bg-[#20b858] text-white font-bold py-3 px-4 rounded-full text-lg shadow-lg">
-                            Kirim Nomor
+                        <button 
+                            type="submit" 
+                            disabled={isSending || !number.trim()}
+                            className="w-full bg-[#25D366] hover:bg-[#20b858] text-white font-bold py-3 px-4 rounded-full text-lg shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        >
+                            {isSending ? (
+                                <>
+                                    <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></div>
+                                    <span>Mengirim...</span>
+                                </>
+                            ) : (
+                                "Kirim Nomor"
+                            )}
                         </button>
-                        <button type="button" onClick={onClose} className="w-full bg-transparent hover:bg-[var(--color-bg-tertiary)] text-[var(--color-text-muted)] font-bold py-2 rounded-full text-sm">
+                        <button 
+                            type="button" 
+                            onClick={onClose} 
+                            disabled={isSending}
+                            className="w-full bg-transparent hover:bg-[var(--color-bg-tertiary)] text-[var(--color-text-muted)] font-bold py-2 rounded-full text-sm disabled:opacity-50"
+                        >
                             Batal
                         </button>
                     </div>
@@ -367,9 +390,9 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
     setIsPrintModalOpen(false);
   }, [printSettings, template]);
 
-  const handleWhatsappSubmit = (number: string) => {
+  const handleWhatsappSubmit = async (number: string) => {
       if (onSaveWhatsapp) {
-          onSaveWhatsapp(number);
+          await onSaveWhatsapp(number);
       }
   };
 
