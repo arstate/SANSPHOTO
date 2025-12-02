@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-    <meta name="theme-color" content="#111827" />
+    <meta name="theme-color" content="#FFDE59" />
     <meta name="description" content="SANS PHOTOBOTH - Web based photobooth application" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -18,88 +18,82 @@
     <script src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Bebas+Neue&family=Roboto:wght@400;700&family=Lora:ital@0;1&family=Oswald:wght@400;700&family=Lobster&family=Pacifico&family=Caveat&family=Roboto+Mono&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Bebas+Neue&family=Roboto:wght@400;700&family=Lora:ital@0;1&family=Oswald:wght@400;700&family=Lobster&family=Pacifico&family=Caveat&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
       :root {
-        --color-bg-primary: #111827;
-        --color-bg-secondary: #1F2937;
-        --color-bg-tertiary: #374151;
-        --color-bg-overlay: rgba(17, 24, 39, 0.8);
+        /* NEO-BRUTALISM PALETTE (Dark/Default Mode is actually Colorful in this theme) */
+        --color-bg-primary: #FFDE59; /* Vibrant Yellow */
+        --color-bg-secondary: #FFFFFF; /* Stark White for cards */
+        --color-bg-tertiary: #F3F4F6; /* Light Grey for inner sections */
+        --color-bg-overlay: rgba(0, 0, 0, 0.85);
 
-        --color-border-primary: #374151;
-        --color-border-secondary: #4B5563;
+        --color-border-primary: #000000; /* Pitch Black Borders */
+        --color-border-secondary: #000000;
         --color-border-focus: #8B5CF6;
-        --color-border-active: #A78BFA;
+        --color-border-active: #000000;
 
-        --color-text-primary: #F9FAFB;
-        --color-text-secondary: #D1D5DB;
-        --color-text-muted: #9CA3AF;
+        --color-text-primary: #000000; /* Always Black Text for readability on Yellow/White */
+        --color-text-secondary: #1F2937;
+        --color-text-muted: #4B5563;
         --color-text-placeholder: #6B7280;
-        --color-text-accent: #A78BFA;
+        --color-text-accent: #7C3AED;
 
-        --color-accent-primary: #8B5CF6;
+        /* Buttons & Accents - High Saturation */
+        --color-accent-primary: #8B5CF6; /* Vibrant Purple */
         --color-accent-primary-hover: #7C3AED;
         --color-accent-primary-text: #FFFFFF;
 
-        --color-accent-secondary: #FBBF24;
-        --color-accent-secondary-hover: #F59E0B;
-        --color-accent-secondary-text: #1F2937;
+        --color-accent-secondary: #FB923C; /* Orange */
+        --color-accent-secondary-hover: #F97316;
+        --color-accent-secondary-text: #000000;
 
-        --color-positive: #10B981;
-        --color-positive-hover: #059669;
-        --color-positive-text: #FFFFFF;
+        --color-positive: #22C55E; /* Bright Green */
+        --color-positive-hover: #16A34A;
+        --color-positive-text: #000000;
         
-        --color-negative: #EF4444;
+        --color-negative: #EF4444; /* Bright Red */
         --color-negative-hover: #DC2626;
         --color-negative-text: #FFFFFF;
         
-        --color-info: #3B82F6;
-        --color-info-hover: #2563EB;
-        --color-info-text: #FFFFFF;
+        --color-info: #06B6D4; /* Cyan */
+        --color-info-hover: #0891B2;
+        --color-info-text: #000000;
+
+        /* Brutalist Specifics */
+        --border-width: 3px;
+        --shadow-hard: 4px 4px 0px 0px #000000;
+        --shadow-hard-sm: 2px 2px 0px 0px #000000;
+        --shadow-hard-lg: 8px 8px 0px 0px #000000;
       }
 
+      /* Light Theme Variant (Alternative Palette - "Clean Brutalism") */
       .light {
         --color-bg-primary: #FFFFFF;
-        --color-bg-secondary: #F3F4F6;
+        --color-bg-secondary: #F0F0F0;
         --color-bg-tertiary: #E5E7EB;
-        --color-bg-overlay: rgba(255, 255, 255, 0.8);
+        --color-bg-overlay: rgba(255, 255, 255, 0.9);
 
-        --color-border-primary: #D1D5DB;
-        --color-border-secondary: #9CA3AF;
-        --color-border-focus: #8B5CF6;
-        --color-border-active: #6D28D9;
-
-        --color-text-primary: #1F2937;
-        --color-text-secondary: #374151;
-        --color-text-muted: #6B7280;
-        --color-text-placeholder: #9CA3AF;
-        --color-text-accent: #6D28D9;
+        --color-border-primary: #000000;
         
-        --color-accent-primary: #8B5CF6;
-        --color-accent-primary-hover: #7C3AED;
+        --color-text-primary: #000000;
+        --color-text-secondary: #1F2937;
+        
+        --color-accent-primary: #000000; /* Black Accent */
+        --color-accent-primary-hover: #333333;
         --color-accent-primary-text: #FFFFFF;
-
-        --color-accent-secondary: #FBBF24;
-        --color-accent-secondary-hover: #F59E0B;
-        --color-accent-secondary-text: #1F2937;
         
-        --color-positive: #16A34A;
-        --color-positive-hover: #15803D;
-        --color-positive-text: #FFFFFF;
-
-        --color-negative: #DC2626;
-        --color-negative-hover: #B91C1C;
-        --color-negative-text: #FFFFFF;
-        
-        --color-info: #2563EB;
-        --color-info-hover: #1D4ED8;
-        --color-info-text: #FFFFFF;
+        --color-accent-secondary: #FFDE59; /* Yellow Accent */
+        --color-accent-secondary-hover: #FACC15;
+        --color-accent-secondary-text: #000000;
       }
 
       body {
         font-family: 'Poppins', sans-serif;
         overflow: hidden;
         background-color: var(--color-bg-primary);
+        /* Background Pattern for Texture */
+        background-image: radial-gradient(#000000 1px, transparent 1px);
+        background-size: 20px 20px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -109,8 +103,12 @@
         transition: background-color 0.3s ease, color 0.3s ease;
         overscroll-behavior: none;
       }
+      
       .font-bebas {
         font-family: 'Bebas Neue', sans-serif;
+      }
+      .font-mono {
+        font-family: 'Roboto Mono', monospace;
       }
 
       #app-container {
@@ -121,7 +119,10 @@
         max-height: 100vh;
         max-width: calc(100vh * 16 / 9);
         background-color: var(--color-bg-primary);
+        border: var(--border-width) solid var(--color-border-primary);
+        box-shadow: var(--shadow-hard-lg);
         transition: background-color 0.3s ease;
+        overflow: hidden; /* Ensure content stays within border */
       }
       
       #app-container.responsive-mode {
@@ -130,33 +131,95 @@
         height: 100vh;
         max-height: 100vh;
         max-width: 100vw;
+        border: none;
       }
 
       #root {
         width: 100%;
         height: 100%;
         overflow: hidden;
+        /* Ensure inner content has a solid background if needed, usually transparent is fine */
       }
 
+      /* Custom Scrollbar - Brutalist */
       .scrollbar-thin {
         scrollbar-width: thin;
-        scrollbar-color: var(--color-border-secondary) var(--color-bg-secondary);
+        scrollbar-color: var(--color-border-primary) var(--color-bg-tertiary);
       }
       .scrollbar-thin::-webkit-scrollbar {
-        height: 8px;
-        width: 8px;
+        height: 12px;
+        width: 12px;
       }
       .scrollbar-thin::-webkit-scrollbar-track {
-        background: var(--color-bg-secondary);
-        border-radius: 10px;
+        background: var(--color-bg-tertiary);
+        border-left: 2px solid black;
       }
       .scrollbar-thin::-webkit-scrollbar-thumb {
-        background-color: var(--color-border-secondary);
-        border-radius: 10px;
-        border: 2px solid var(--color-bg-secondary);
+        background-color: var(--color-accent-primary);
+        border: 2px solid black;
       }
       .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-        background-color: var(--color-text-muted);
+        background-color: var(--color-accent-primary-hover);
+      }
+
+      /* --- NEO-BRUTALISM GLOBAL OVERRIDES --- */
+      
+      /* Buttons */
+      button {
+        border: var(--border-width) solid var(--color-border-primary) !important;
+        box-shadow: var(--shadow-hard) !important;
+        transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+      button:active:not(:disabled) {
+        transform: translate(4px, 4px) !important;
+        box-shadow: none !important;
+      }
+      button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        box-shadow: none !important;
+        background-color: #E5E7EB !important;
+        color: #9CA3AF !important;
+        border-color: #9CA3AF !important;
+      }
+      button.transform-none {
+        transform: none !important;
+      }
+
+      /* Cards / Containers */
+      .bg-\[var\(--color-bg-secondary\)\] {
+        background-color: var(--color-bg-secondary) !important;
+        border: var(--border-width) solid var(--color-border-primary) !important;
+        box-shadow: var(--shadow-hard) !important;
+      }
+      
+      /* Inputs */
+      input[type="text"],
+      input[type="password"],
+      input[type="number"],
+      input[type="url"],
+      input[type="datetime-local"],
+      textarea,
+      select {
+        background-color: #FFFFFF !important;
+        border: var(--border-width) solid var(--color-border-primary) !important;
+        border-radius: 0.5rem !important;
+        box-shadow: var(--shadow-hard-sm) !important;
+        color: #000000 !important;
+        font-family: 'Roboto Mono', monospace !important;
+        font-weight: 600 !important;
+      }
+      input:focus, textarea:focus, select:focus {
+        outline: none !important;
+        box-shadow: var(--shadow-hard) !important;
+        background-color: #FEF3C7 !important; /* Light yellow on focus */
+      }
+
+      /* Text Shadows for overlay text */
+      .text-shadow-hard {
+        text-shadow: 2px 2px 0px #000000;
       }
 
       @keyframes shake {
@@ -170,15 +233,9 @@
       }
 
       @keyframes float-3d-spin {
-        0% {
-          transform: translateY(0px);
-        }
-        50% {
-          transform: translateY(-20px);
-        }
-        100% {
-          transform: translateY(0px);
-        }
+        0% { transform: translateY(0px); }
+        50% { transform: translateY(-20px); }
+        100% { transform: translateY(0px); }
       }
       .animate-float-3d {
         animation: float-3d-spin 6s ease-in-out infinite;

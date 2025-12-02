@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Settings, FloatingObject, PriceList, PaymentEntry, OnlineHistoryEntry } from '../types';
 import { BackIcon } from './icons/BackIcon';
@@ -71,14 +70,14 @@ const CategoryButton: React.FC<{
 }> = ({ label, icon, isActive, onClick }) => (
   <button
     onClick={onClick}
-    className={`w-full flex items-center gap-3 text-left p-3 rounded-lg transition-colors text-lg ${
+    className={`w-full flex items-center gap-3 text-left p-3 rounded-md transition-all text-lg border-b-4 border-r-4 border-black border-t-2 border-l-2 mb-2 ${
       isActive
-        ? 'bg-[var(--color-accent-primary)] text-[var(--color-accent-primary-text)] font-bold'
-        : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)]'
+        ? 'bg-[var(--color-accent-primary)] text-white border-black translate-x-1 translate-y-1 shadow-none'
+        : 'bg-white text-black hover:bg-gray-100 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]'
     }`}
   >
-    {icon}
-    <span>{label}</span>
+    <div className={`${isActive ? 'text-white' : 'text-black'}`}>{icon}</div>
+    <span className="font-bold font-mono uppercase">{label}</span>
   </button>
 );
 
@@ -633,11 +632,11 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
         return (
           <div className="space-y-6">
             {/* Session Settings */}
-            <div className="p-6 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] text-left space-y-4">
-                <h3 className="text-xl font-bold text-[var(--color-text-accent)]">General Settings</h3>
+            <div className="p-6 bg-[var(--color-bg-secondary)] rounded-md border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left space-y-4">
+                <h3 className="text-xl font-bold font-bebas tracking-wider text-black border-b-2 border-black pb-2">General Settings</h3>
                 <div>
-                  <label htmlFor="countdownDuration" className="block text-sm font-medium text-[var(--color-text-secondary)]">Countdown Duration (seconds)</label>
-                  <p className="text-xs text-[var(--color-text-muted)] mb-2">How long the countdown lasts before each photo is taken.</p>
+                  <label htmlFor="countdownDuration" className="block text-sm font-bold text-black font-mono uppercase">Countdown Duration (seconds)</label>
+                  <p className="text-xs text-gray-600 mb-2 font-mono">How long the countdown lasts before each photo is taken.</p>
                   <input
                       type="number"
                       id="countdownDuration"
@@ -645,14 +644,14 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                       value={settings.countdownDuration}
                       onChange={handleSettingsInputChange}
                       min="0"
-                      className="mt-1 block w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md shadow-sm py-2 px-3 text-[var(--color-text-primary)] focus:outline-none focus:ring-[var(--color-border-focus)] focus:border-[var(--color-border-focus)] sm:text-sm"
+                      className="input-style w-full"
                   />
                 </div>
-                <div className="border-t border-[var(--color-border-primary)] pt-4">
-                  <label htmlFor="flashEffectEnabled" className="flex items-center justify-between cursor-pointer">
+                <div className="border-t-2 border-black pt-4">
+                  <label htmlFor="flashEffectEnabled" className="flex items-center justify-between cursor-pointer group">
                       <div>
-                          <span className="block text-sm font-medium text-[var(--color-text-secondary)]">Enable Flash Effect</span>
-                          <p className="text-xs text-[var(--color-text-muted)]">Shows a white flash on screen when a photo is taken.</p>
+                          <span className="block text-sm font-bold text-black font-mono uppercase">Enable Flash Effect</span>
+                          <p className="text-xs text-gray-600 font-mono">Shows a white flash on screen when a photo is taken.</p>
                       </div>
                       <div className="relative">
                           <input
@@ -663,13 +662,15 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                               onChange={handleSettingsInputChange}
                               className="sr-only peer"
                           />
-                          <div className="w-11 h-6 bg-[var(--color-bg-tertiary)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--color-accent-primary)]"></div>
+                          <div className="w-12 h-6 bg-gray-300 rounded-full border-2 border-black peer-checked:bg-[var(--color-accent-primary)] transition-colors">
+                              <div className={`absolute top-1 left-1 w-4 h-4 bg-white border-2 border-black rounded-full transition-transform ${settings.flashEffectEnabled ? 'translate-x-6' : ''}`}></div>
+                          </div>
                       </div>
                   </label>
                 </div>
-                <div className="border-t border-[var(--color-border-primary)] pt-4">
-                    <label htmlFor="maxRetakes" className="block text-sm font-medium text-[var(--color-text-secondary)]">Max Retakes per Session</label>
-                    <p className="text-xs text-[var(--color-text-muted)] mb-2">Number of times a user can retake individual photos. Set to 0 to disable.</p>
+                <div className="border-t-2 border-black pt-4">
+                    <label htmlFor="maxRetakes" className="block text-sm font-bold text-black font-mono uppercase">Max Retakes per Session</label>
+                    <p className="text-xs text-gray-600 mb-2 font-mono">Number of times a user can retake individual photos. Set to 0 to disable.</p>
                     <input
                         type="number"
                         id="maxRetakes"
@@ -677,18 +678,18 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                         value={settings.maxRetakes ?? 0}
                         onChange={handleSettingsInputChange}
                         min="0"
-                        className="mt-1 block w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md shadow-sm py-2 px-3 text-[var(--color-text-primary)] focus:outline-none focus:ring-[var(--color-border-focus)] focus:border-[var(--color-border-focus)] sm:text-sm"
+                        className="input-style w-full"
                     />
                 </div>
             </div>
 
             {/* Camera Source Settings */}
-            <div className="p-6 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] text-left space-y-4">
-                <h3 className="text-xl font-bold text-[var(--color-text-accent)] flex items-center gap-2"><CameraIcon /> Camera Source</h3>
-                <p className="text-sm text-[var(--color-text-muted)]">Choose between the default device webcam or an external IP Camera stream.</p>
+            <div className="p-6 bg-[var(--color-bg-secondary)] rounded-md border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left space-y-4">
+                <h3 className="text-xl font-bold font-bebas tracking-wider text-black border-b-2 border-black pb-2 flex items-center gap-2"><CameraIcon /> Camera Source</h3>
+                <p className="text-sm text-gray-600 font-mono">Choose between the default device webcam or an external IP Camera stream.</p>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <label className={`flex flex-col items-center p-4 border-2 rounded-lg cursor-pointer transition-colors ${settings.cameraSourceType !== 'ip_camera' ? 'border-[var(--color-accent-primary)] bg-[var(--color-accent-primary)]/10' : 'border-[var(--color-border-secondary)] hover:border-[var(--color-border-primary)]'}`}>
+                    <label className={`flex flex-col items-center p-4 border-2 rounded-md cursor-pointer transition-all ${settings.cameraSourceType !== 'ip_camera' ? 'border-black bg-yellow-200 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' : 'border-gray-400 hover:border-black'}`}>
                         <input 
                             type="radio" 
                             name="cameraSourceType" 
@@ -697,11 +698,11 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                             onChange={handleSettingsInputChange} 
                             className="sr-only"
                         />
-                        <span className="font-bold">Default Webcam</span>
-                        <span className="text-xs text-center text-[var(--color-text-muted)] mt-1">Uses browser API (USB/HDMI Capture)</span>
+                        <span className="font-bold font-mono">Default Webcam</span>
+                        <span className="text-xs text-center text-gray-600 mt-1 font-mono">Uses browser API (USB/HDMI Capture)</span>
                     </label>
 
-                    <label className={`flex flex-col items-center p-4 border-2 rounded-lg cursor-pointer transition-colors ${settings.cameraSourceType === 'ip_camera' ? 'border-[var(--color-accent-primary)] bg-[var(--color-accent-primary)]/10' : 'border-[var(--color-border-secondary)] hover:border-[var(--color-border-primary)]'}`}>
+                    <label className={`flex flex-col items-center p-4 border-2 rounded-md cursor-pointer transition-all ${settings.cameraSourceType === 'ip_camera' ? 'border-black bg-yellow-200 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' : 'border-gray-400 hover:border-black'}`}>
                         <input 
                             type="radio" 
                             name="cameraSourceType" 
@@ -710,8 +711,8 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                             onChange={handleSettingsInputChange} 
                             className="sr-only"
                         />
-                        <span className="font-bold">IP Camera / Web Server</span>
-                        <span className="text-xs text-center text-[var(--color-text-muted)] mt-1">MJPEG Stream via HTTP/URL</span>
+                        <span className="font-bold font-mono">IP Camera / Web Server</span>
+                        <span className="text-xs text-center text-gray-600 mt-1 font-mono">MJPEG Stream via HTTP/URL</span>
                     </label>
                 </div>
                 
@@ -719,21 +720,21 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 {settings.cameraSourceType !== 'ip_camera' && (
                     <div className="mt-4 animate-fade-in">
                         <div className="flex items-center justify-between mb-2">
-                            <label htmlFor="cameraDeviceId" className="block text-sm font-medium text-[var(--color-text-secondary)]">Select Input Device</label>
+                            <label htmlFor="cameraDeviceId" className="block text-sm font-bold text-black font-mono uppercase">Select Input Device</label>
                             <button 
                                 onClick={refreshVideoDevices} 
-                                className="text-xs text-[var(--color-text-accent)] flex items-center gap-1 hover:underline"
+                                className="text-xs text-black font-bold border border-black px-2 py-1 rounded bg-white hover:bg-gray-100 flex items-center gap-1 shadow-[2px_2px_0px_0px_black]"
                             >
-                                <RestartIcon /> Refresh Devices
+                                <RestartIcon /> Refresh
                             </button>
                         </div>
-                        <p className="text-xs text-[var(--color-text-muted)] mb-2">If using USB HDMI capture on mobile, select the USB device here.</p>
+                        <p className="text-xs text-gray-600 mb-2 font-mono">If using USB HDMI capture on mobile, select the USB device here.</p>
                         <select
                             id="cameraDeviceId"
                             name="cameraDeviceId"
                             value={settings.cameraDeviceId || ''}
                             onChange={handleSettingsInputChange}
-                            className="mt-1 block w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md shadow-sm py-2 px-3 text-[var(--color-text-primary)] focus:outline-none focus:ring-[var(--color-border-focus)] focus:border-[var(--color-border-focus)] sm:text-sm"
+                            className="input-style w-full"
                         >
                             <option value="">Default (Front Camera / Auto)</option>
                             {videoDevices.map((device, index) => (
@@ -748,8 +749,8 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 {settings.cameraSourceType === 'ip_camera' && (
                     <div className="mt-4 animate-fade-in space-y-4">
                         <div>
-                            <label htmlFor="ipCameraUrl" className="block text-sm font-medium text-[var(--color-text-secondary)]">HTTP Stream URL</label>
-                            <p className="text-xs text-[var(--color-text-muted)] mb-2">e.g., http://192.168.1.24:8081 or http://192.168.1.24:8081/video</p>
+                            <label htmlFor="ipCameraUrl" className="block text-sm font-bold text-black font-mono uppercase">HTTP Stream URL</label>
+                            <p className="text-xs text-gray-600 mb-2 font-mono">e.g., http://192.168.1.24:8081 or http://192.168.1.24:8081/video</p>
                             <input
                                 type="url"
                                 id="ipCameraUrl"
@@ -757,14 +758,14 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                                 value={settings.ipCameraUrl || ''}
                                 onChange={handleSettingsInputChange}
                                 placeholder="http://192.168.1..."
-                                className="mt-1 block w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md shadow-sm py-2 px-3 text-[var(--color-text-primary)] focus:outline-none focus:ring-[var(--color-border-focus)] focus:border-[var(--color-border-focus)] sm:text-sm font-mono"
+                                className="input-style w-full font-mono"
                             />
                         </div>
 
-                        <label htmlFor="ipCameraUseProxy" className="flex items-center justify-between cursor-pointer p-2 bg-[var(--color-bg-tertiary)]/50 rounded border border-[var(--color-border-secondary)]">
+                        <label htmlFor="ipCameraUseProxy" className="flex items-center justify-between cursor-pointer p-2 bg-gray-100 rounded border border-black">
                             <div>
-                                <span className="block text-sm font-medium text-[var(--color-text-secondary)]">Enable CORS Proxy</span>
-                                <p className="text-xs text-[var(--color-text-muted)]">Wraps the URL in a public proxy to bypass CORS/Mixed-Content issues.</p>
+                                <span className="block text-sm font-bold text-black font-mono uppercase">Enable CORS Proxy</span>
+                                <p className="text-xs text-gray-600 font-mono">Wraps the URL in a public proxy to bypass CORS issues.</p>
                             </div>
                             <div className="relative">
                                 <input
@@ -775,56 +776,56 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                                     onChange={handleSettingsInputChange}
                                     className="sr-only peer"
                                 />
-                                <div className="w-11 h-6 bg-[var(--color-bg-tertiary)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--color-accent-primary)]"></div>
+                                <div className="w-12 h-6 bg-gray-300 rounded-full border-2 border-black peer-checked:bg-[var(--color-accent-primary)] transition-colors">
+                                    <div className={`absolute top-1 left-1 w-4 h-4 bg-white border-2 border-black rounded-full transition-transform ${settings.ipCameraUseProxy ? 'translate-x-6' : ''}`}></div>
+                                </div>
                             </div>
                         </label>
-
-                        <p className="text-xs text-yellow-500 mt-2">
-                            Note: If the camera server is on a different network or doesn't support CORS, the preview might load but capturing to canvas (saving photo) might fail due to browser security policies (Tainted Canvas). Enable the Proxy option above if you encounter issues.
-                        </p>
                     </div>
                 )}
             </div>
 
             {/* Closed Mode Settings */}
-            <div className="p-6 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] text-left space-y-4">
-              <h3 className="text-xl font-bold text-[var(--color-text-accent)]">Closed Mode</h3>
-              <div className="border-t border-[var(--color-border-primary)] pt-4">
+            <div className="p-6 bg-[var(--color-bg-secondary)] rounded-md border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left space-y-4">
+              <h3 className="text-xl font-bold font-bebas tracking-wider text-black border-b-2 border-black pb-2">Closed Mode</h3>
+              <div className="border-t-2 border-black pt-4">
                 <label htmlFor="isClosedModeEnabled" className="flex items-center justify-between cursor-pointer">
                     <div>
-                        <span className="block text-sm font-medium text-[var(--color-text-secondary)]">Enable Closed Mode</span>
-                        <p className="text-xs text-[var(--color-text-muted)]">Replaces the welcome screen with a countdown to reopening.</p>
+                        <span className="block text-sm font-bold text-black font-mono uppercase">Enable Closed Mode</span>
+                        <p className="text-xs text-gray-600 font-mono">Replaces the welcome screen with a countdown to reopening.</p>
                     </div>
                     <div className="relative">
                         <input type="checkbox" id="isClosedModeEnabled" name="isClosedModeEnabled" checked={settings.isClosedModeEnabled ?? false} onChange={handleToggleClosedMode} className="sr-only peer" />
-                        <div className="w-11 h-6 bg-[var(--color-bg-tertiary)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--color-accent-primary)]"></div>
+                        <div className="w-12 h-6 bg-gray-300 rounded-full border-2 border-black peer-checked:bg-[var(--color-accent-primary)] transition-colors">
+                            <div className={`absolute top-1 left-1 w-4 h-4 bg-white border-2 border-black rounded-full transition-transform ${settings.isClosedModeEnabled ? 'translate-x-6' : ''}`}></div>
+                        </div>
                     </div>
                 </label>
               </div>
               {settings.isClosedModeEnabled && (
-                <div className="border-t border-[var(--color-border-primary)] pt-4">
-                  <label htmlFor="reopenTimestamp" className="block text-sm font-medium text-[var(--color-text-secondary)]">Reopen Date & Time</label>
-                  <p className="text-xs text-[var(--color-text-muted)] mb-2">Set when the photobooth will be available again for users.</p>
+                <div className="border-t-2 border-black pt-4">
+                  <label htmlFor="reopenTimestamp" className="block text-sm font-bold text-black font-mono uppercase">Reopen Date & Time</label>
+                  <p className="text-xs text-gray-600 mb-2 font-mono">Set when the photobooth will be available again.</p>
                   <input
                     type="datetime-local"
                     id="reopenTimestamp"
                     name="reopenTimestamp"
                     value={formatTimestampForInput(settings.reopenTimestamp)}
                     onChange={handleSettingsInputChange}
-                    className="mt-1 block w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md shadow-sm py-2 px-3 text-[var(--color-text-primary)] focus:outline-none focus:ring-[var(--color-border-focus)] focus:border-[var(--color-border-focus)] sm:text-sm"
+                    className="input-style w-full"
                   />
                 </div>
               )}
             </div>
             
              {/* Download Settings */}
-            <div className="p-6 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] text-left space-y-4">
-              <h3 className="text-xl font-bold text-[var(--color-text-accent)]">Download Settings</h3>
-              <div className="border-t border-[var(--color-border-primary)] pt-4">
+            <div className="p-6 bg-[var(--color-bg-secondary)] rounded-md border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left space-y-4">
+              <h3 className="text-xl font-bold font-bebas tracking-wider text-black border-b-2 border-black pb-2">Download Settings</h3>
+              <div className="border-t-2 border-black pt-4">
                 <label htmlFor="isAutoDownloadEnabled" className="flex items-center justify-between cursor-pointer">
                     <div>
-                        <span className="block text-sm font-medium text-[var(--color-text-secondary)]">Automatic Download</span>
-                        <p className="text-xs text-[var(--color-text-muted)]">Automatically start download on preview screen.</p>
+                        <span className="block text-sm font-bold text-black font-mono uppercase">Automatic Download</span>
+                        <p className="text-xs text-gray-600 font-mono">Automatically start download on preview screen.</p>
                     </div>
                     <div className="relative">
                         <input
@@ -835,15 +836,17 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                             onChange={handleSettingsInputChange}
                             className="sr-only peer"
                         />
-                        <div className="w-11 h-6 bg-[var(--color-bg-tertiary)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--color-accent-primary)]"></div>
+                        <div className="w-12 h-6 bg-gray-300 rounded-full border-2 border-black peer-checked:bg-[var(--color-accent-primary)] transition-colors">
+                            <div className={`absolute top-1 left-1 w-4 h-4 bg-white border-2 border-black rounded-full transition-transform ${settings.isAutoDownloadEnabled ? 'translate-x-6' : ''}`}></div>
+                        </div>
                     </div>
                 </label>
               </div>
-               <div className="border-t border-[var(--color-border-primary)] pt-4">
+               <div className="border-t-2 border-black pt-4">
                 <label htmlFor="isDownloadButtonEnabled" className="flex items-center justify-between cursor-pointer">
                     <div>
-                        <span className="block text-sm font-medium text-[var(--color-text-secondary)]">Show Manual Download Button</span>
-                        <p className="text-xs text-[var(--color-text-muted)]">Display a button for users to download manually.</p>
+                        <span className="block text-sm font-bold text-black font-mono uppercase">Show Manual Download Button</span>
+                        <p className="text-xs text-gray-600 font-mono">Display a button for users to download manually.</p>
                     </div>
                     <div className="relative">
                         <input
@@ -854,86 +857,89 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                             onChange={handleSettingsInputChange}
                             className="sr-only peer"
                         />
-                        <div className="w-11 h-6 bg-[var(--color-bg-tertiary)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--color-accent-primary)]"></div>
+                        <div className="w-12 h-6 bg-gray-300 rounded-full border-2 border-black peer-checked:bg-[var(--color-accent-primary)] transition-colors">
+                            <div className={`absolute top-1 left-1 w-4 h-4 bg-white border-2 border-black rounded-full transition-transform ${settings.isDownloadButtonEnabled ? 'translate-x-6' : ''}`}></div>
+                        </div>
                     </div>
                 </label>
               </div>
             </div>
 
             {/* Print Settings */}
-            <div className="p-6 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] text-left space-y-4">
-              <h3 className="text-xl font-bold text-[var(--color-text-accent)]">Print Settings</h3>
+            <div className="p-6 bg-[var(--color-bg-secondary)] rounded-md border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left space-y-4">
+              <h3 className="text-xl font-bold font-bebas tracking-wider text-black border-b-2 border-black pb-2">Print Settings</h3>
               
               {/* Configure Defaults Button */}
-              <div className="bg-[var(--color-bg-tertiary)]/50 p-4 rounded-lg border border-[var(--color-border-secondary)]">
+              <div className="bg-gray-100 p-4 rounded-md border border-black">
                   <div className="flex justify-between items-start gap-4">
                       <div>
-                          <h4 className="font-bold text-[var(--color-text-primary)]">Printer Calibration</h4>
-                          <p className="text-xs text-[var(--color-text-muted)] mt-1">
-                              Open the browser's native print dialog to set margins, paper size, and scale as defaults for Kiosk mode.
+                          <h4 className="font-bold text-black font-mono uppercase">Printer Calibration</h4>
+                          <p className="text-xs text-gray-600 mt-1 font-mono">
+                              Open the browser's native print dialog to set margins, paper size, and scale as defaults.
                           </p>
                       </div>
                       <button 
                         onClick={handleConfigurePrinter}
-                        className="bg-[var(--color-info)] hover:bg-[var(--color-info-hover)] text-[var(--color-info-text)] font-bold py-2 px-4 rounded-md text-sm whitespace-nowrap flex items-center gap-2"
+                        className="bg-[var(--color-info)] text-black border-2 border-black font-bold py-2 px-4 rounded shadow-[2px_2px_0px_0px_black] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all flex items-center gap-2"
                       >
-                          <SettingsIcon /> Configure Defaults
+                          <SettingsIcon /> Configure
                       </button>
                   </div>
-                  <p className="text-[10px] text-yellow-500 mt-2">
-                      *Note: If you launched Chrome with <code>--kiosk-printing</code>, the popup will be suppressed. Launch normally to configure.
-                  </p>
               </div>
 
-              <div className="border-t border-[var(--color-border-primary)] pt-4">
+              <div className="border-t-2 border-black pt-4">
                 <label htmlFor="isPrintButtonEnabled" className="flex items-center justify-between cursor-pointer">
                     <div>
-                        <span className="block text-sm font-medium text-[var(--color-text-secondary)]">Enable Print Button</span>
-                        <p className="text-xs text-[var(--color-text-muted)]">Show a 'Print' button on the final preview screen.</p>
+                        <span className="block text-sm font-bold text-black font-mono uppercase">Enable Print Button</span>
+                        <p className="text-xs text-gray-600 font-mono">Show a 'Print' button on the final preview screen.</p>
                     </div>
                     <div className="relative">
                         <input type="checkbox" id="isPrintButtonEnabled" name="isPrintButtonEnabled" checked={settings.isPrintButtonEnabled ?? true} onChange={handleSettingsInputChange} className="sr-only peer" />
-                        <div className="w-11 h-6 bg-[var(--color-bg-tertiary)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--color-accent-primary)]"></div>
+                        <div className="w-12 h-6 bg-gray-300 rounded-full border-2 border-black peer-checked:bg-[var(--color-accent-primary)] transition-colors">
+                            <div className={`absolute top-1 left-1 w-4 h-4 bg-white border-2 border-black rounded-full transition-transform ${settings.isPrintButtonEnabled ? 'translate-x-6' : ''}`}></div>
+                        </div>
                     </div>
                 </label>
               </div>
 
               {(settings.isPrintButtonEnabled ?? true) && (
                 <>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-[var(--color-border-primary)] pt-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t-2 border-black pt-4">
                       <div>
-                        <label htmlFor="printPaperSize" className="block text-sm font-medium text-[var(--color-text-secondary)]">Paper Size</label>
-                        <select id="printPaperSize" name="printPaperSize" value={settings.printPaperSize ?? '4x6'} onChange={handleSettingsInputChange} className="mt-1 block w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md shadow-sm py-2 px-3 text-[var(--color-text-primary)] focus:outline-none focus:ring-[var(--color-border-focus)] focus:border-[var(--color-border-focus)] sm:text-sm">
+                        <label htmlFor="printPaperSize" className="block text-sm font-bold text-black font-mono uppercase">Paper Size</label>
+                        <select id="printPaperSize" name="printPaperSize" value={settings.printPaperSize ?? '4x6'} onChange={handleSettingsInputChange} className="input-style w-full">
                           <option value="4x6">4x6 inch</option>
                           <option value="A4_portrait">A4 Portrait</option>
                           <option value="A4_landscape">A4 Landscape</option>
                         </select>
                       </div>
                        <div>
-                        <label htmlFor="printColorMode" className="block text-sm font-medium text-[var(--color-text-secondary)]">Color Mode</label>
-                        <select id="printColorMode" name="printColorMode" value={settings.printColorMode ?? 'color'} onChange={handleSettingsInputChange} className="mt-1 block w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md shadow-sm py-2 px-3 text-[var(--color-text-primary)] focus:outline-none focus:ring-[var(--color-border-focus)] focus:border-[var(--color-border-focus)] sm:text-sm">
+                        <label htmlFor="printColorMode" className="block text-sm font-bold text-black font-mono uppercase">Color Mode</label>
+                        <select id="printColorMode" name="printColorMode" value={settings.printColorMode ?? 'color'} onChange={handleSettingsInputChange} className="input-style w-full">
                           <option value="color">Color</option>
                           <option value="grayscale">Grayscale</option>
                         </select>
                       </div>
                   </div>
-                   <div className="border-t border-[var(--color-border-primary)] pt-4">
+                   <div className="border-t-2 border-black pt-4">
                       <label htmlFor="isPrintCopyInputEnabled" className="flex items-center justify-between cursor-pointer">
                           <div>
-                              <span className="block text-sm font-medium text-[var(--color-text-secondary)]">Show 'Number of Copies' Option</span>
-                              <p className="text-xs text-[var(--color-text-muted)]">Allow users to choose how many copies to print.</p>
+                              <span className="block text-sm font-bold text-black font-mono uppercase">Show 'Number of Copies' Option</span>
+                              <p className="text-xs text-gray-600 font-mono">Allow users to choose how many copies to print.</p>
                           </div>
                           <div className="relative">
                               <input type="checkbox" id="isPrintCopyInputEnabled" name="isPrintCopyInputEnabled" checked={settings.isPrintCopyInputEnabled ?? true} onChange={handleSettingsInputChange} className="sr-only peer" />
-                              <div className="w-11 h-6 bg-[var(--color-bg-tertiary)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--color-accent-primary)]"></div>
+                              <div className="w-12 h-6 bg-gray-300 rounded-full border-2 border-black peer-checked:bg-[var(--color-accent-primary)] transition-colors">
+                                  <div className={`absolute top-1 left-1 w-4 h-4 bg-white border-2 border-black rounded-full transition-transform ${settings.isPrintCopyInputEnabled ? 'translate-x-6' : ''}`}></div>
+                              </div>
                           </div>
                       </label>
                   </div>
                   {(settings.isPrintCopyInputEnabled ?? true) && (
-                     <div className="border-t border-[var(--color-border-primary)] pt-4">
-                        <label htmlFor="printMaxCopies" className="block text-sm font-medium text-[var(--color-text-secondary)]">Maximum Copies per Print</label>
-                        <p className="text-xs text-[var(--color-text-muted)] mb-2">Set the maximum number of copies a user can select.</p>
-                        <input type="number" id="printMaxCopies" name="printMaxCopies" value={settings.printMaxCopies ?? 5} onChange={handleSettingsInputChange} min="1" className="mt-1 block w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md shadow-sm py-2 px-3 text-[var(--color-text-primary)] focus:outline-none focus:ring-[var(--color-border-focus)] focus:border-[var(--color-border-focus)] sm:text-sm" />
+                     <div className="border-t-2 border-black pt-4">
+                        <label htmlFor="printMaxCopies" className="block text-sm font-bold text-black font-mono uppercase">Maximum Copies per Print</label>
+                        <p className="text-xs text-gray-600 mb-2 font-mono">Set the maximum number of copies a user can select.</p>
+                        <input type="number" id="printMaxCopies" name="printMaxCopies" value={settings.printMaxCopies ?? 5} onChange={handleSettingsInputChange} min="1" className="input-style w-full" />
                     </div>
                   )}
                 </>
@@ -948,10 +954,10 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
         return (
            <div className="space-y-6">
              {/* Welcome Screen Text Customization */}
-            <div className="p-6 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] text-left space-y-4">
-              <h3 className="text-xl font-bold text-[var(--color-text-accent)]">Welcome Screen Text</h3>
+            <div className="p-6 bg-[var(--color-bg-secondary)] rounded-md border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left space-y-4">
+              <h3 className="text-xl font-bold font-bebas tracking-wider text-black border-b-2 border-black pb-2">Welcome Screen Text</h3>
               <div>
-                <label htmlFor="welcomeTitle" className="block text-sm font-medium text-[var(--color-text-secondary)]">Main Title</label>
+                <label htmlFor="welcomeTitle" className="block text-sm font-bold text-black font-mono uppercase">Main Title</label>
                 <input
                     type="text"
                     id="welcomeTitle"
@@ -959,11 +965,11 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                     value={settings.welcomeTitle || ''}
                     onChange={handleSettingsInputChange}
                     placeholder="e.g., SANS PHOTO"
-                    className="mt-1 block w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md shadow-sm py-2 px-3 text-[var(--color-text-primary)] focus:outline-none focus:ring-[var(--color-border-focus)] focus:border-[var(--color-border-focus)] sm:text-sm"
+                    className="input-style w-full"
                 />
               </div>
               <div>
-                <label htmlFor="welcomeSubtitle" className="block text-sm font-medium text-[var(--color-text-secondary)]">Subtitle</label>
+                <label htmlFor="welcomeSubtitle" className="block text-sm font-bold text-black font-mono uppercase">Subtitle</label>
                 <input
                     type="text"
                     id="welcomeSubtitle"
@@ -971,56 +977,56 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                     value={settings.welcomeSubtitle || ''}
                     onChange={handleSettingsInputChange}
                     placeholder="e.g., Your personal web photobooth"
-                    className="mt-1 block w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md shadow-sm py-2 px-3 text-[var(--color-text-primary)] focus:outline-none focus:ring-[var(--color-border-focus)] focus:border-[var(--color-border-focus)] sm:text-sm"
+                    className="input-style w-full"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4 border-t border-[var(--color-border-primary)] pt-4">
+              <div className="grid grid-cols-2 gap-4 border-t-2 border-black pt-4">
                   <div>
                       <div className="flex justify-between items-center mb-1">
-                        <label htmlFor="welcomeTitleColor" className="block text-sm font-medium text-[var(--color-text-secondary)]">Title Color</label>
-                        <button onClick={() => handleResetSetting('welcomeTitleColor')} className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] underline">Reset</button>
+                        <label htmlFor="welcomeTitleColor" className="block text-sm font-bold text-black font-mono uppercase">Title Color</label>
+                        <button onClick={() => handleResetSetting('welcomeTitleColor')} className="text-xs text-gray-500 hover:text-black underline font-mono">Reset</button>
                       </div>
-                      <input type="color" id="welcomeTitleColor" name="welcomeTitleColor" value={settings.welcomeTitleColor || '#F9FAFB'} onChange={handleSettingsInputChange} className="mt-1 w-full h-10 p-1 bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md cursor-pointer"/>
+                      <input type="color" id="welcomeTitleColor" name="welcomeTitleColor" value={settings.welcomeTitleColor || '#F9FAFB'} onChange={handleSettingsInputChange} className="mt-1 w-full h-12 p-1 bg-white border-2 border-black rounded-md cursor-pointer"/>
                   </div>
                   <div>
                        <div className="flex justify-between items-center mb-1">
-                        <label htmlFor="welcomeSubtitleColor" className="block text-sm font-medium text-[var(--color-text-secondary)]">Subtitle Color</label>
-                        <button onClick={() => handleResetSetting('welcomeSubtitleColor')} className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] underline">Reset</button>
+                        <label htmlFor="welcomeSubtitleColor" className="block text-sm font-bold text-black font-mono uppercase">Subtitle Color</label>
+                        <button onClick={() => handleResetSetting('welcomeSubtitleColor')} className="text-xs text-gray-500 hover:text-black underline font-mono">Reset</button>
                       </div>
-                      <input type="color" id="welcomeSubtitleColor" name="welcomeSubtitleColor" value={settings.welcomeSubtitleColor || '#D1D5DB'} onChange={handleSettingsInputChange} className="mt-1 w-full h-10 p-1 bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md cursor-pointer"/>
+                      <input type="color" id="welcomeSubtitleColor" name="welcomeSubtitleColor" value={settings.welcomeSubtitleColor || '#D1D5DB'} onChange={handleSettingsInputChange} className="mt-1 w-full h-12 p-1 bg-white border-2 border-black rounded-md cursor-pointer"/>
                   </div>
               </div>
 
-               <div className="border-t border-[var(--color-border-primary)] pt-4 space-y-4">
+               <div className="border-t-2 border-black pt-4 space-y-4">
                   <div>
-                    <label htmlFor="welcomeTitleFont" className="block text-sm font-medium text-[var(--color-text-secondary)]">Title Font</label>
-                    <select id="welcomeTitleFont" name="welcomeTitleFont" value={settings.welcomeTitleFont} onChange={handleSettingsInputChange} className="mt-1 block w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md shadow-sm py-2 px-3 text-[var(--color-text-primary)] focus:outline-none focus:ring-[var(--color-border-focus)] focus:border-[var(--color-border-focus)] sm:text-sm">
+                    <label htmlFor="welcomeTitleFont" className="block text-sm font-bold text-black font-mono uppercase">Title Font</label>
+                    <select id="welcomeTitleFont" name="welcomeTitleFont" value={settings.welcomeTitleFont} onChange={handleSettingsInputChange} className="input-style w-full">
                       {GOOGLE_FONTS.map(font => <option key={font.name} value={font.value}>{font.name}</option>)}
                     </select>
                   </div>
                   <label htmlFor="isWelcomeTitleFontRandom" className="flex items-center justify-between cursor-pointer">
-                    <span className="text-sm font-medium text-[var(--color-text-secondary)]">Randomize Title Font</span>
-                    <div className="relative"><input type="checkbox" id="isWelcomeTitleFontRandom" name="isWelcomeTitleFontRandom" checked={settings.isWelcomeTitleFontRandom ?? false} onChange={handleSettingsInputChange} className="sr-only peer" /><div className="w-11 h-6 bg-[var(--color-bg-tertiary)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--color-accent-primary)]"></div></div>
+                    <span className="text-sm font-bold text-black font-mono uppercase">Randomize Title Font</span>
+                    <div className="relative"><input type="checkbox" id="isWelcomeTitleFontRandom" name="isWelcomeTitleFontRandom" checked={settings.isWelcomeTitleFontRandom ?? false} onChange={handleSettingsInputChange} className="sr-only peer" /><div className="w-12 h-6 bg-gray-300 rounded-full border-2 border-black peer-checked:bg-[var(--color-accent-primary)] transition-colors"><div className={`absolute top-1 left-1 w-4 h-4 bg-white border-2 border-black rounded-full transition-transform ${settings.isWelcomeTitleFontRandom ? 'translate-x-6' : ''}`}></div></div></div>
                   </label>
                 </div>
-                <div className="border-t border-[var(--color-border-primary)] pt-4 space-y-4">
+                <div className="border-t-2 border-black pt-4 space-y-4">
                   <div>
-                    <label htmlFor="welcomeSubtitleFont" className="block text-sm font-medium text-[var(--color-text-secondary)]">Subtitle Font</label>
-                    <select id="welcomeSubtitleFont" name="welcomeSubtitleFont" value={settings.welcomeSubtitleFont} onChange={handleSettingsInputChange} className="mt-1 block w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md shadow-sm py-2 px-3 text-[var(--color-text-primary)] focus:outline-none focus:ring-[var(--color-border-focus)] focus:border-[var(--color-border-focus)] sm:text-sm">
+                    <label htmlFor="welcomeSubtitleFont" className="block text-sm font-bold text-black font-mono uppercase">Subtitle Font</label>
+                    <select id="welcomeSubtitleFont" name="welcomeSubtitleFont" value={settings.welcomeSubtitleFont} onChange={handleSettingsInputChange} className="input-style w-full">
                       {GOOGLE_FONTS.map(font => <option key={font.name} value={font.value}>{font.name}</option>)}
                     </select>
                   </div>
                    <label htmlFor="isWelcomeSubtitleFontRandom" className="flex items-center justify-between cursor-pointer">
-                    <span className="text-sm font-medium text-[var(--color-text-secondary)]">Randomize Subtitle Font</span>
-                    <div className="relative"><input type="checkbox" id="isWelcomeSubtitleFontRandom" name="isWelcomeSubtitleFontRandom" checked={settings.isWelcomeSubtitleFontRandom ?? false} onChange={handleSettingsInputChange} className="sr-only peer" /><div className="w-11 h-6 bg-[var(--color-bg-tertiary)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--color-accent-primary)]"></div></div>
+                    <span className="text-sm font-bold text-black font-mono uppercase">Randomize Subtitle Font</span>
+                    <div className="relative"><input type="checkbox" id="isWelcomeSubtitleFontRandom" name="isWelcomeSubtitleFontRandom" checked={settings.isWelcomeSubtitleFontRandom ?? false} onChange={handleSettingsInputChange} className="sr-only peer" /><div className="w-12 h-6 bg-gray-300 rounded-full border-2 border-black peer-checked:bg-[var(--color-accent-primary)] transition-colors"><div className={`absolute top-1 left-1 w-4 h-4 bg-white border-2 border-black rounded-full transition-transform ${settings.isWelcomeSubtitleFontRandom ? 'translate-x-6' : ''}`}></div></div></div>
                   </label>
                 </div>
 
-              <div className="border-t border-[var(--color-border-primary)] pt-4">
+              <div className="border-t-2 border-black pt-4">
                 <label htmlFor="isWelcomeTextShadowEnabled" className="flex items-center justify-between cursor-pointer">
                     <div>
-                        <span className="block text-sm font-medium text-[var(--color-text-secondary)]">Enable Text Shadow</span>
-                        <p className="text-xs text-[var(--color-text-muted)]">Adds a drop shadow for better readability.</p>
+                        <span className="block text-sm font-bold text-black font-mono uppercase">Enable Text Shadow</span>
+                        <p className="text-xs text-gray-600 font-mono">Adds a drop shadow for better readability.</p>
                     </div>
                     <div className="relative">
                         <input
@@ -1031,36 +1037,38 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                             onChange={handleSettingsInputChange}
                             className="sr-only peer"
                         />
-                        <div className="w-11 h-6 bg-[var(--color-bg-tertiary)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--color-accent-primary)]"></div>
+                        <div className="w-12 h-6 bg-gray-300 rounded-full border-2 border-black peer-checked:bg-[var(--color-accent-primary)] transition-colors">
+                            <div className={`absolute top-1 left-1 w-4 h-4 bg-white border-2 border-black rounded-full transition-transform ${settings.isWelcomeTextShadowEnabled ? 'translate-x-6' : ''}`}></div>
+                        </div>
                     </div>
                 </label>
               </div>
             </div>
             
             {/* Floating 3D Objects Manager */}
-            <div className="p-6 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] text-left space-y-4">
-              <h3 className="text-xl font-bold text-[var(--color-text-accent)]">Floating 3D Objects</h3>
-              <p className="text-sm text-[var(--color-text-muted)]">Manage decorative 3D objects on the welcome screen.</p>
+            <div className="p-6 bg-[var(--color-bg-secondary)] rounded-md border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left space-y-4">
+              <h3 className="text-xl font-bold font-bebas tracking-wider text-black border-b-2 border-black pb-2">Floating 3D Objects</h3>
+              <p className="text-sm text-gray-600 font-mono">Manage decorative 3D objects on the welcome screen.</p>
               
               {/* List */}
               <div className="space-y-3">
                   {currentFloatingObjects.map(obj => (
-                      <div key={obj.id} className="bg-[var(--color-bg-tertiary)] p-3 rounded-lg border border-[var(--color-border-secondary)]">
+                      <div key={obj.id} className="bg-gray-50 p-3 rounded-md border-2 border-black">
                           <div className="flex justify-between items-center mb-2">
                               <div>
-                                  <span className="font-bold text-[var(--color-text-primary)]">{obj.name}</span>
-                                  <span className="ml-2 text-xs text-[var(--color-text-muted)] px-1.5 py-0.5 border border-[var(--color-text-muted)] rounded">
+                                  <span className="font-bold text-black">{obj.name}</span>
+                                  <span className="ml-2 text-xs text-black font-mono bg-yellow-200 px-1.5 py-0.5 border border-black rounded">
                                       {obj.type === 'built-in-camera' ? 'Built-in' : 'Custom Voxel'}
                                   </span>
                               </div>
                               <div className="flex gap-2">
-                                  <button onClick={() => handleObjectToggle(obj.id)} className={`p-1.5 rounded-full ${obj.isVisible ? 'text-green-400 bg-green-900/20' : 'text-gray-400 bg-gray-700/50'}`}>
+                                  <button onClick={() => handleObjectToggle(obj.id)} className={`p-1.5 border-2 border-black rounded bg-white hover:bg-gray-100 ${obj.isVisible ? 'text-green-600' : 'text-gray-400'}`}>
                                       {obj.isVisible ? <ToggleOnIcon /> : <ToggleOffIcon />}
                                   </button>
-                                  <button onClick={() => setEditingObjectId(editingObjectId === obj.id ? null : obj.id)} className={`p-1.5 rounded-full ${editingObjectId === obj.id ? 'text-[var(--color-accent-primary)] bg-[var(--color-accent-primary)]/10' : 'text-gray-400 hover:text-white'}`}>
+                                  <button onClick={() => setEditingObjectId(editingObjectId === obj.id ? null : obj.id)} className={`p-1.5 border-2 border-black rounded bg-white hover:bg-gray-100 ${editingObjectId === obj.id ? 'bg-purple-100' : ''}`}>
                                       <EditIcon />
                                   </button>
-                                  <button onClick={() => handleDeleteObject(obj.id)} className="p-1.5 rounded-full text-red-400 hover:bg-red-900/20">
+                                  <button onClick={() => handleDeleteObject(obj.id)} className="p-1.5 border-2 border-black rounded bg-white hover:bg-red-100 text-red-500">
                                       <TrashIcon />
                                   </button>
                               </div>
@@ -1068,63 +1076,63 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                           
                           {/* Inline Edit Form */}
                           {editingObjectId === obj.id && (
-                              <div className="mt-4 pt-4 border-t border-[var(--color-border-secondary)] grid grid-cols-1 sm:grid-cols-2 gap-4 animate-fade-in">
+                              <div className="mt-4 pt-4 border-t border-black grid grid-cols-1 sm:grid-cols-2 gap-4 animate-fade-in">
                                   <div>
-                                      <label className="text-xs text-[var(--color-text-secondary)] block mb-1">Scale ({obj.scale})</label>
+                                      <label className="text-xs font-bold block mb-1">Scale ({obj.scale})</label>
                                       <input 
                                         type="range" min="0.1" max="3" step="0.1" 
                                         value={obj.scale} 
                                         onChange={(e) => handleObjectPropertyChange(obj.id, 'scale', parseFloat(e.target.value))}
-                                        className="w-full h-2 bg-[var(--color-bg-primary)] rounded-lg appearance-none cursor-pointer"
+                                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer border border-black"
                                       />
                                   </div>
                                   <div>
-                                      <label className="text-xs text-[var(--color-text-secondary)] block mb-1">Spin Speed ({obj.spinSpeed})</label>
+                                      <label className="text-xs font-bold block mb-1">Spin Speed ({obj.spinSpeed})</label>
                                       <input 
                                         type="range" min="0" max="0.1" step="0.001" 
                                         value={obj.spinSpeed} 
                                         onChange={(e) => handleObjectPropertyChange(obj.id, 'spinSpeed', parseFloat(e.target.value))}
-                                        className="w-full h-2 bg-[var(--color-bg-primary)] rounded-lg appearance-none cursor-pointer"
+                                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer border border-black"
                                       />
                                   </div>
                                   <div>
-                                      <label className="text-xs text-[var(--color-text-secondary)] block mb-1">Pos X ({obj.positionX}%)</label>
+                                      <label className="text-xs font-bold block mb-1">Pos X ({obj.positionX}%)</label>
                                       <input 
                                         type="range" min="0" max="100" 
                                         value={obj.positionX} 
                                         onChange={(e) => handleObjectPropertyChange(obj.id, 'positionX', parseInt(e.target.value))}
-                                        className="w-full h-2 bg-[var(--color-bg-primary)] rounded-lg appearance-none cursor-pointer"
+                                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer border border-black"
                                       />
                                   </div>
                                   <div>
-                                      <label className="text-xs text-[var(--color-text-secondary)] block mb-1">Pos Y ({obj.positionY}%)</label>
+                                      <label className="text-xs font-bold block mb-1">Pos Y ({obj.positionY}%)</label>
                                       <input 
                                         type="range" min="0" max="100" 
                                         value={obj.positionY} 
                                         onChange={(e) => handleObjectPropertyChange(obj.id, 'positionY', parseInt(e.target.value))}
-                                        className="w-full h-2 bg-[var(--color-bg-primary)] rounded-lg appearance-none cursor-pointer"
+                                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer border border-black"
                                       />
                                   </div>
                                   
                                   <div className="col-span-1 sm:col-span-2 grid grid-cols-3 gap-2">
                                       <div>
-                                          <label className="text-xs text-[var(--color-text-secondary)] block mb-1">Rot X</label>
-                                          <input type="number" step="0.1" value={obj.rotationX} onChange={(e) => handleObjectPropertyChange(obj.id, 'rotationX', parseFloat(e.target.value))} className="w-full bg-[var(--color-bg-primary)] border border-[var(--color-border-secondary)] rounded px-2 py-1 text-xs" />
+                                          <label className="text-xs font-bold block mb-1">Rot X</label>
+                                          <input type="number" step="0.1" value={obj.rotationX} onChange={(e) => handleObjectPropertyChange(obj.id, 'rotationX', parseFloat(e.target.value))} className="input-style w-full text-xs py-1" />
                                       </div>
                                       <div>
-                                          <label className="text-xs text-[var(--color-text-secondary)] block mb-1">Rot Y</label>
-                                          <input type="number" step="0.1" value={obj.rotationY} onChange={(e) => handleObjectPropertyChange(obj.id, 'rotationY', parseFloat(e.target.value))} className="w-full bg-[var(--color-bg-primary)] border border-[var(--color-border-secondary)] rounded px-2 py-1 text-xs" />
+                                          <label className="text-xs font-bold block mb-1">Rot Y</label>
+                                          <input type="number" step="0.1" value={obj.rotationY} onChange={(e) => handleObjectPropertyChange(obj.id, 'rotationY', parseFloat(e.target.value))} className="input-style w-full text-xs py-1" />
                                       </div>
                                       <div>
-                                          <label className="text-xs text-[var(--color-text-secondary)] block mb-1">Rot Z</label>
-                                          <input type="number" step="0.1" value={obj.rotationZ} onChange={(e) => handleObjectPropertyChange(obj.id, 'rotationZ', parseFloat(e.target.value))} className="w-full bg-[var(--color-bg-primary)] border border-[var(--color-border-secondary)] rounded px-2 py-1 text-xs" />
+                                          <label className="text-xs font-bold block mb-1">Rot Z</label>
+                                          <input type="number" step="0.1" value={obj.rotationZ} onChange={(e) => handleObjectPropertyChange(obj.id, 'rotationZ', parseFloat(e.target.value))} className="input-style w-full text-xs py-1" />
                                       </div>
                                   </div>
 
                                   <div className="col-span-1 sm:col-span-2">
                                      <label className="flex items-center gap-2 cursor-pointer">
-                                        <input type="checkbox" checked={obj.isSpinning} onChange={(e) => handleObjectPropertyChange(obj.id, 'isSpinning', e.target.checked)} className="rounded bg-[var(--color-bg-primary)] border-[var(--color-border-secondary)]" />
-                                        <span className="text-sm">Enable Spinning Animation</span>
+                                        <input type="checkbox" checked={obj.isSpinning} onChange={(e) => handleObjectPropertyChange(obj.id, 'isSpinning', e.target.checked)} className="rounded border-2 border-black text-purple-600 focus:ring-0" />
+                                        <span className="text-sm font-bold">Enable Spinning Animation</span>
                                      </label>
                                   </div>
                               </div>
@@ -1134,16 +1142,16 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
               </div>
 
               {/* Upload New */}
-              <div className="border-t border-[var(--color-border-primary)] pt-4">
-                 <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">Add Custom Voxel Object (.json)</label>
-                 <label className="flex items-center justify-center w-full h-24 border-2 border-dashed border-[var(--color-border-secondary)] rounded-lg cursor-pointer hover:border-[var(--color-accent-primary)] hover:bg-[var(--color-bg-tertiary)] transition-colors">
+              <div className="border-t-2 border-black pt-4">
+                 <label className="block text-sm font-bold text-black font-mono uppercase mb-2">Add Custom Voxel Object (.json)</label>
+                 <label className="flex items-center justify-center w-full h-24 border-2 border-dashed border-black rounded-lg cursor-pointer hover:bg-yellow-100 transition-colors">
                      <div className="flex flex-col items-center">
                          <AddIcon />
-                         <span className="text-xs mt-1 text-[var(--color-text-muted)]">Click to upload JSON</span>
+                         <span className="text-xs mt-1 font-bold text-black">Click to upload JSON</span>
                      </div>
                      <input type="file" accept=".json" onChange={handleAddVoxelObject} className="hidden" />
                  </label>
-                 <p className="text-xs text-[var(--color-text-muted)] mt-2">
+                 <p className="text-xs text-gray-600 mt-2 font-mono">
                     Format: JSON array of objects with x, y, z coordinates and color hex. Example: <code>[{`{"x":0,"y":0,"z":0,"color":"#ff0000"}`}]</code>
                  </p>
               </div>
@@ -1151,13 +1159,13 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
             </div>
 
             {/* Welcome Screen Background Customization */}
-            <div className="p-6 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] text-left space-y-4">
-              <h3 className="text-xl font-bold text-[var(--color-text-accent)]">Welcome Screen Background</h3>
+            <div className="p-6 bg-[var(--color-bg-secondary)] rounded-md border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left space-y-4">
+              <h3 className="text-xl font-bold font-bebas tracking-wider text-black border-b-2 border-black pb-2">Welcome Screen Background</h3>
               <div>
-                <label className="block text-sm font-medium text-[var(--color-text-secondary)]">Background Type</label>
-                <div className="mt-2 grid grid-cols-2 lg:grid-cols-4 gap-2 rounded-lg bg-[var(--color-bg-tertiary)] p-1">
+                <label className="block text-sm font-bold text-black font-mono uppercase">Background Type</label>
+                <div className="mt-2 grid grid-cols-2 lg:grid-cols-4 gap-2 rounded-lg bg-gray-100 p-1 border-2 border-black">
                   {(['default', 'color', 'image', 'camera'] as const).map(type => (
-                    <label key={type} className={`block text-center cursor-pointer rounded-md py-2 px-3 text-sm font-semibold transition-colors ${settings.welcomeBgType === type ? 'bg-[var(--color-accent-primary)] text-[var(--color-accent-primary-text)]' : 'hover:bg-[var(--color-bg-primary)]'}`}>
+                    <label key={type} className={`block text-center cursor-pointer rounded py-2 px-3 text-sm font-bold transition-colors ${settings.welcomeBgType === type ? 'bg-[var(--color-accent-primary)] text-white' : 'hover:bg-white text-black'}`}>
                       <input type="radio" name="welcomeBgType" value={type} checked={settings.welcomeBgType === type} onChange={handleSettingsInputChange} className="sr-only"/>
                       {type.charAt(0).toUpperCase() + type.slice(1)}
                     </label>
@@ -1166,17 +1174,17 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
               </div>
 
               {settings.welcomeBgType === 'color' && (
-                <div className="border-t border-[var(--color-border-primary)] pt-4">
-                  <label htmlFor="welcomeBgColor" className="block text-sm font-medium text-[var(--color-text-secondary)]">Background Color</label>
-                  <input type="color" id="welcomeBgColor" name="welcomeBgColor" value={settings.welcomeBgColor || '#111827'} onChange={handleSettingsInputChange} className="mt-1 w-full h-10 p-1 bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md cursor-pointer"/>
+                <div className="border-t-2 border-black pt-4">
+                  <label htmlFor="welcomeBgColor" className="block text-sm font-bold text-black font-mono uppercase">Background Color</label>
+                  <input type="color" id="welcomeBgColor" name="welcomeBgColor" value={settings.welcomeBgColor || '#111827'} onChange={handleSettingsInputChange} className="mt-1 w-full h-12 p-1 bg-white border-2 border-black rounded-md cursor-pointer"/>
                 </div>
               )}
 
               {settings.welcomeBgType === 'image' && (
-                <div className="border-t border-[var(--color-border-primary)] pt-4 space-y-4">
+                <div className="border-t-2 border-black pt-4 space-y-4">
                   <div>
-                    <label htmlFor="welcomeBgImageUrl" className="block text-sm font-medium text-[var(--color-text-secondary)]">Background Image URL</label>
-                    <p className="text-xs text-[var(--color-text-muted)] mb-2">Use a direct image link. For Google Photos, use an embed link.</p>
+                    <label htmlFor="welcomeBgImageUrl" className="block text-sm font-bold text-black font-mono uppercase">Background Image URL</label>
+                    <p className="text-xs text-gray-600 mb-2 font-mono">Use a direct image link. For Google Photos, use an embed link.</p>
                     <input
                         type="url"
                         id="welcomeBgImageUrl"
@@ -1184,15 +1192,15 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                         value={settings.welcomeBgImageUrl || ''}
                         onChange={handleSettingsInputChange}
                         placeholder="https://..."
-                        className="mt-1 block w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md shadow-sm py-2 px-3 text-[var(--color-text-primary)] focus:outline-none focus:ring-[var(--color-border-focus)] focus:border-[var(--color-border-focus)] sm:text-sm"
+                        className="input-style w-full"
                     />
                   </div>
                 </div>
               )}
               
               {(settings.welcomeBgType === 'color' || settings.welcomeBgType === 'image' || settings.welcomeBgType === 'camera') && (
-                 <div className="border-t border-[var(--color-border-primary)] pt-4">
-                  <label htmlFor="welcomeBgZoom" className="block text-sm font-medium text-[var(--color-text-secondary)]">Zoom ({settings.welcomeBgZoom || 100}%)</label>
+                 <div className="border-t-2 border-black pt-4">
+                  <label htmlFor="welcomeBgZoom" className="block text-sm font-bold text-black font-mono uppercase">Zoom ({settings.welcomeBgZoom || 100}%)</label>
                   <input
                     id="welcomeBgZoom"
                     name="welcomeBgZoom"
@@ -1201,17 +1209,17 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                     max="300"
                     value={settings.welcomeBgZoom || 100}
                     onChange={handleSettingsInputChange}
-                    className="w-full h-2 bg-[var(--color-bg-tertiary)] rounded-lg appearance-none cursor-pointer"
+                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer border border-black"
                   />
                 </div>
               )}
             </div>
             
              {/* Start Button Customization */}
-            <div className="p-6 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] text-left space-y-4">
-                <h3 className="text-xl font-bold text-[var(--color-text-accent)]">Start Button</h3>
+            <div className="p-6 bg-[var(--color-bg-secondary)] rounded-md border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left space-y-4">
+                <h3 className="text-xl font-bold font-bebas tracking-wider text-black border-b-2 border-black pb-2">Start Button</h3>
                 <div>
-                    <label htmlFor="startButtonText" className="block text-sm font-medium text-[var(--color-text-secondary)]">Button Text</label>
+                    <label htmlFor="startButtonText" className="block text-sm font-bold text-black font-mono uppercase">Button Text</label>
                     <input
                         type="text"
                         id="startButtonText"
@@ -1219,32 +1227,32 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                         value={settings.startButtonText || ''}
                         onChange={handleSettingsInputChange}
                         placeholder="e.g., START SESSION"
-                        className="mt-1 block w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md shadow-sm py-2 px-3 text-[var(--color-text-primary)] focus:outline-none focus:ring-[var(--color-border-focus)] focus:border-[var(--color-border-focus)] sm:text-sm"
+                        className="input-style w-full"
                     />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 border-t border-[var(--color-border-primary)] pt-4">
+                <div className="grid grid-cols-2 gap-4 border-t-2 border-black pt-4">
                     <div>
                         <div className="flex justify-between items-center mb-1">
-                            <label htmlFor="startButtonBgColor" className="block text-sm font-medium text-[var(--color-text-secondary)]">Background Color</label>
-                            <button onClick={() => handleResetSetting('startButtonBgColor')} className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] underline">Reset</button>
+                            <label htmlFor="startButtonBgColor" className="block text-sm font-bold text-black font-mono uppercase">Background Color</label>
+                            <button onClick={() => handleResetSetting('startButtonBgColor')} className="text-xs text-gray-500 hover:text-black underline font-mono">Reset</button>
                         </div>
-                        <input type="color" id="startButtonBgColor" name="startButtonBgColor" value={settings.startButtonBgColor || '#8B5CF6'} onChange={handleSettingsInputChange} className="w-full h-10 p-1 bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md cursor-pointer"/>
+                        <input type="color" id="startButtonBgColor" name="startButtonBgColor" value={settings.startButtonBgColor || '#8B5CF6'} onChange={handleSettingsInputChange} className="w-full h-12 p-1 bg-white border-2 border-black rounded-md cursor-pointer"/>
                     </div>
                     <div>
                         <div className="flex justify-between items-center mb-1">
-                            <label htmlFor="startButtonTextColor" className="block text-sm font-medium text-[var(--color-text-secondary)]">Text Color</label>
-                            <button onClick={() => handleResetSetting('startButtonTextColor')} className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] underline">Reset</button>
+                            <label htmlFor="startButtonTextColor" className="block text-sm font-bold text-black font-mono uppercase">Text Color</label>
+                            <button onClick={() => handleResetSetting('startButtonTextColor')} className="text-xs text-gray-500 hover:text-black underline font-mono">Reset</button>
                         </div>
-                        <input type="color" id="startButtonTextColor" name="startButtonTextColor" value={settings.startButtonTextColor || '#FFFFFF'} onChange={handleSettingsInputChange} className="w-full h-10 p-1 bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md cursor-pointer"/>
+                        <input type="color" id="startButtonTextColor" name="startButtonTextColor" value={settings.startButtonTextColor || '#FFFFFF'} onChange={handleSettingsInputChange} className="w-full h-12 p-1 bg-white border-2 border-black rounded-md cursor-pointer"/>
                     </div>
                 </div>
                 
-                <div className="border-t border-[var(--color-border-primary)] pt-4">
+                <div className="border-t-2 border-black pt-4">
                     <label htmlFor="isStartButtonShadowEnabled" className="flex items-center justify-between cursor-pointer">
                         <div>
-                            <span className="block text-sm font-medium text-[var(--color-text-secondary)]">Enable Button Shadow</span>
-                            <p className="text-xs text-[var(--color-text-muted)]">Adds a drop shadow to the start button.</p>
+                            <span className="block text-sm font-bold text-black font-mono uppercase">Enable Button Shadow</span>
+                            <p className="text-xs text-gray-600 font-mono">Adds a drop shadow to the start button.</p>
                         </div>
                         <div className="relative">
                             <input
@@ -1255,21 +1263,23 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                                 onChange={handleSettingsInputChange}
                                 className="sr-only peer"
                             />
-                            <div className="w-11 h-6 bg-[var(--color-bg-tertiary)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--color-accent-primary)]"></div>
+                            <div className="w-12 h-6 bg-gray-300 rounded-full border-2 border-black peer-checked:bg-[var(--color-accent-primary)] transition-colors">
+                                <div className={`absolute top-1 left-1 w-4 h-4 bg-white border-2 border-black rounded-full transition-transform ${settings.isStartButtonShadowEnabled ? 'translate-x-6' : ''}`}></div>
+                            </div>
                         </div>
                     </label>
                 </div>
             </div>
 
             {/* Online History Button Customization */}
-            <div className="p-6 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] text-left space-y-4">
-                <h3 className="text-xl font-bold text-[var(--color-text-accent)]">Online History Button (User)</h3>
+            <div className="p-6 bg-[var(--color-bg-secondary)] rounded-md border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left space-y-4">
+                <h3 className="text-xl font-bold font-bebas tracking-wider text-black border-b-2 border-black pb-2">Online History Button (User)</h3>
                 
-                <div className="border-t border-[var(--color-border-primary)] pt-4">
+                <div className="border-t-2 border-black pt-4">
                     <label htmlFor="isOnlineHistoryEnabled" className="flex items-center justify-between cursor-pointer">
                         <div>
-                            <span className="block text-sm font-medium text-[var(--color-text-secondary)]">Show Online History Button</span>
-                            <p className="text-xs text-[var(--color-text-muted)]">Toggles the button's visibility on the user's welcome screen.</p>
+                            <span className="block text-sm font-bold text-black font-mono uppercase">Show Online History Button</span>
+                            <p className="text-xs text-gray-600 font-mono">Toggles the button's visibility on the user's welcome screen.</p>
                         </div>
                         <div className="relative">
                             <input
@@ -1280,13 +1290,15 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                                 onChange={handleSettingsInputChange}
                                 className="sr-only peer"
                             />
-                            <div className="w-11 h-6 bg-[var(--color-bg-tertiary)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--color-accent-primary)]"></div>
+                            <div className="w-12 h-6 bg-gray-300 rounded-full border-2 border-black peer-checked:bg-[var(--color-accent-primary)] transition-colors">
+                                <div className={`absolute top-1 left-1 w-4 h-4 bg-white border-2 border-black rounded-full transition-transform ${settings.isOnlineHistoryEnabled ? 'translate-x-6' : ''}`}></div>
+                            </div>
                         </div>
                     </label>
                 </div>
                 
                 <div>
-                    <label htmlFor="onlineHistoryButtonText" className="block text-sm font-medium text-[var(--color-text-secondary)]">Button Text</label>
+                    <label htmlFor="onlineHistoryButtonText" className="block text-sm font-bold text-black font-mono uppercase">Button Text</label>
                     <input
                         type="text"
                         id="onlineHistoryButtonText"
@@ -1294,73 +1306,73 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                         value={settings.onlineHistoryButtonText || ''}
                         onChange={handleSettingsInputChange}
                         placeholder="e.g., History"
-                        className="mt-1 block w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md shadow-sm py-2 px-3 text-[var(--color-text-primary)] focus:outline-none focus:ring-[var(--color-border-focus)] focus:border-[var(--color-border-focus)] sm:text-sm"
+                        className="input-style w-full"
                     />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 border-t border-[var(--color-border-primary)] pt-4">
+                <div className="grid grid-cols-2 gap-4 border-t-2 border-black pt-4">
                     <label htmlFor="isOnlineHistoryButtonIconEnabled" className="flex items-center justify-between cursor-pointer">
-                        <span className="text-sm font-medium text-[var(--color-text-secondary)]">Show Icon</span>
-                        <div className="relative"><input type="checkbox" id="isOnlineHistoryButtonIconEnabled" name="isOnlineHistoryButtonIconEnabled" checked={settings.isOnlineHistoryButtonIconEnabled ?? true} onChange={handleSettingsInputChange} className="sr-only peer" /><div className="w-11 h-6 bg-[var(--color-bg-tertiary)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--color-accent-primary)]"></div></div>
+                        <span className="text-sm font-bold text-black font-mono uppercase">Show Icon</span>
+                        <div className="relative"><input type="checkbox" id="isOnlineHistoryButtonIconEnabled" name="isOnlineHistoryButtonIconEnabled" checked={settings.isOnlineHistoryButtonIconEnabled ?? true} onChange={handleSettingsInputChange} className="sr-only peer" /><div className="w-12 h-6 bg-gray-300 rounded-full border-2 border-black peer-checked:bg-[var(--color-accent-primary)] transition-colors"><div className={`absolute top-1 left-1 w-4 h-4 bg-white border-2 border-black rounded-full transition-transform ${settings.isOnlineHistoryButtonIconEnabled ? 'translate-x-6' : ''}`}></div></div></div>
                     </label>
                     <label htmlFor="isOnlineHistoryButtonShadowEnabled" className="flex items-center justify-between cursor-pointer">
-                        <span className="text-sm font-medium text-[var(--color-text-secondary)]">Enable Shadow</span>
-                        <div className="relative"><input type="checkbox" id="isOnlineHistoryButtonShadowEnabled" name="isOnlineHistoryButtonShadowEnabled" checked={settings.isOnlineHistoryButtonShadowEnabled ?? true} onChange={handleSettingsInputChange} className="sr-only peer" /><div className="w-11 h-6 bg-[var(--color-bg-tertiary)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--color-accent-primary)]"></div></div>
+                        <span className="text-sm font-bold text-black font-mono uppercase">Enable Shadow</span>
+                        <div className="relative"><input type="checkbox" id="isOnlineHistoryButtonShadowEnabled" name="isOnlineHistoryButtonShadowEnabled" checked={settings.isOnlineHistoryButtonShadowEnabled ?? true} onChange={handleSettingsInputChange} className="sr-only peer" /><div className="w-12 h-6 bg-gray-300 rounded-full border-2 border-black peer-checked:bg-[var(--color-accent-primary)] transition-colors"><div className={`absolute top-1 left-1 w-4 h-4 bg-white border-2 border-black rounded-full transition-transform ${settings.isOnlineHistoryButtonShadowEnabled ? 'translate-x-6' : ''}`}></div></div></div>
                     </label>
                      <label htmlFor="isOnlineHistoryButtonFillEnabled" className="flex items-center justify-between cursor-pointer">
-                        <span className="text-sm font-medium text-[var(--color-text-secondary)]">Enable Fill</span>
-                        <div className="relative"><input type="checkbox" id="isOnlineHistoryButtonFillEnabled" name="isOnlineHistoryButtonFillEnabled" checked={settings.isOnlineHistoryButtonFillEnabled ?? false} onChange={handleSettingsInputChange} className="sr-only peer" /><div className="w-11 h-6 bg-[var(--color-bg-tertiary)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--color-accent-primary)]"></div></div>
+                        <span className="text-sm font-bold text-black font-mono uppercase">Enable Fill</span>
+                        <div className="relative"><input type="checkbox" id="isOnlineHistoryButtonFillEnabled" name="isOnlineHistoryButtonFillEnabled" checked={settings.isOnlineHistoryButtonFillEnabled ?? false} onChange={handleSettingsInputChange} className="sr-only peer" /><div className="w-12 h-6 bg-gray-300 rounded-full border-2 border-black peer-checked:bg-[var(--color-accent-primary)] transition-colors"><div className={`absolute top-1 left-1 w-4 h-4 bg-white border-2 border-black rounded-full transition-transform ${settings.isOnlineHistoryButtonFillEnabled ? 'translate-x-6' : ''}`}></div></div></div>
                     </label>
                     <label htmlFor="isOnlineHistoryButtonStrokeEnabled" className="flex items-center justify-between cursor-pointer">
-                        <span className="text-sm font-medium text-[var(--color-text-secondary)]">Enable Stroke</span>
-                        <div className="relative"><input type="checkbox" id="isOnlineHistoryButtonStrokeEnabled" name="isOnlineHistoryButtonStrokeEnabled" checked={settings.isOnlineHistoryButtonStrokeEnabled ?? true} onChange={handleSettingsInputChange} className="sr-only peer" /><div className="w-11 h-6 bg-[var(--color-bg-tertiary)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--color-accent-primary)]"></div></div>
+                        <span className="text-sm font-bold text-black font-mono uppercase">Enable Stroke</span>
+                        <div className="relative"><input type="checkbox" id="isOnlineHistoryButtonStrokeEnabled" name="isOnlineHistoryButtonStrokeEnabled" checked={settings.isOnlineHistoryButtonStrokeEnabled ?? true} onChange={handleSettingsInputChange} className="sr-only peer" /><div className="w-12 h-6 bg-gray-300 rounded-full border-2 border-black peer-checked:bg-[var(--color-accent-primary)] transition-colors"><div className={`absolute top-1 left-1 w-4 h-4 bg-white border-2 border-black rounded-full transition-transform ${settings.isOnlineHistoryButtonStrokeEnabled ? 'translate-x-6' : ''}`}></div></div></div>
                     </label>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 border-t border-[var(--color-border-primary)] pt-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 border-t-2 border-black pt-4">
                     {(settings.isOnlineHistoryButtonFillEnabled) && (
                         <div>
                             <div className="flex justify-between items-center mb-1">
-                                <label htmlFor="onlineHistoryButtonFillColor" className="block text-sm font-medium text-[var(--color-text-secondary)]">Fill Color</label>
-                                <button onClick={() => handleResetSetting('onlineHistoryButtonFillColor')} className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] underline">Reset</button>
+                                <label htmlFor="onlineHistoryButtonFillColor" className="block text-sm font-bold text-black font-mono uppercase">Fill Color</label>
+                                <button onClick={() => handleResetSetting('onlineHistoryButtonFillColor')} className="text-xs text-gray-500 hover:text-black underline font-mono">Reset</button>
                             </div>
-                            <input type="color" id="onlineHistoryButtonFillColor" name="onlineHistoryButtonFillColor" value={settings.onlineHistoryButtonFillColor || '#1F2937'} onChange={handleSettingsInputChange} className="w-full h-10 p-1 bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md cursor-pointer"/>
+                            <input type="color" id="onlineHistoryButtonFillColor" name="onlineHistoryButtonFillColor" value={settings.onlineHistoryButtonFillColor || '#1F2937'} onChange={handleSettingsInputChange} className="w-full h-12 p-1 bg-white border-2 border-black rounded-md cursor-pointer"/>
                         </div>
                     )}
                     <div>
                         <div className="flex justify-between items-center mb-1">
-                            <label htmlFor="onlineHistoryButtonTextColor" className="block text-sm font-medium text-[var(--color-text-secondary)]">Text Color</label>
-                            <button onClick={() => handleResetSetting('onlineHistoryButtonTextColor')} className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] underline">Reset</button>
+                            <label htmlFor="onlineHistoryButtonTextColor" className="block text-sm font-bold text-black font-mono uppercase">Text Color</label>
+                            <button onClick={() => handleResetSetting('onlineHistoryButtonTextColor')} className="text-xs text-gray-500 hover:text-black underline font-mono">Reset</button>
                         </div>
-                        <input type="color" id="onlineHistoryButtonTextColor" name="onlineHistoryButtonTextColor" value={settings.onlineHistoryButtonTextColor || '#D1D5DB'} onChange={handleSettingsInputChange} className="w-full h-10 p-1 bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md cursor-pointer"/>
+                        <input type="color" id="onlineHistoryButtonTextColor" name="onlineHistoryButtonTextColor" value={settings.onlineHistoryButtonTextColor || '#D1D5DB'} onChange={handleSettingsInputChange} className="w-full h-12 p-1 bg-white border-2 border-black rounded-md cursor-pointer"/>
                     </div>
                     {(settings.isOnlineHistoryButtonStrokeEnabled) && (
                         <div>
                             <div className="flex justify-between items-center mb-1">
-                                <label htmlFor="onlineHistoryButtonStrokeColor" className="block text-sm font-medium text-[var(--color-text-secondary)]">Stroke Color</label>
-                                <button onClick={() => handleResetSetting('onlineHistoryButtonStrokeColor')} className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] underline">Reset</button>
+                                <label htmlFor="onlineHistoryButtonStrokeColor" className="block text-sm font-bold text-black font-mono uppercase">Stroke Color</label>
+                                <button onClick={() => handleResetSetting('onlineHistoryButtonStrokeColor')} className="text-xs text-gray-500 hover:text-black underline font-mono">Reset</button>
                             </div>
-                            <input type="color" id="onlineHistoryButtonStrokeColor" name="onlineHistoryButtonStrokeColor" value={settings.onlineHistoryButtonStrokeColor || '#9CA3AF'} onChange={handleSettingsInputChange} className="w-full h-10 p-1 bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md cursor-pointer"/>
+                            <input type="color" id="onlineHistoryButtonStrokeColor" name="onlineHistoryButtonStrokeColor" value={settings.onlineHistoryButtonStrokeColor || '#9CA3AF'} onChange={handleSettingsInputChange} className="w-full h-12 p-1 bg-white border-2 border-black rounded-md cursor-pointer"/>
                         </div>
                     )}
                 </div>
             </div>
 
             {/* Theme Settings */}
-            <div className="p-6 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] text-left space-y-4">
-              <h3 className="text-xl font-bold text-[var(--color-text-accent)]">App Theme</h3>
+            <div className="p-6 bg-[var(--color-bg-secondary)] rounded-md border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left space-y-4">
+              <h3 className="text-xl font-bold font-bebas tracking-wider text-black border-b-2 border-black pb-2">App Theme</h3>
               <div className="flex gap-2">
                 <button
                   onClick={() => handleThemeChange('dark')}
-                  className={`flex-1 font-bold py-2 px-4 rounded-md transition-colors ${settings.theme === 'dark' || !settings.theme ? 'bg-[var(--color-accent-primary)] text-[var(--color-accent-primary-text)]' : 'bg-[var(--color-bg-tertiary)] hover:bg-[var(--color-border-secondary)]'}`}
+                  className={`flex-1 font-bold py-3 px-4 rounded-md transition-all border-2 border-black ${settings.theme === 'dark' || !settings.theme ? 'bg-[var(--color-bg-primary)] text-black shadow-none translate-x-[2px] translate-y-[2px]' : 'bg-white hover:bg-gray-100 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]'}`}
                 >
-                  Dark Mode
+                  Neo-Yellow
                 </button>
                 <button
                   onClick={() => handleThemeChange('light')}
-                  className={`flex-1 font-bold py-2 px-4 rounded-md transition-colors ${settings.theme === 'light' ? 'bg-[var(--color-accent-primary)] text-[var(--color-accent-primary-text)]' : 'bg-[var(--color-bg-tertiary)] hover:bg-[var(--color-border-secondary)]'}`}
+                  className={`flex-1 font-bold py-3 px-4 rounded-md transition-all border-2 border-black ${settings.theme === 'light' ? 'bg-white text-black shadow-none translate-x-[2px] translate-y-[2px]' : 'bg-gray-200 hover:bg-gray-300 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]'}`}
                 >
-                  Light Mode
+                  Neo-Clean
                 </button>
               </div>
             </div>
@@ -1370,15 +1382,15 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
         return (
            <div className="space-y-6">
              {/* Security Settings */}
-            <div className="p-6 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] text-left space-y-4">
-              <h3 className="text-xl font-bold text-[var(--color-text-accent)] flex items-center gap-2"><KeyIcon /> Security Settings</h3>
+            <div className="p-6 bg-[var(--color-bg-secondary)] rounded-md border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left space-y-4">
+              <h3 className="text-xl font-bold font-bebas tracking-wider text-black border-b-2 border-black pb-2 flex items-center gap-2"><KeyIcon /> Security Settings</h3>
               
               {/* PIN Lock */}
-              <div className="border-t border-[var(--color-border-primary)] pt-4">
+              <div className="border-t-2 border-black pt-4">
                   <label htmlFor="isPinLockEnabled" className="flex items-center justify-between cursor-pointer">
                       <div>
-                          <span className="block text-sm font-medium text-[var(--color-text-secondary)]">Enable PIN to Exit Fullscreen</span>
-                          <p className="text-xs text-[var(--color-text-muted)]">Requires a PIN to exit fullscreen mode.</p>
+                          <span className="block text-sm font-bold text-black font-mono uppercase">Enable PIN to Exit Fullscreen</span>
+                          <p className="text-xs text-gray-600 font-mono">Requires a PIN to exit fullscreen mode.</p>
                       </div>
                       <div className="relative">
                           <input
@@ -1389,13 +1401,15 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                               onChange={handleSettingsInputChange}
                               className="sr-only peer"
                           />
-                          <div className="w-11 h-6 bg-[var(--color-bg-tertiary)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--color-accent-primary)]"></div>
+                          <div className="w-12 h-6 bg-gray-300 rounded-full border-2 border-black peer-checked:bg-[var(--color-accent-primary)] transition-colors">
+                              <div className={`absolute top-1 left-1 w-4 h-4 bg-white border-2 border-black rounded-full transition-transform ${settings.isPinLockEnabled ? 'translate-x-6' : ''}`}></div>
+                          </div>
                       </div>
                   </label>
               </div>
               {settings.isPinLockEnabled && (
                   <div className="pt-4 space-y-2">
-                      <label htmlFor="fullscreenPin" className="block text-sm font-medium text-[var(--color-text-secondary)]">Set 4-Digit PIN</label>
+                      <label htmlFor="fullscreenPin" className="block text-sm font-bold text-black font-mono uppercase">Set 4-Digit PIN</label>
                       <div className="flex items-center gap-2">
                           <input
                               type="password"
@@ -1406,11 +1420,11 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                               maxLength={4}
                               pattern="\d{4}"
                               title="PIN must be 4 digits"
-                              className="flex-grow block w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md shadow-sm py-2 px-3 text-[var(--color-text-primary)] focus:outline-none focus:ring-[var(--color-border-focus)] focus:border-[var(--color-border-focus)] sm:text-sm tracking-[1em] text-center"
+                              className="flex-grow block w-full input-style text-center tracking-[1em]"
                           />
                           <button
                               onClick={handleResetPin}
-                              className="bg-[var(--color-accent-secondary)] hover:bg-[var(--color-accent-secondary-hover)] text-[var(--color-accent-secondary-text)] font-bold py-2 px-4 rounded-md text-sm"
+                              className="bg-orange-400 hover:bg-orange-500 text-black font-bold py-2 px-4 rounded border-2 border-black shadow-[2px_2px_0px_0px_black] text-sm"
                           >
                               Reset
                           </button>
@@ -1419,14 +1433,14 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
               )}
 
               {/* Strict Kiosk Mode */}
-              <div className="border-t border-[var(--color-border-primary)] pt-4">
+              <div className="border-t-2 border-black pt-4">
                   <label htmlFor="isStrictKioskMode" className="flex items-center justify-between cursor-pointer">
                       <div className="flex items-center gap-2">
                           <div>
-                              <span className="block text-sm font-medium text-[var(--color-text-secondary)]">Strict Kiosk Mode</span>
-                              <p className="text-xs text-[var(--color-text-muted)]">Aggressively tries to prevent exiting fullscreen. <span className="font-bold">Recommended.</span></p>
+                              <span className="block text-sm font-bold text-black font-mono uppercase">Strict Kiosk Mode</span>
+                              <p className="text-xs text-gray-600 font-mono">Aggressively tries to prevent exiting fullscreen. <span className="font-bold">Recommended.</span></p>
                           </div>
-                          <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsGuideOpen(true); }} className="text-[var(--color-text-muted)] hover:text-[var(--color-text-accent)]"><InfoIcon /></button>
+                          <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsGuideOpen(true); }} className="text-gray-500 hover:text-black"><InfoIcon /></button>
                       </div>
                       <div className="relative">
                           <input
@@ -1437,7 +1451,9 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                               onChange={handleSettingsInputChange}
                               className="sr-only peer"
                           />
-                          <div className="w-11 h-6 bg-[var(--color-bg-tertiary)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--color-accent-primary)]"></div>
+                          <div className="w-12 h-6 bg-gray-300 rounded-full border-2 border-black peer-checked:bg-[var(--color-accent-primary)] transition-colors">
+                              <div className={`absolute top-1 left-1 w-4 h-4 bg-white border-2 border-black rounded-full transition-transform ${settings.isStrictKioskMode ? 'translate-x-6' : ''}`}></div>
+                          </div>
                       </div>
                   </label>
               </div>
@@ -1448,15 +1464,15 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
          return (
           <div className="space-y-6">
             {/* Session Code Management */}
-            <div className="p-6 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] text-left space-y-4">
-                <h3 className="text-xl font-bold text-[var(--color-text-accent)]">Session Management</h3>
+            <div className="p-6 bg-[var(--color-bg-secondary)] rounded-md border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left space-y-4">
+                <h3 className="text-xl font-bold font-bebas tracking-wider text-black border-b-2 border-black pb-2">Session Management</h3>
                 
                 {/* Enable/Disable Session Code */}
-                <div className="border-t border-[var(--color-border-primary)] pt-4">
+                <div className="border-t-2 border-black pt-4">
                   <label htmlFor="isSessionCodeEnabled" className="flex items-center justify-between cursor-pointer">
                       <div>
-                          <span className="block text-sm font-medium text-[var(--color-text-secondary)]">Enable Session Code Mode</span>
-                          <p className="text-xs text-[var(--color-text-muted)]">
+                          <span className="block text-sm font-bold text-black font-mono uppercase">Enable Session Code Mode</span>
+                          <p className="text-xs text-gray-600 font-mono">
                               If enabled, Payment Mode will be disabled. Users need a code to start.
                           </p>
                       </div>
@@ -1469,15 +1485,17 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                               onChange={handleToggleSessionCode}
                               className="sr-only peer"
                           />
-                          <div className="w-11 h-6 bg-[var(--color-bg-tertiary)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--color-accent-primary)]"></div>
+                          <div className="w-12 h-6 bg-gray-300 rounded-full border-2 border-black peer-checked:bg-[var(--color-accent-primary)] transition-colors">
+                              <div className={`absolute top-1 left-1 w-4 h-4 bg-white border-2 border-black rounded-full transition-transform ${settings.isSessionCodeEnabled ? 'translate-x-6' : ''}`}></div>
+                          </div>
                       </div>
                   </label>
                 </div>
                 
                 {!(settings.isSessionCodeEnabled ?? true) && !settings.isPaymentEnabled && (
-                  <div className="border-t border-[var(--color-border-primary)] pt-4">
-                    <label htmlFor="freePlayMaxTakes" className="block text-sm font-medium text-[var(--color-text-secondary)]">Takes per Free Session</label>
-                    <p className="text-xs text-[var(--color-text-muted)] mb-2">Number of photo takes a user gets in free play mode.</p>
+                  <div className="border-t-2 border-black pt-4">
+                    <label htmlFor="freePlayMaxTakes" className="block text-sm font-bold text-black font-mono uppercase">Takes per Free Session</label>
+                    <p className="text-xs text-gray-600 mb-2 font-mono">Number of photo takes a user gets in free play mode.</p>
                     <input
                         type="number"
                         id="freePlayMaxTakes"
@@ -1485,19 +1503,19 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                         value={settings.freePlayMaxTakes || 1}
                         onChange={handleSettingsInputChange}
                         min="1"
-                        className="mt-1 block w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md shadow-sm py-2 px-3 text-[var(--color-text-primary)] focus:outline-none focus:ring-[var(--color-border-focus)] focus:border-[var(--color-border-focus)] sm:text-sm"
+                        className="input-style w-full"
                     />
                   </div>
                 )}
 
                 {(settings.isSessionCodeEnabled ?? true) && (
                     <div className="pt-4">
-                    <p className="text-[var(--color-text-muted)] mb-4 text-sm">
+                    <p className="text-gray-600 mb-4 text-sm font-mono">
                         Generate and manage single-use session codes for users to start the photobooth.
                     </p>
                     <button
                         onClick={onManageSessions}
-                        className="w-full bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-[var(--color-accent-primary-text)] font-bold py-3 px-6 rounded-full text-lg transition-transform transform hover:scale-105 flex items-center justify-center gap-2"
+                        className="w-full bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-white font-bold py-3 px-6 rounded text-lg transition-transform transform hover:translate-y-[-2px] border-2 border-black shadow-[4px_4px_0px_0px_black] active:shadow-none active:translate-x-[4px] active:translate-y-[4px] flex items-center justify-center gap-2"
                     >
                         <TicketIcon />
                         Manage Session Codes
@@ -1507,42 +1525,42 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
               </div>
 
              {/* Event Management */}
-              <div className="p-6 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] text-left">
-                <h3 className="text-xl font-bold mb-4 text-[var(--color-text-accent)]">Event Management</h3>
-                <p className="text-[var(--color-text-muted)] mb-4">
+              <div className="p-6 bg-[var(--color-bg-secondary)] rounded-md border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left">
+                <h3 className="text-xl font-bold mb-4 font-bebas tracking-wider text-black border-b-2 border-black pb-2">Event Management</h3>
+                <p className="text-gray-600 mb-4 font-mono text-sm">
                   Create, manage, and archive events. Assign specific templates to each event.
                 </p>
                 <button
                   onClick={onManageEvents}
-                  className="w-full bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-[var(--color-accent-primary-text)] font-bold py-3 px-6 rounded-full text-lg transition-transform transform hover:scale-105"
+                  className="w-full bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-white font-bold py-3 px-6 rounded text-lg transition-transform transform hover:translate-y-[-2px] border-2 border-black shadow-[4px_4px_0px_0px_black] active:shadow-none active:translate-x-[4px] active:translate-y-[4px]"
                 >
                   Manage Events
                 </button>
               </div>
 
               {/* Template Settings */}
-              <div className="p-6 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] text-left">
-                <h3 className="text-xl font-bold mb-4 text-[var(--color-text-accent)]">Template Library</h3>
-                <p className="text-[var(--color-text-muted)] mb-4">
+              <div className="p-6 bg-[var(--color-bg-secondary)] rounded-md border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left">
+                <h3 className="text-xl font-bold mb-4 font-bebas tracking-wider text-black border-b-2 border-black pb-2">Template Library</h3>
+                <p className="text-gray-600 mb-4 font-mono text-sm">
                   Add, edit, or delete photobooth templates from your global library.
                 </p>
                 <button
                   onClick={onManageTemplates}
-                  className="w-full bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-[var(--color-accent-primary-text)] font-bold py-3 px-6 rounded-full text-lg transition-transform transform hover:scale-105"
+                  className="w-full bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-white font-bold py-3 px-6 rounded text-lg transition-transform transform hover:translate-y-[-2px] border-2 border-black shadow-[4px_4px_0px_0px_black] active:shadow-none active:translate-x-[4px] active:translate-y-[4px]"
                 >
                   Manage All Templates
                 </button>
               </div>
               
               {/* History */}
-              <div className="p-6 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] text-left">
-                  <h3 className="text-xl font-bold mb-4 text-[var(--color-text-accent)]">Photobooth History</h3>
-                  <p className="text-[var(--color-text-muted)] mb-4">
+              <div className="p-6 bg-[var(--color-bg-secondary)] rounded-md border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left">
+                  <h3 className="text-xl font-bold mb-4 font-bebas tracking-wider text-black border-b-2 border-black pb-2">Photobooth History</h3>
+                  <p className="text-gray-600 mb-4 font-mono text-sm">
                       View, filter, and manage all photos taken during events.
                   </p>
                   <button
                       onClick={onViewHistory}
-                      className="w-full bg-[var(--color-info)] hover:bg-[var(--color-info-hover)] text-[var(--color-info-text)] font-bold py-3 px-6 rounded-full text-lg transition-transform transform hover:scale-105"
+                      className="w-full bg-[var(--color-info)] hover:bg-[var(--color-info-hover)] text-white font-bold py-3 px-6 rounded text-lg transition-transform transform hover:translate-y-[-2px] border-2 border-black shadow-[4px_4px_0px_0px_black] active:shadow-none active:translate-x-[4px] active:translate-y-[4px]"
                   >
                       View Photobooth History
                   </button>
@@ -1552,15 +1570,15 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
       case 'payment':
         return (
             <div className="space-y-6">
-                <div className="p-6 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] text-left space-y-4">
-                    <h3 className="text-xl font-bold text-[var(--color-text-accent)]">Payment Mode</h3>
+                <div className="p-6 bg-[var(--color-bg-secondary)] rounded-md border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left space-y-4">
+                    <h3 className="text-xl font-bold font-bebas tracking-wider text-black border-b-2 border-black pb-2">Payment Mode</h3>
                     
                     {/* Enable/Disable Payment Mode */}
-                    <div className="border-t border-[var(--color-border-primary)] pt-4">
+                    <div className="border-t-2 border-black pt-4">
                         <label htmlFor="isPaymentEnabled" className="flex items-center justify-between cursor-pointer">
                             <div>
-                                <span className="block text-sm font-medium text-[var(--color-text-secondary)]">Enable QRIS Payment Mode</span>
-                                <p className="text-xs text-[var(--color-text-muted)]">
+                                <span className="block text-sm font-bold text-black font-mono uppercase">Enable QRIS Payment Mode</span>
+                                <p className="text-xs text-gray-600 font-mono">
                                     If enabled, Session Code mode will be disabled. Users pay via QRIS to start.
                                 </p>
                             </div>
@@ -1573,18 +1591,20 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                                     onChange={handleTogglePaymentMode}
                                     className="sr-only peer"
                                 />
-                                <div className="w-11 h-6 bg-[var(--color-bg-tertiary)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--color-accent-primary)]"></div>
+                                <div className="w-12 h-6 bg-gray-300 rounded-full border-2 border-black peer-checked:bg-[var(--color-accent-primary)] transition-colors">
+                                    <div className={`absolute top-1 left-1 w-4 h-4 bg-white border-2 border-black rounded-full transition-transform ${settings.isPaymentEnabled ? 'translate-x-6' : ''}`}></div>
+                                </div>
                             </div>
                         </label>
                     </div>
                 </div>
 
                 {/* QRIS Image Upload */}
-                <div className={`p-6 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] text-left space-y-4 ${!settings.isPaymentEnabled ? 'opacity-50 pointer-events-none' : ''}`}>
-                    <h3 className="text-xl font-bold text-[var(--color-text-accent)]">QRIS Image</h3>
+                <div className={`p-6 bg-[var(--color-bg-secondary)] rounded-md border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left space-y-4 ${!settings.isPaymentEnabled ? 'opacity-50 pointer-events-none' : ''}`}>
+                    <h3 className="text-xl font-bold font-bebas tracking-wider text-black border-b-2 border-black pb-2">QRIS Image</h3>
                     <div>
-                        <label htmlFor="qrisImageUrl" className="block text-sm font-medium text-[var(--color-text-secondary)]">QRIS Image URL</label>
-                        <p className="text-xs text-[var(--color-text-muted)] mb-2">Direct link or Google Photos Embed Link for your QRIS code.</p>
+                        <label htmlFor="qrisImageUrl" className="block text-sm font-bold text-black font-mono uppercase">QRIS Image URL</label>
+                        <p className="text-xs text-gray-600 mb-2 font-mono">Direct link or Google Photos Embed Link for your QRIS code.</p>
                         <input
                             type="text"
                             id="qrisImageUrl"
@@ -1592,24 +1612,24 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                             value={settings.qrisImageUrl || ''}
                             onChange={handleSettingsInputChange}
                             placeholder="https://..."
-                            className="mt-1 block w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md shadow-sm py-2 px-3 text-[var(--color-text-primary)] focus:outline-none focus:ring-[var(--color-border-focus)] focus:border-[var(--color-border-focus)] sm:text-sm"
+                            className="input-style w-full"
                         />
                     </div>
                 </div>
 
                 {/* Price Lists Management */}
-                <div className={`p-6 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] text-left space-y-4 ${!settings.isPaymentEnabled ? 'opacity-50 pointer-events-none' : ''}`}>
-                    <h3 className="text-xl font-bold text-[var(--color-text-accent)]">Price List Packages</h3>
+                <div className={`p-6 bg-[var(--color-bg-secondary)] rounded-md border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left space-y-4 ${!settings.isPaymentEnabled ? 'opacity-50 pointer-events-none' : ''}`}>
+                    <h3 className="text-xl font-bold font-bebas tracking-wider text-black border-b-2 border-black pb-2">Price List Packages</h3>
                     
                     {/* Add New Price List */}
-                    <form onSubmit={handleAddPriceList} className="bg-[var(--color-bg-tertiary)]/50 p-4 rounded-lg border border-[var(--color-border-secondary)] space-y-3">
+                    <form onSubmit={handleAddPriceList} className="bg-gray-100 p-4 rounded-md border-2 border-black space-y-3">
                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                             <input
                                 type="text"
                                 placeholder="Package Name"
                                 value={newPriceName}
                                 onChange={e => setNewPriceName(e.target.value)}
-                                className="w-full bg-[var(--color-bg-primary)] border border-[var(--color-border-secondary)] rounded px-3 py-2 text-sm"
+                                className="w-full bg-white border-2 border-black rounded px-3 py-2 text-sm font-bold"
                                 required
                             />
                             <input
@@ -1617,7 +1637,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                                 placeholder="Price"
                                 value={newPriceAmount}
                                 onChange={e => setNewPriceAmount(e.target.value)}
-                                className="w-full bg-[var(--color-bg-primary)] border border-[var(--color-border-secondary)] rounded px-3 py-2 text-sm"
+                                className="w-full bg-white border-2 border-black rounded px-3 py-2 text-sm font-bold"
                                 required
                             />
                             <input
@@ -1626,7 +1646,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                                 value={newPriceTakes}
                                 onChange={e => setNewPriceTakes(Math.max(1, parseInt(e.target.value) || 1))}
                                 min="1"
-                                className="w-full bg-[var(--color-bg-primary)] border border-[var(--color-border-secondary)] rounded px-3 py-2 text-sm"
+                                className="w-full bg-white border-2 border-black rounded px-3 py-2 text-sm font-bold"
                                 required
                             />
                              <input
@@ -1634,10 +1654,10 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                                 placeholder="Description (optional)"
                                 value={newPriceDesc}
                                 onChange={e => setNewPriceDesc(e.target.value)}
-                                className="w-full bg-[var(--color-bg-primary)] border border-[var(--color-border-secondary)] rounded px-3 py-2 text-sm"
+                                className="w-full bg-white border-2 border-black rounded px-3 py-2 text-sm font-bold"
                             />
                          </div>
-                         <button type="submit" className="w-full bg-[var(--color-positive)] hover:bg-[var(--color-positive-hover)] text-[var(--color-positive-text)] font-bold py-2 rounded-md text-sm">
+                         <button type="submit" className="w-full bg-[var(--color-positive)] hover:bg-[var(--color-positive-hover)] text-black font-bold py-2 rounded border-2 border-black shadow-[2px_2px_0px_0px_black] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none text-sm uppercase">
                              Add Package
                          </button>
                     </form>
@@ -1645,30 +1665,30 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                     {/* List Existing Packages */}
                     <div className="space-y-2 mt-4">
                         {(settings.priceLists || []).map(pkg => (
-                            <div key={pkg.id} className="flex items-center justify-between p-3 bg-[var(--color-bg-tertiary)] rounded-md border border-[var(--color-border-secondary)]">
+                            <div key={pkg.id} className="flex items-center justify-between p-3 bg-white rounded-md border-2 border-black shadow-[2px_2px_0px_0px_black]">
                                 <div>
-                                    <p className="font-bold">{pkg.name} - Rp {pkg.price.toLocaleString()}</p>
-                                    <p className="text-xs text-[var(--color-text-accent)] font-bold">{(pkg.maxTakes || 1)} Session(s)</p>
-                                    <p className="text-xs text-[var(--color-text-muted)]">{pkg.description}</p>
+                                    <p className="font-bold text-black uppercase">{pkg.name} - Rp {pkg.price.toLocaleString()}</p>
+                                    <p className="text-xs text-[var(--color-accent-primary)] font-bold">{(pkg.maxTakes || 1)} Session(s)</p>
+                                    <p className="text-xs text-gray-600">{pkg.description}</p>
                                 </div>
-                                <button onClick={() => handleDeletePriceList(pkg.id)} className="text-red-400 hover:text-red-300 p-2">
+                                <button onClick={() => handleDeletePriceList(pkg.id)} className="text-red-500 hover:text-red-700 p-2 border-2 border-transparent hover:border-black rounded">
                                     <TrashIcon />
                                 </button>
                             </div>
                         ))}
                         {(!settings.priceLists || settings.priceLists.length === 0) && (
-                            <p className="text-center text-[var(--color-text-muted)] text-sm">No packages added.</p>
+                            <p className="text-center text-gray-500 text-sm font-mono">No packages added.</p>
                         )}
                     </div>
                 </div>
 
                 {/* Payment History View */}
-                <div className="p-6 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] text-left space-y-4">
-                    <div className="flex justify-between items-center">
-                        <h3 className="text-xl font-bold text-[var(--color-text-accent)]">Recent Payments</h3>
+                <div className="p-6 bg-[var(--color-bg-secondary)] rounded-md border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left space-y-4">
+                    <div className="flex justify-between items-center border-b-2 border-black pb-2">
+                        <h3 className="text-xl font-bold font-bebas tracking-wider text-black">Recent Payments</h3>
                         <button 
                             onClick={handleRefreshPayments}
-                            className={`p-2 bg-[var(--color-bg-tertiary)] hover:bg-[var(--color-border-secondary)] rounded-full transition-all text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] ${isRefreshingPayments ? 'animate-spin text-[var(--color-accent-primary)]' : ''}`}
+                            className={`p-2 bg-white border-2 border-black hover:bg-gray-100 rounded-full transition-all text-black shadow-[2px_2px_0px_0px_black] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none ${isRefreshingPayments ? 'animate-spin text-[var(--color-accent-primary)]' : ''}`}
                             title="Refresh List"
                             disabled={isRefreshingPayments}
                         >
@@ -1678,33 +1698,33 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                     
                     <div className="relative min-h-[150px]">
                         {isRefreshingPayments && (
-                            <div className="absolute inset-0 bg-[var(--color-bg-secondary)]/80 backdrop-blur-sm z-10 flex flex-col items-center justify-center rounded-lg animate-fade-in">
-                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--color-accent-primary)] mb-2"></div>
-                                <p className="text-xs text-[var(--color-text-muted)] font-bold">Refreshing...</p>
+                            <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-10 flex flex-col items-center justify-center rounded-lg animate-fade-in border-2 border-black">
+                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black mb-2"></div>
+                                <p className="text-xs text-black font-bold font-mono">Refreshing...</p>
                             </div>
                         )}
                         
-                        <div className="max-h-[600px] overflow-y-auto scrollbar-thin space-y-2">
+                        <div className="max-h-[600px] overflow-y-auto scrollbar-thin space-y-2 pr-1">
                             {payments.map(pay => (
-                                <div key={pay.id} className="p-3 bg-[var(--color-bg-tertiary)] rounded flex justify-between items-center text-sm">
+                                <div key={pay.id} className="p-3 bg-white rounded border-2 border-black flex justify-between items-center text-sm shadow-[2px_2px_0px_0px_gray]">
                                     <div>
-                                        <p className="font-bold">{pay.userName}</p>
-                                        <p className="text-xs text-[var(--color-text-muted)]">{pay.priceListName} - Rp {pay.amount.toLocaleString()}</p>
-                                        <p className="text-[10px] text-[var(--color-text-muted)]">{new Date(pay.timestamp).toLocaleString()}</p>
+                                        <p className="font-bold text-black uppercase">{pay.userName}</p>
+                                        <p className="text-xs text-gray-600 font-mono">{pay.priceListName} - Rp {pay.amount.toLocaleString()}</p>
+                                        <p className="text-[10px] text-gray-500 font-mono">{new Date(pay.timestamp).toLocaleString()}</p>
                                         {pay.whatsappNumber && (
-                                            <p className="text-xs text-green-400 mt-1 flex items-center gap-1">
+                                            <p className="text-xs text-green-600 mt-1 flex items-center gap-1 font-bold">
                                                 <WhatsAppIcon /> {pay.whatsappNumber}
                                             </p>
                                         )}
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <span className={`px-2 py-1 rounded text-xs font-bold uppercase ${pay.status === 'verified' ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
+                                        <span className={`px-2 py-1 rounded border-2 border-black text-xs font-bold uppercase ${pay.status === 'verified' ? 'bg-green-300 text-black' : 'bg-yellow-300 text-black'}`}>
                                             {pay.status}
                                         </span>
                                         {pay.status === 'pending' && (
                                             <button 
                                                 onClick={() => onAcceptPayment(pay.id)}
-                                                className="p-2 bg-green-500/20 hover:bg-green-500/40 text-green-500 rounded-full transition-colors"
+                                                className="p-1.5 bg-green-200 hover:bg-green-300 text-black border-2 border-black rounded transition-colors"
                                                 title="Accept Payment"
                                             >
                                                 <CheckIcon />
@@ -1712,19 +1732,19 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                                         )}
                                         <button 
                                             onClick={() => handleViewPaymentPhoto(pay)}
-                                            className="p-2 bg-[var(--color-info)]/20 hover:bg-[var(--color-info)]/40 text-[var(--color-info)] rounded-full transition-colors disabled:opacity-50"
+                                            className="p-1.5 bg-blue-200 hover:bg-blue-300 text-black border-2 border-black rounded transition-colors disabled:opacity-50"
                                             title="View Photos"
                                             disabled={!!isFindingPhoto}
                                         >
                                             {isFindingPhoto === pay.id ? (
-                                                <div className="animate-spin h-4 w-4 border-2 border-[var(--color-info)] border-t-transparent rounded-full"></div>
+                                                <div className="animate-spin h-4 w-4 border-2 border-black border-t-transparent rounded-full"></div>
                                             ) : (
                                                 <EyeIcon />
                                             )}
                                         </button>
                                         <button 
                                             onClick={() => handleOpenClientWeb(pay.userName)}
-                                            className="p-2 bg-purple-500/20 hover:bg-purple-500/40 text-purple-400 rounded-full transition-colors"
+                                            className="p-1.5 bg-purple-200 hover:bg-purple-300 text-black border-2 border-black rounded transition-colors"
                                             title="Open Web Link"
                                         >
                                             <GlobeIcon />
@@ -1732,12 +1752,12 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                                         {pay.whatsappNumber && (
                                             <button 
                                                 onClick={() => handleSendWhatsapp(pay)}
-                                                className="p-2 bg-green-500/20 hover:bg-green-500/40 text-green-500 rounded-full transition-colors disabled:opacity-50"
+                                                className="p-1.5 bg-green-200 hover:bg-green-300 text-black border-2 border-black rounded transition-colors disabled:opacity-50"
                                                 title="Send Web Link to WhatsApp"
                                                 disabled={!!sendingWhatsappId}
                                             >
                                                 {sendingWhatsappId === pay.id ? (
-                                                    <div className="animate-spin h-4 w-4 border-2 border-green-500 border-t-transparent rounded-full"></div>
+                                                    <div className="animate-spin h-4 w-4 border-2 border-black border-t-transparent rounded-full"></div>
                                                 ) : (
                                                     <WhatsAppIcon />
                                                 )}
@@ -1745,7 +1765,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                                         )}
                                         <button 
                                             onClick={() => onDeletePayment(pay.id)}
-                                            className="p-2 bg-[var(--color-negative)]/20 hover:bg-[var(--color-negative)]/40 text-[var(--color-negative)] rounded-full transition-colors"
+                                            className="p-1.5 bg-red-200 hover:bg-red-300 text-black border-2 border-black rounded transition-colors"
                                             title="Delete Payment"
                                         >
                                             <TrashIcon />
@@ -1753,14 +1773,14 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                                     </div>
                                 </div>
                             ))}
-                            {payments.length === 0 && <p className="text-center text-[var(--color-text-muted)] py-10">No payments yet.</p>}
+                            {payments.length === 0 && <p className="text-center text-gray-500 py-10 font-mono">No payments yet.</p>}
                         </div>
                     </div>
                     {payments.length > 0 && (
-                        <div className="flex justify-end pt-4 border-t border-[var(--color-border-primary)]">
+                        <div className="flex justify-end pt-4 border-t-2 border-black">
                             <button
                                 onClick={onDeleteAllPayments}
-                                className="bg-[var(--color-negative)] hover:bg-[var(--color-negative-hover)] text-[var(--color-negative-text)] font-bold py-2 px-6 rounded-full text-sm transition-transform transform hover:scale-105 flex items-center justify-center gap-2"
+                                className="bg-[var(--color-negative)] hover:bg-[var(--color-negative-hover)] text-white font-bold py-2 px-6 rounded text-sm transition-transform transform hover:translate-y-[-2px] border-2 border-black shadow-[2px_2px_0px_0px_black] active:shadow-none active:translate-x-[2px] active:translate-y-[2px] flex items-center justify-center gap-2"
                             >
                                 <TrashIcon />
                                 Hapus Semua Riwayat
@@ -1774,38 +1794,40 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
         return (
           <div className="space-y-6">
             {/* Review Management Button */}
-            <div className="p-6 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] text-left">
-              <h3 className="text-xl font-bold mb-4 text-[var(--color-text-accent)]">Review Management</h3>
-              <p className="text-[var(--color-text-muted)] mb-4">
+            <div className="p-6 bg-[var(--color-bg-secondary)] rounded-md border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left">
+              <h3 className="text-xl font-bold mb-4 font-bebas tracking-wider text-black border-b-2 border-black pb-2">Review Management</h3>
+              <p className="text-gray-600 mb-4 font-mono text-sm">
                 View and delete user-submitted reviews and testimonials.
               </p>
               <button
                 onClick={onManageReviews}
-                className="w-full bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-[var(--color-accent-primary-text)] font-bold py-3 px-6 rounded-full text-lg transition-transform transform hover:scale-105"
+                className="w-full bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-white font-bold py-3 px-6 rounded text-lg transition-transform transform hover:translate-y-[-2px] border-2 border-black shadow-[4px_4px_0px_0px_black] active:shadow-none active:translate-x-[4px] active:translate-y-[4px]"
               >
                 Manage Reviews
               </button>
             </div>
 
             {/* Review Reward Settings */}
-            <div className="p-6 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] text-left space-y-4">
-              <h3 className="text-xl font-bold text-[var(--color-text-accent)]">Review Rewards</h3>
-              <div className="border-t border-[var(--color-border-primary)] pt-4">
+            <div className="p-6 bg-[var(--color-bg-secondary)] rounded-md border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left space-y-4">
+              <h3 className="text-xl font-bold font-bebas tracking-wider text-black border-b-2 border-black pb-2">Review Rewards</h3>
+              <div className="border-t-2 border-black pt-4">
                 <label htmlFor="isReviewForFreebieEnabled" className="flex items-center justify-between cursor-pointer">
                     <div>
-                        <span className="block text-sm font-medium text-[var(--color-text-secondary)]">Reward for 5-Star Reviews</span>
-                        <p className="text-xs text-[var(--color-text-muted)]">Give users free photo sessions for leaving a 5-star review.</p>
+                        <span className="block text-sm font-bold text-black font-mono uppercase">Reward for 5-Star Reviews</span>
+                        <p className="text-xs text-gray-600 font-mono">Give users free photo sessions for leaving a 5-star review.</p>
                     </div>
                     <div className="relative">
                         <input type="checkbox" id="isReviewForFreebieEnabled" name="isReviewForFreebieEnabled" checked={settings.isReviewForFreebieEnabled ?? false} onChange={handleSettingsInputChange} className="sr-only peer" />
-                        <div className="w-11 h-6 bg-[var(--color-bg-tertiary)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--color-accent-primary)]"></div>
+                        <div className="w-12 h-6 bg-gray-300 rounded-full border-2 border-black peer-checked:bg-[var(--color-accent-primary)] transition-colors">
+                            <div className={`absolute top-1 left-1 w-4 h-4 bg-white border-2 border-black rounded-full transition-transform ${settings.isReviewForFreebieEnabled ? 'translate-x-6' : ''}`}></div>
+                        </div>
                     </div>
                 </label>
               </div>
               {settings.isReviewForFreebieEnabled && (
-                <div className="border-t border-[var(--color-border-primary)] pt-4">
-                    <label htmlFor="reviewFreebieTakesCount" className="block text-sm font-medium text-[var(--color-text-secondary)]">Number of Free Sessions</label>
-                    <p className="text-xs text-[var(--color-text-muted)] mb-2">How many extra photo sessions to award.</p>
+                <div className="border-t-2 border-black pt-4">
+                    <label htmlFor="reviewFreebieTakesCount" className="block text-sm font-bold text-black font-mono uppercase">Number of Free Sessions</label>
+                    <p className="text-xs text-gray-600 mb-2 font-mono">How many extra photo sessions to award.</p>
                     <input
                         type="number"
                         id="reviewFreebieTakesCount"
@@ -1813,30 +1835,32 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                         value={settings.reviewFreebieTakesCount ?? 1}
                         onChange={handleSettingsInputChange}
                         min="1"
-                        className="mt-1 block w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md shadow-sm py-2 px-3 text-[var(--color-text-primary)] focus:outline-none focus:ring-[var(--color-border-focus)] focus:border-[var(--color-border-focus)] sm:text-sm"
+                        className="input-style w-full"
                     />
                 </div>
               )}
             </div>
 
             {/* Review Slider Settings */}
-            <div className="p-6 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] text-left space-y-4">
-              <h3 className="text-xl font-bold text-[var(--color-text-accent)]">Review Slider</h3>
-              <div className="border-t border-[var(--color-border-primary)] pt-4">
+            <div className="p-6 bg-[var(--color-bg-secondary)] rounded-md border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left space-y-4">
+              <h3 className="text-xl font-bold font-bebas tracking-wider text-black border-b-2 border-black pb-2">Review Slider</h3>
+              <div className="border-t-2 border-black pt-4">
                 <label htmlFor="isReviewSliderEnabled" className="flex items-center justify-between cursor-pointer">
                     <div>
-                        <span className="block text-sm font-medium text-[var(--color-text-secondary)]">Show Review Slider on Welcome Screen</span>
-                        <p className="text-xs text-[var(--color-text-muted)]">Displays user reviews in a slider at the bottom.</p>
+                        <span className="block text-sm font-bold text-black font-mono uppercase">Show Review Slider on Welcome Screen</span>
+                        <p className="text-xs text-gray-600 font-mono">Displays user reviews in a slider at the bottom.</p>
                     </div>
                     <div className="relative">
                         <input type="checkbox" id="isReviewSliderEnabled" name="isReviewSliderEnabled" checked={settings.isReviewSliderEnabled ?? true} onChange={handleSettingsInputChange} className="sr-only peer" />
-                        <div className="w-11 h-6 bg-[var(--color-bg-tertiary)] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--color-accent-primary)]"></div>
+                        <div className="w-12 h-6 bg-gray-300 rounded-full border-2 border-black peer-checked:bg-[var(--color-accent-primary)] transition-colors">
+                            <div className={`absolute top-1 left-1 w-4 h-4 bg-white border-2 border-black rounded-full transition-transform ${settings.isReviewSliderEnabled ? 'translate-x-6' : ''}`}></div>
+                        </div>
                     </div>
                 </label>
               </div>
               <div>
-                  <label htmlFor="reviewSliderMaxDescriptionLength" className="block text-sm font-medium text-[var(--color-text-secondary)]">Max Review Length in Slider (chars)</label>
-                  <p className="text-xs text-[var(--color-text-muted)] mb-2">Truncates long reviews to keep the slider clean.</p>
+                  <label htmlFor="reviewSliderMaxDescriptionLength" className="block text-sm font-bold text-black font-mono uppercase">Max Review Length in Slider (chars)</label>
+                  <p className="text-xs text-gray-600 mb-2 font-mono">Truncates long reviews to keep the slider clean.</p>
                   <input
                       type="number"
                       id="reviewSliderMaxDescriptionLength"
@@ -1844,59 +1868,59 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                       value={settings.reviewSliderMaxDescriptionLength ?? 150}
                       onChange={handleSettingsInputChange}
                       min="50" max="500"
-                      className="mt-1 block w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md shadow-sm py-2 px-3 text-[var(--color-text-primary)] focus:outline-none focus:ring-[var(--color-border-focus)] focus:border-[var(--color-border-focus)] sm:text-sm"
+                      className="input-style w-full"
                   />
               </div>
             </div>
             
             {/* Rating Screen Text Customization */}
-            <div className="p-6 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] text-left space-y-4">
-                <h3 className="text-xl font-bold text-[var(--color-text-accent)]">Rating Screen Text Customization</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-[var(--color-border-primary)] pt-4">
+            <div className="p-6 bg-[var(--color-bg-secondary)] rounded-md border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left space-y-4">
+                <h3 className="text-xl font-bold font-bebas tracking-wider text-black border-b-2 border-black pb-2">Rating Screen Text Customization</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t-2 border-black pt-4">
                     <div>
-                        <label htmlFor="ratingScreenTitle" className="block text-sm font-medium text-[var(--color-text-secondary)]">Title</label>
-                        <input type="text" id="ratingScreenTitle" name="ratingScreenTitle" value={settings.ratingScreenTitle || ''} onChange={handleSettingsInputChange} className="mt-1 block w-full input-style"/>
+                        <label htmlFor="ratingScreenTitle" className="block text-sm font-bold text-black font-mono uppercase">Title</label>
+                        <input type="text" id="ratingScreenTitle" name="ratingScreenTitle" value={settings.ratingScreenTitle || ''} onChange={handleSettingsInputChange} className="input-style w-full"/>
                     </div>
                     <div>
-                        <label htmlFor="ratingScreenSubtitle" className="block text-sm font-medium text-[var(--color-text-secondary)]">Subtitle</label>
-                        <input type="text" id="ratingScreenSubtitle" name="ratingScreenSubtitle" value={settings.ratingScreenSubtitle || ''} onChange={handleSettingsInputChange} className="mt-1 block w-full input-style"/>
+                        <label htmlFor="ratingScreenSubtitle" className="block text-sm font-bold text-black font-mono uppercase">Subtitle</label>
+                        <input type="text" id="ratingScreenSubtitle" name="ratingScreenSubtitle" value={settings.ratingScreenSubtitle || ''} onChange={handleSettingsInputChange} className="input-style w-full"/>
                     </div>
                     <div>
-                        <label htmlFor="ratingScreenFreebieTitle" className="block text-sm font-medium text-[var(--color-text-secondary)]">Freebie Offer Title</label>
-                        <input type="text" id="ratingScreenFreebieTitle" name="ratingScreenFreebieTitle" value={settings.ratingScreenFreebieTitle || ''} onChange={handleSettingsInputChange} className="mt-1 block w-full input-style"/>
+                        <label htmlFor="ratingScreenFreebieTitle" className="block text-sm font-bold text-black font-mono uppercase">Freebie Offer Title</label>
+                        <input type="text" id="ratingScreenFreebieTitle" name="ratingScreenFreebieTitle" value={settings.ratingScreenFreebieTitle || ''} onChange={handleSettingsInputChange} className="input-style w-full"/>
                     </div>
                     <div>
-                        <label htmlFor="ratingScreenFreebieDescription" className="block text-sm font-medium text-[var(--color-text-secondary)]">Freebie Offer Description</label>
-                        <input type="text" id="ratingScreenFreebieDescription" name="ratingScreenFreebieDescription" value={settings.ratingScreenFreebieDescription || ''} onChange={handleSettingsInputChange} className="mt-1 block w-full input-style"/>
-                        <p className="text-xs text-[var(--color-text-muted)] mt-1">Use {'{count}'} as a placeholder for the number.</p>
+                        <label htmlFor="ratingScreenFreebieDescription" className="block text-sm font-bold text-black font-mono uppercase">Freebie Offer Description</label>
+                        <input type="text" id="ratingScreenFreebieDescription" name="ratingScreenFreebieDescription" value={settings.ratingScreenFreebieDescription || ''} onChange={handleSettingsInputChange} className="input-style w-full"/>
+                        <p className="text-xs text-gray-600 mt-1 font-mono">Use {'{count}'} as a placeholder for the number.</p>
                     </div>
                     <div>
-                        <label htmlFor="ratingScreenNameLabel" className="block text-sm font-medium text-[var(--color-text-secondary)]">"Your Name" Label</label>
-                        <input type="text" id="ratingScreenNameLabel" name="ratingScreenNameLabel" value={settings.ratingScreenNameLabel || ''} onChange={handleSettingsInputChange} className="mt-1 block w-full input-style"/>
+                        <label htmlFor="ratingScreenNameLabel" className="block text-sm font-bold text-black font-mono uppercase">"Your Name" Label</label>
+                        <input type="text" id="ratingScreenNameLabel" name="ratingScreenNameLabel" value={settings.ratingScreenNameLabel || ''} onChange={handleSettingsInputChange} className="input-style w-full"/>
                     </div>
                     <div>
-                        <label htmlFor="ratingScreenNamePlaceholder" className="block text-sm font-medium text-[var(--color-text-secondary)]">Name Field Placeholder</label>
-                        <input type="text" id="ratingScreenNamePlaceholder" name="ratingScreenNamePlaceholder" value={settings.ratingScreenNamePlaceholder || ''} onChange={handleSettingsInputChange} className="mt-1 block w-full input-style"/>
+                        <label htmlFor="ratingScreenNamePlaceholder" className="block text-sm font-bold text-black font-mono uppercase">Name Field Placeholder</label>
+                        <input type="text" id="ratingScreenNamePlaceholder" name="ratingScreenNamePlaceholder" value={settings.ratingScreenNamePlaceholder || ''} onChange={handleSettingsInputChange} className="input-style w-full"/>
                     </div>
                      <div>
-                        <label htmlFor="ratingScreenRatingLabel" className="block text-sm font-medium text-[var(--color-text-secondary)]">"Your Rating" Label</label>
-                        <input type="text" id="ratingScreenRatingLabel" name="ratingScreenRatingLabel" value={settings.ratingScreenRatingLabel || ''} onChange={handleSettingsInputChange} className="mt-1 block w-full input-style"/>
+                        <label htmlFor="ratingScreenRatingLabel" className="block text-sm font-bold text-black font-mono uppercase">"Your Rating" Label</label>
+                        <input type="text" id="ratingScreenRatingLabel" name="ratingScreenRatingLabel" value={settings.ratingScreenRatingLabel || ''} onChange={handleSettingsInputChange} className="input-style w-full"/>
                     </div>
                     <div>
-                        <label htmlFor="ratingScreenCommentLabel" className="block text-sm font-medium text-[var(--color-text-secondary)]">"Comments" Label</label>
-                        <input type="text" id="ratingScreenCommentLabel" name="ratingScreenCommentLabel" value={settings.ratingScreenCommentLabel || ''} onChange={handleSettingsInputChange} className="mt-1 block w-full input-style"/>
+                        <label htmlFor="ratingScreenCommentLabel" className="block text-sm font-bold text-black font-mono uppercase">"Comments" Label</label>
+                        <input type="text" id="ratingScreenCommentLabel" name="ratingScreenCommentLabel" value={settings.ratingScreenCommentLabel || ''} onChange={handleSettingsInputChange} className="input-style w-full"/>
                     </div>
                      <div className="col-span-1 sm:col-span-2">
-                        <label htmlFor="ratingScreenCommentPlaceholder" className="block text-sm font-medium text-[var(--color-text-secondary)]">Comments Field Placeholder</label>
-                        <textarea id="ratingScreenCommentPlaceholder" name="ratingScreenCommentPlaceholder" value={settings.ratingScreenCommentPlaceholder || ''} onChange={handleSettingsInputChange} rows={2} className="mt-1 block w-full input-style resize-none scrollbar-thin"></textarea>
+                        <label htmlFor="ratingScreenCommentPlaceholder" className="block text-sm font-bold text-black font-mono uppercase">Comments Field Placeholder</label>
+                        <textarea id="ratingScreenCommentPlaceholder" name="ratingScreenCommentPlaceholder" value={settings.ratingScreenCommentPlaceholder || ''} onChange={handleSettingsInputChange} rows={2} className="input-style w-full resize-none scrollbar-thin"></textarea>
                     </div>
                      <div>
-                        <label htmlFor="ratingScreenSubmitButtonText" className="block text-sm font-medium text-[var(--color-text-secondary)]">Submit Button Text</label>
-                        <input type="text" id="ratingScreenSubmitButtonText" name="ratingScreenSubmitButtonText" value={settings.ratingScreenSubmitButtonText || ''} onChange={handleSettingsInputChange} className="mt-1 block w-full input-style"/>
+                        <label htmlFor="ratingScreenSubmitButtonText" className="block text-sm font-bold text-black font-mono uppercase">Submit Button Text</label>
+                        <input type="text" id="ratingScreenSubmitButtonText" name="ratingScreenSubmitButtonText" value={settings.ratingScreenSubmitButtonText || ''} onChange={handleSettingsInputChange} className="input-style w-full"/>
                     </div>
                     <div>
-                        <label htmlFor="ratingScreenSkipButtonText" className="block text-sm font-medium text-[var(--color-text-secondary)]">Skip Button Text</label>
-                        <input type="text" id="ratingScreenSkipButtonText" name="ratingScreenSkipButtonText" value={settings.ratingScreenSkipButtonText || ''} onChange={handleSettingsInputChange} className="mt-1 block w-full input-style"/>
+                        <label htmlFor="ratingScreenSkipButtonText" className="block text-sm font-bold text-black font-mono uppercase">Skip Button Text</label>
+                        <input type="text" id="ratingScreenSkipButtonText" name="ratingScreenSkipButtonText" value={settings.ratingScreenSkipButtonText || ''} onChange={handleSettingsInputChange} className="input-style w-full"/>
                     </div>
                 </div>
             </div>
@@ -1905,51 +1929,51 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
       case 'network':
         return (
             <div className="space-y-6">
-                <div className="p-6 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)] text-left">
-                    <h3 className="text-xl font-bold text-[var(--color-text-accent)] mb-4 flex items-center gap-2">
+                <div className="p-6 bg-[var(--color-bg-secondary)] rounded-md border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left">
+                    <h3 className="text-xl font-bold text-black mb-4 font-bebas tracking-wider flex items-center gap-2 border-b-2 border-black pb-2">
                         <SpeedIcon /> Internet Speed Test
                     </h3>
-                    <p className="text-[var(--color-text-muted)] mb-6">
+                    <p className="text-gray-600 mb-6 font-mono text-sm">
                         Test your connection speed (Ping, Download, Upload) to ensure smooth photo uploading.
                     </p>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                         {/* Ping Gauge */}
-                        <div className="bg-[var(--color-bg-tertiary)] p-4 rounded-lg flex flex-col items-center justify-center border border-[var(--color-border-secondary)]">
-                            <span className="text-[var(--color-text-secondary)] text-sm uppercase tracking-wider mb-2">Ping</span>
+                        <div className="bg-white p-4 rounded-md flex flex-col items-center justify-center border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                            <span className="text-black text-sm uppercase tracking-wider mb-2 font-bold">Ping</span>
                             <div className="flex items-end gap-1">
                                 {testStatus === 'ping' ? (
                                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--color-accent-primary)] mb-2"></div>
                                 ) : (
-                                    <span className="text-4xl font-bebas text-[var(--color-text-primary)]">{pingResult !== null ? pingResult : '-'}</span>
+                                    <span className="text-4xl font-bebas text-black">{pingResult !== null ? pingResult : '-'}</span>
                                 )}
-                                <span className="text-sm text-[var(--color-text-muted)] mb-1">ms</span>
+                                <span className="text-sm text-gray-600 mb-1 font-mono">ms</span>
                             </div>
                         </div>
 
                         {/* Download Gauge */}
-                        <div className="bg-[var(--color-bg-tertiary)] p-4 rounded-lg flex flex-col items-center justify-center border border-[var(--color-border-secondary)]">
-                            <span className="text-[var(--color-text-secondary)] text-sm uppercase tracking-wider mb-2">Download</span>
+                        <div className="bg-white p-4 rounded-md flex flex-col items-center justify-center border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                            <span className="text-black text-sm uppercase tracking-wider mb-2 font-bold">Download</span>
                             <div className="flex items-end gap-1">
                                 {testStatus === 'download' ? (
                                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500 mb-2"></div>
                                 ) : (
-                                    <span className="text-4xl font-bebas text-[var(--color-text-primary)]">{downloadResult !== null ? downloadResult : '-'}</span>
+                                    <span className="text-4xl font-bebas text-black">{downloadResult !== null ? downloadResult : '-'}</span>
                                 )}
-                                <span className="text-sm text-[var(--color-text-muted)] mb-1">Mbps</span>
+                                <span className="text-sm text-gray-600 mb-1 font-mono">Mbps</span>
                             </div>
                         </div>
 
                         {/* Upload Gauge */}
-                        <div className="bg-[var(--color-bg-tertiary)] p-4 rounded-lg flex flex-col items-center justify-center border border-[var(--color-border-secondary)]">
-                            <span className="text-[var(--color-text-secondary)] text-sm uppercase tracking-wider mb-2">Upload</span>
+                        <div className="bg-white p-4 rounded-md flex flex-col items-center justify-center border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                            <span className="text-black text-sm uppercase tracking-wider mb-2 font-bold">Upload</span>
                             <div className="flex items-end gap-1">
                                 {testStatus === 'upload' ? (
                                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mb-2"></div>
                                 ) : (
-                                    <span className="text-4xl font-bebas text-[var(--color-text-primary)]">{uploadResult !== null ? uploadResult : '-'}</span>
+                                    <span className="text-4xl font-bebas text-black">{uploadResult !== null ? uploadResult : '-'}</span>
                                 )}
-                                <span className="text-sm text-[var(--color-text-muted)] mb-1">Mbps</span>
+                                <span className="text-sm text-gray-600 mb-1 font-mono">Mbps</span>
                             </div>
                         </div>
                     </div>
@@ -1958,12 +1982,12 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                         <button
                             onClick={runSpeedTest}
                             disabled={testStatus !== 'idle'}
-                            className="bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-[var(--color-accent-primary-text)] font-bold py-3 px-8 rounded-full text-xl transition-transform transform hover:scale-105 flex items-center justify-center gap-2 mx-auto disabled:bg-[var(--color-bg-tertiary)] disabled:cursor-wait"
+                            className="bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-white font-bold py-3 px-8 rounded text-xl transition-transform transform hover:translate-y-[-2px] border-2 border-black shadow-[4px_4px_0px_0px_black] active:shadow-none active:translate-x-[4px] active:translate-y-[4px] mx-auto disabled:bg-gray-300 disabled:cursor-wait"
                         >
                             {testStatus !== 'idle' ? 'Running Test...' : 'Start Speed Test'}
                         </button>
                         {testStatus !== 'idle' && (
-                            <p className="mt-4 text-xs text-[var(--color-text-muted)] animate-pulse">Testing {testStatus} speed...</p>
+                            <p className="mt-4 text-xs text-gray-600 animate-pulse font-mono">Testing {testStatus} speed...</p>
                         )}
                     </div>
                 </div>
@@ -1972,12 +1996,12 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
       case 'master':
         return isMasterAdmin ? (
           <div className="space-y-6">
-            <div className={`p-6 rounded-lg border text-left ${isLight ? 'bg-purple-100 border-purple-300' : 'bg-purple-900/20 border-purple-700'}`}>
-              <h3 className={`text-xl font-bold ${isLight ? 'text-purple-800' : 'text-purple-300'}`}>Master Admin Area</h3>
-              <p className={`${isLight ? 'text-purple-600' : 'text-purple-200/80'} mb-4`}>Manage tenant admins who use your photobooth platform.</p>
+            <div className={`p-6 rounded-md border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left bg-purple-100`}>
+              <h3 className={`text-xl font-bold text-black border-b-2 border-black pb-2 font-bebas tracking-wider`}>Master Admin Area</h3>
+              <p className={`text-gray-700 mb-4 font-mono text-sm`}>Manage tenant admins who use your photobooth platform.</p>
               <button
                 onClick={onManageTenants}
-                className="w-full bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-[var(--color-accent-primary-text)] font-bold py-3 px-6 rounded-full text-lg transition-transform transform hover:scale-105 flex items-center justify-center gap-2"
+                className="w-full bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-white font-bold py-3 px-6 rounded text-lg transition-transform transform hover:translate-y-[-2px] border-2 border-black shadow-[4px_4px_0px_0px_black] active:shadow-none active:translate-x-[4px] active:translate-y-[4px] flex items-center justify-center gap-2"
               >
                 <UsersIcon />
                 Manage Admins
@@ -1994,17 +2018,17 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
     <>
       {/* Toast Notification */}
       {showPrintConfigSuccess && (
-        <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 bg-green-500 text-white px-6 py-3 rounded-full shadow-lg flex items-center gap-2 animate-bounce">
+        <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 bg-green-400 border-2 border-black text-black px-6 py-3 rounded-none shadow-[4px_4px_0px_0px_black] flex items-center gap-2 animate-bounce">
             <CheckIcon />
-            <span className="font-bold">Settings Saved</span>
+            <span className="font-bold font-mono">Settings Saved</span>
         </div>
       )}
       
       {/* Copy Toast Notification */}
       {clipboardMessage && (
-        <div className="fixed bottom-10 left-1/2 transform -translate-x-1/2 z-50 bg-[var(--color-accent-primary)] text-white px-6 py-3 rounded-full shadow-lg flex items-center gap-2 animate-fade-in-up">
+        <div className="fixed bottom-10 left-1/2 transform -translate-x-1/2 z-50 bg-[var(--color-accent-primary)] border-2 border-black text-white px-6 py-3 rounded-none shadow-[4px_4px_0px_0px_black] flex items-center gap-2 animate-fade-in-up">
             <CheckIcon />
-            <span className="font-bold">{clipboardMessage}</span>
+            <span className="font-bold font-mono">{clipboardMessage}</span>
         </div>
       )}
 
@@ -2015,16 +2039,16 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
           onClick={() => setViewingPhotos(null)}
         >
           <div
-            className="relative bg-[var(--color-bg-secondary)] rounded-lg shadow-xl w-full h-full max-w-5xl flex flex-col p-4 border border-[var(--color-border-primary)]"
+            className="relative bg-[var(--color-bg-secondary)] rounded-md shadow-[8px_8px_0px_0px_rgba(255,255,255,0.5)] w-full h-full max-w-5xl flex flex-col p-4 border-2 border-black"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex justify-between items-center mb-4 pb-2 border-b border-[var(--color-border-primary)]">
-                <h3 className="text-xl font-bold text-[var(--color-text-primary)]">
+            <div className="flex justify-between items-center mb-4 pb-2 border-b-2 border-black">
+                <h3 className="text-xl font-bold text-black font-bebas tracking-wide">
                     Photo Gallery ({viewingPhotos.length})
                 </h3>
                 <button
                   onClick={() => setViewingPhotos(null)}
-                  className="bg-black/50 hover:bg-black/80 text-white p-2 rounded-full"
+                  className="bg-red-500 hover:bg-red-600 text-white p-2 rounded border-2 border-black shadow-[2px_2px_0px_0px_black] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none"
                   aria-label="Close"
                 >
                   <CloseIcon />
@@ -2034,12 +2058,12 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
             <div className="flex-grow overflow-y-auto scrollbar-thin p-2">
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                     {viewingPhotos.map((photo, index) => (
-                        <div key={index} className="relative group bg-black/20 rounded-lg overflow-hidden border border-[var(--color-border-secondary)]">
+                        <div key={index} className="relative group bg-gray-200 rounded-md overflow-hidden border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,0.5)]">
                             <div className="aspect-[2/3] w-full">
                                 <img
                                     src={photo.url}
                                     alt={photo.nama}
-                                    className="w-full h-full object-contain"
+                                    className="w-full h-full object-contain bg-white"
                                     loading="lazy"
                                 />
                             </div>
@@ -2047,13 +2071,13 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                                 <button
                                     onClick={() => handleDownloadPhoto(photo)}
                                     disabled={downloadingPhotoIds.includes(photo.nama)}
-                                    className="bg-[var(--color-positive)] hover:bg-[var(--color-positive-hover)] text-[var(--color-positive-text)] font-bold py-2 px-6 rounded-full text-sm transition-transform transform hover:scale-105 flex items-center gap-2 disabled:bg-[var(--color-bg-tertiary)] disabled:cursor-wait"
+                                    className="bg-[var(--color-positive)] hover:bg-[var(--color-positive-hover)] text-black font-bold py-2 px-6 rounded text-sm transition-transform transform hover:scale-105 border-2 border-black shadow-[2px_2px_0px_0px_black] flex items-center gap-2 disabled:bg-gray-400 disabled:cursor-wait"
                                 >
                                     {downloadingPhotoIds.includes(photo.nama) ? <UploadingIcon /> : <DownloadIcon />}
                                     <span>Download</span>
                                 </button>
                             </div>
-                            <div className="absolute bottom-0 left-0 right-0 bg-black/50 p-2 text-xs text-white truncate">
+                            <div className="absolute bottom-0 left-0 right-0 bg-white border-t-2 border-black p-2 text-xs text-black font-bold truncate">
                                 {photo.nama}
                             </div>
                         </div>
@@ -2065,11 +2089,11 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
       )}
 
       {isGuideOpen && <KioskGuide onClose={() => setIsGuideOpen(false)} />}
-      <div className="relative flex flex-col items-center w-full h-full">
+      <div className="relative flex flex-col items-center w-full h-full bg-[var(--color-bg-primary)]">
         <div className="absolute top-4 left-4 z-10">
           <button 
             onClick={onBack}
-            className="bg-[var(--color-bg-secondary)]/50 hover:bg-[var(--color-bg-tertiary)]/70 text-[var(--color-text-primary)] font-bold p-3 rounded-full transition-colors"
+            className="bg-white hover:bg-gray-100 text-black border-2 border-black font-bold p-3 rounded-full transition-colors shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-[4px] active:translate-y-[4px]"
             aria-label="Go Back"
           >
             <BackIcon />
@@ -2077,7 +2101,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
         </div>
         
         <header className="text-center shrink-0 my-4">
-            <h2 className="text-4xl font-bebas tracking-wider text-[var(--color-text-primary)]">Admin Settings</h2>
+            <h2 className="text-5xl font-bebas tracking-widest text-black drop-shadow-[2px_2px_0px_rgba(255,255,255,1)]">Admin Settings</h2>
         </header>
         
         <div className="w-full max-w-6xl mx-auto flex-grow flex flex-col md:flex-row gap-8 overflow-hidden px-4 pb-4">
@@ -2142,20 +2166,21 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
         </div>
         <style>{`
             .input-style {
-                background-color: var(--color-bg-tertiary);
-                border: 1px solid var(--color-border-secondary);
+                background-color: #FFFFFF;
+                border: 2px solid #000000;
                 border-radius: 0.375rem;
-                box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+                box-shadow: 2px 2px 0px 0px #000000;
                 padding: 0.5rem 0.75rem;
-                color: var(--color-text-primary);
+                color: #000000;
+                font-family: 'Roboto Mono', monospace;
+                font-weight: bold;
+                transition: all 0.1s;
             }
             .input-style:focus {
                 outline: none;
-                --tw-ring-color: var(--color-border-focus);
-                --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);
-                --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color);
-                box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);
-                border-color: var(--color-border-focus);
+                background-color: #FEF3C7;
+                box-shadow: 4px 4px 0px 0px #000000;
+                transform: translate(-1px, -1px);
             }
         `}</style>
       </div>
