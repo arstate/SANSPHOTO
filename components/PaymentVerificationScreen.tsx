@@ -158,7 +158,7 @@ const PaymentVerificationScreen: React.FC<PaymentVerificationScreenProps> = ({ t
         <div className="absolute top-4 left-4 z-10">
             <button 
             onClick={onBack}
-            className="bg-[var(--color-bg-secondary)]/50 hover:bg-[var(--color-bg-tertiary)]/70 text-[var(--color-text-primary)] font-bold p-3 rounded-full transition-colors"
+            className="bg-[var(--color-bg-secondary)]/50 hover:bg-[var(--color-bg-tertiary)]/70 text-[var(--color-text-primary)] font-bold p-3 rounded-none border-2 border-black transition-colors shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
             aria-label="Go Back"
             >
             <BackIcon />
@@ -167,10 +167,10 @@ const PaymentVerificationScreen: React.FC<PaymentVerificationScreenProps> = ({ t
 
         <h2 className="text-3xl font-bebas text-[var(--color-text-primary)] mb-2">Verifikasi Pembayaran</h2>
         <p className="text-[var(--color-text-muted)] mb-4 text-center max-w-md">
-            Arahkan bukti pembayaran (layar HP ke kamera) agar nominal <strong className="text-white">Rp {targetAmount.toLocaleString()}</strong> terlihat jelas.
+            Arahkan bukti pembayaran (layar HP ke kamera) agar nominal <strong className="text-black bg-white px-1">Rp {targetAmount.toLocaleString()}</strong> terlihat jelas.
         </p>
 
-        <div className="relative bg-black rounded-xl overflow-hidden shadow-2xl border-4 border-[var(--color-border-primary)] w-full max-w-md aspect-[3/4]">
+        <div className="relative bg-black rounded-none overflow-hidden shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] border-4 border-[var(--color-border-primary)] w-full max-w-md aspect-[3/4]">
             {capturedImage ? (
                 <img src={capturedImage} alt="Captured Proof" className="w-full h-full object-cover" />
             ) : (
@@ -186,35 +186,35 @@ const PaymentVerificationScreen: React.FC<PaymentVerificationScreenProps> = ({ t
             {/* Overlay Guide - Moved to TOP and Text changed to WHITE */}
             {!capturedImage && (
                 <div className="absolute inset-0 border-[2px] border-white/30 pointer-events-none flex flex-col items-center justify-start pt-12">
-                    <div className="w-3/4 h-1/5 border-2 border-[var(--color-accent-primary)] rounded-lg bg-[var(--color-accent-primary)]/10 flex items-center justify-center shadow-[0_0_15px_rgba(139,92,246,0.3)]">
-                        <span className="text-white text-sm font-bold bg-black/50 px-2 rounded shadow-sm">Area Nominal</span>
+                    <div className="w-3/4 h-1/5 border-4 border-[var(--color-accent-primary)] rounded-none bg-[var(--color-accent-primary)]/10 flex items-center justify-center shadow-[0_0_15px_rgba(139,92,246,0.3)]">
+                        <span className="text-white text-sm font-bold bg-black px-2 py-1 shadow-sm uppercase tracking-wider">Area Nominal</span>
                     </div>
                 </div>
             )}
 
             {/* Status Overlay */}
             {isScanning && (
-                <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center z-20">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mb-4"></div>
-                    <p className="text-white font-bold">{logs}</p>
+                <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center z-20">
+                    <div className="animate-spin h-12 w-12 border-4 border-white border-t-transparent mb-4"></div>
+                    <p className="text-white font-bold font-mono">{logs}</p>
                 </div>
             )}
             
             {scanStatus === 'success' && (
                 <div className="absolute inset-0 bg-green-500/90 flex flex-col items-center justify-center z-20 animate-fade-in">
-                    <div className="bg-white rounded-full p-4 mb-4">
-                        <svg className="w-12 h-12 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+                    <div className="bg-white p-4 mb-4 border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                        <svg className="w-12 h-12 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
                     </div>
-                    <h3 className="text-2xl font-bold text-white">Pembayaran Diterima!</h3>
-                    <p className="text-white mt-2">Memulai sesi...</p>
+                    <h3 className="text-3xl font-bold text-white uppercase font-bebas">Pembayaran Diterima!</h3>
+                    <p className="text-white mt-2 font-mono">Memulai sesi...</p>
                 </div>
             )}
 
             {scanStatus === 'duplicate' && (
                 <div className="absolute inset-0 bg-red-500/90 flex flex-col items-center justify-center z-20 animate-fade-in p-6 text-center">
-                    <h3 className="text-2xl font-bold text-white mb-2">Bukti Sudah Digunakan!</h3>
-                    <p className="text-white mb-6">Bukti pembayaran ini telah dipakai sebelumnya.</p>
-                    <button onClick={handleRetry} className="bg-white text-red-500 font-bold py-3 px-8 rounded-full flex items-center gap-2">
+                    <h3 className="text-3xl font-bold text-white mb-2 uppercase font-bebas">Bukti Sudah Digunakan!</h3>
+                    <p className="text-white mb-6 font-mono">Bukti pembayaran ini telah dipakai sebelumnya.</p>
+                    <button onClick={handleRetry} className="bg-white text-black border-4 border-black font-bold py-3 px-8 rounded-none flex items-center gap-2 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all">
                         <RestartIcon /> Coba Lagi
                     </button>
                 </div>
@@ -222,9 +222,9 @@ const PaymentVerificationScreen: React.FC<PaymentVerificationScreenProps> = ({ t
 
             {scanStatus === 'failed' && (
                 <div className="absolute inset-0 bg-red-900/90 flex flex-col items-center justify-center z-20 animate-fade-in p-6 text-center">
-                    <h3 className="text-2xl font-bold text-white mb-2">Verifikasi Gagal</h3>
-                    <p className="text-white mb-6">Nominal tidak terbaca atau tidak sesuai. Pastikan gambar jelas dan tidak buram.</p>
-                    <button onClick={handleRetry} className="bg-white text-red-900 font-bold py-3 px-8 rounded-full flex items-center gap-2">
+                    <h3 className="text-3xl font-bold text-white mb-2 uppercase font-bebas">Verifikasi Gagal</h3>
+                    <p className="text-white mb-6 font-mono">Nominal tidak terbaca atau tidak sesuai. Pastikan gambar jelas dan tidak buram.</p>
+                    <button onClick={handleRetry} className="bg-white text-black border-4 border-black font-bold py-3 px-8 rounded-none flex items-center gap-2 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all">
                         <RestartIcon /> Foto Ulang
                     </button>
                 </div>
@@ -234,7 +234,7 @@ const PaymentVerificationScreen: React.FC<PaymentVerificationScreenProps> = ({ t
         {!isScanning && scanStatus === 'idle' && (
             <button
                 onClick={captureAndVerify}
-                className="mt-6 bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-[var(--color-accent-primary-text)] font-bold py-4 px-10 rounded-full text-xl transition-all shadow-lg flex items-center gap-3 transform hover:scale-105"
+                className="mt-6 bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-[var(--color-accent-primary-text)] font-bold py-4 px-10 rounded-none border-4 border-black text-xl transition-all shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-2 active:translate-y-2 flex items-center gap-3 transform hover:scale-105"
             >
                 <CameraIcon />
                 Scan Bukti

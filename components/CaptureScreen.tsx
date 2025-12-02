@@ -1,7 +1,4 @@
 
-
-
-
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { CameraIcon } from './icons/CameraIcon';
 import { Template } from '../types';
@@ -209,11 +206,11 @@ const CaptureScreen: React.FC<CaptureScreenProps> = ({
   
   if (cameraError) {
     return (
-        <div className="text-center p-8 bg-red-900/50 rounded-lg h-full flex flex-col items-center justify-center">
-            <h2 className="text-2xl font-bold text-red-300">Camera Error</h2>
+        <div className="text-center p-8 bg-red-900/50 rounded-none h-full flex flex-col items-center justify-center border-4 border-red-500">
+            <h2 className="text-2xl font-bold text-red-300 uppercase">Camera Error</h2>
             <p className="mt-2 text-red-200">{cameraError}</p>
              {isIpCamera && (
-                <div className="mt-4 text-sm text-red-300 bg-black/30 p-2 rounded break-all max-w-md">
+                <div className="mt-4 text-sm text-red-300 bg-black/30 p-2 rounded-none break-all max-w-md border border-red-500">
                     <p>URL: {finalIpCameraUrl}</p>
                     {ipCameraUseProxy && <p className="text-xs text-yellow-300 mt-1">(Proxy Enabled)</p>}
                 </div>
@@ -233,7 +230,7 @@ const CaptureScreen: React.FC<CaptureScreenProps> = ({
         <div className="w-full md:w-3/5 flex flex-col items-center justify-center p-4 md:p-2">
           <div className="w-full flex-grow flex items-center justify-center min-h-0">
             <div 
-              className="relative max-w-full max-h-full bg-black rounded-lg overflow-hidden border-4 border-[var(--color-border-primary)] shadow-2xl shadow-[var(--color-accent-primary)]/20"
+              className="relative max-w-full max-h-full bg-black rounded-none overflow-hidden border-4 border-[var(--color-border-primary)] shadow-[10px_10px_0px_0px_rgba(0,0,0,1)]"
               style={{ aspectRatio: aspectRatio }}
             >
               {isIpCamera ? (
@@ -264,13 +261,13 @@ const CaptureScreen: React.FC<CaptureScreenProps> = ({
               {countdown === null && !isSessionFinished ? (
                 <button
                   onClick={startCountdown}
-                  className="w-full bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-[var(--color-accent-primary-text)] font-bold py-4 px-10 rounded-full text-xl transition-transform transform hover:scale-105 flex items-center justify-center gap-2"
+                  className="w-full bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-[var(--color-accent-primary-text)] font-bold py-4 px-10 rounded-none border-4 border-black text-xl transition-transform transform hover:scale-105 flex items-center justify-center gap-2 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1 uppercase"
                 >
                   <CameraIcon />
                   {isRetakeMode ? 'Take Retake' : `Take Photo ${photoIndex + 1}`}
                 </button>
               ) : (
-                <div className="text-center text-lg h-[64px] flex items-center justify-center">
+                <div className="text-center text-lg h-[64px] flex items-center justify-center font-bold uppercase tracking-wider bg-black text-white border-2 border-white">
                   {isSessionFinished ? 'All photos taken!' : 'Get ready...'}
                 </div>
               )}
@@ -283,7 +280,7 @@ const CaptureScreen: React.FC<CaptureScreenProps> = ({
             {isRetakeMode ? `RETAKE PHOTO` : `PHOTO ${Math.min(photoIndex + 1, totalPhotos)} / ${totalPhotos}`}
           </h2>
           <div className="w-full flex-grow flex items-center justify-center min-h-0">
-            <div className={`relative w-full h-auto ${isLandscape ? 'aspect-[3/2]' : 'aspect-[2/3]'} bg-white rounded-lg overflow-hidden shadow-lg`}>
+            <div className={`relative w-full h-auto ${isLandscape ? 'aspect-[3/2]' : 'aspect-[2/3]'} bg-white rounded-none overflow-hidden shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] border-4 border-black`}>
                 
                 {isRetakeMode && existingImages ? (
                     existingImages.map((imgSrc, index) => {

@@ -73,7 +73,7 @@ const WhatsappModal: React.FC<WhatsappModalProps> = ({ isOpen, onClose, onSubmit
 
     return (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={onClose}>
-            <div className="bg-[var(--color-bg-secondary)] rounded-lg shadow-xl p-6 w-full max-w-sm border border-[var(--color-border-primary)]" onClick={e => e.stopPropagation()}>
+            <div className="bg-[var(--color-bg-secondary)] rounded-none shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] p-6 w-full max-w-sm border-4 border-[var(--color-border-primary)]" onClick={e => e.stopPropagation()}>
                 <h2 className="font-bebas text-3xl text-center mb-2">Kirim ke WhatsApp</h2>
                 <p className="text-center text-[var(--color-text-muted)] text-sm mb-4">Masukkan nomor WA kamu agar admin bisa mengirimkan softfile foto secara otomatis.</p>
                 <form onSubmit={handleSubmit}>
@@ -82,7 +82,7 @@ const WhatsappModal: React.FC<WhatsappModalProps> = ({ isOpen, onClose, onSubmit
                         value={number} 
                         onChange={(e) => setNumber(e.target.value)}
                         placeholder="08xxxxxxxxxx"
-                        className="w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md py-3 px-4 text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[#25D366] mb-4 text-center text-xl font-bold"
+                        className="w-full bg-[var(--color-bg-tertiary)] border-2 border-black rounded-none py-3 px-4 text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[#25D366] mb-4 text-center text-xl font-bold shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
                         autoFocus
                         disabled={isSending}
                     />
@@ -90,7 +90,7 @@ const WhatsappModal: React.FC<WhatsappModalProps> = ({ isOpen, onClose, onSubmit
                         <button 
                             type="submit" 
                             disabled={isSending || !number.trim()}
-                            className="w-full bg-[#25D366] hover:bg-[#20b858] text-white font-bold py-3 px-4 rounded-full text-lg shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                            className="w-full bg-[#25D366] hover:bg-[#20b858] text-white font-bold py-3 px-4 rounded-none border-2 border-black text-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                         >
                             {isSending ? (
                                 <>
@@ -105,7 +105,7 @@ const WhatsappModal: React.FC<WhatsappModalProps> = ({ isOpen, onClose, onSubmit
                             type="button" 
                             onClick={onClose} 
                             disabled={isSending}
-                            className="w-full bg-transparent hover:bg-[var(--color-bg-tertiary)] text-[var(--color-text-muted)] font-bold py-2 rounded-full text-sm disabled:opacity-50"
+                            className="w-full bg-white hover:bg-[var(--color-bg-tertiary)] text-[var(--color-text-muted)] font-bold py-2 rounded-none border-2 border-black text-sm disabled:opacity-50 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1"
                         >
                             Batal
                         </button>
@@ -133,27 +133,27 @@ const PrintModal: React.FC<PrintModalProps> = ({ isOpen, onClose, onConfirm, ima
 
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={onClose}>
-      <div className="bg-[var(--color-bg-secondary)] rounded-lg shadow-xl p-6 w-full max-w-md border border-[var(--color-border-primary)]" onClick={e => e.stopPropagation()}>
+      <div className="bg-[var(--color-bg-secondary)] rounded-none shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] p-6 w-full max-w-md border-4 border-[var(--color-border-primary)]" onClick={e => e.stopPropagation()}>
         <h2 className="font-bebas text-3xl text-center mb-4">Konfirmasi Cetak</h2>
-        <img src={imageSrc ?? ''} alt="Pratinjau Cetak" className="w-full max-w-xs mx-auto aspect-[2/3] object-contain rounded-md bg-white/10" />
+        <img src={imageSrc ?? ''} alt="Pratinjau Cetak" className="w-full max-w-xs mx-auto aspect-[2/3] object-contain rounded-none bg-white/10 border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]" />
         
         {settings.isCopyInputEnabled && (
           <div className="my-6">
-            <label className="block text-center font-bold text-lg text-[var(--color-text-secondary)] mb-2">Jumlah Salinan</label>
+            <label className="block text-center font-bold text-lg text-[var(--color-text-secondary)] mb-2 uppercase">Jumlah Salinan</label>
             <div className="flex items-center justify-center gap-4">
-              <button onClick={decrement} className="w-12 h-12 bg-[var(--color-bg-tertiary)] rounded-full text-3xl font-bold hover:bg-[var(--color-border-secondary)]">-</button>
-              <span className="text-4xl font-bold w-20 text-center">{copies}</span>
-              <button onClick={increment} className="w-12 h-12 bg-[var(--color-bg-tertiary)] rounded-full text-3xl font-bold hover:bg-[var(--color-border-secondary)]">+</button>
+              <button onClick={decrement} className="w-12 h-12 bg-[var(--color-bg-tertiary)] rounded-none border-2 border-black text-3xl font-bold hover:bg-[var(--color-border-secondary)] shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1">-</button>
+              <span className="text-4xl font-bold w-20 text-center font-mono">{copies}</span>
+              <button onClick={increment} className="w-12 h-12 bg-[var(--color-bg-tertiary)] rounded-none border-2 border-black text-3xl font-bold hover:bg-[var(--color-border-secondary)] shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1">+</button>
             </div>
-            <p className="text-xs text-center text-[var(--color-text-muted)] mt-2">Maksimum: {settings.maxCopies} salinan. Harap sesuaikan jumlah ini di dialog cetak printer Anda.</p>
+            <p className="text-xs text-center text-[var(--color-text-muted)] mt-2 font-mono">Maksimum: {settings.maxCopies} salinan. Harap sesuaikan jumlah ini di dialog cetak printer Anda.</p>
           </div>
         )}
 
-        <div className="flex flex-col sm:flex-row gap-3 pt-4 mt-4 border-t border-[var(--color-border-primary)]">
-          <button onClick={() => onConfirm(copies)} className="flex-1 w-full bg-[var(--color-info)] hover:bg-[var(--color-info-hover)] text-[var(--color-info-text)] font-bold py-3 px-4 rounded-full text-lg">
+        <div className="flex flex-col sm:flex-row gap-3 pt-4 mt-4 border-t-2 border-[var(--color-border-primary)]">
+          <button onClick={() => onConfirm(copies)} className="flex-1 w-full bg-[var(--color-info)] hover:bg-[var(--color-info-hover)] text-[var(--color-info-text)] font-bold py-3 px-4 rounded-none border-2 border-black text-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1">
             Konfirmasi Cetak
           </button>
-          <button onClick={onClose} className="flex-1 w-full bg-[var(--color-bg-tertiary)] hover:bg-[var(--color-border-secondary)] text-[var(--color-text-primary)] font-bold py-3 px-4 rounded-full text-lg">
+          <button onClick={onClose} className="flex-1 w-full bg-[var(--color-bg-tertiary)] hover:bg-[var(--color-border-secondary)] text-[var(--color-text-primary)] font-bold py-3 px-4 rounded-none border-2 border-black text-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1">
             Batal
           </button>
         </div>
@@ -531,7 +531,7 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
        <div className="absolute top-4 left-4">
         <button 
           onClick={onBack}
-          className="bg-[var(--color-bg-secondary)]/50 hover:bg-[var(--color-bg-tertiary)]/70 text-[var(--color-text-primary)] font-bold p-3 rounded-full transition-colors"
+          className="bg-[var(--color-bg-secondary)]/50 hover:bg-[var(--color-bg-tertiary)]/70 text-[var(--color-text-primary)] font-bold p-3 rounded-none border-2 border-black transition-colors shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
           aria-label="Kembali"
         >
           <BackIcon />
@@ -544,27 +544,27 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
         {/* Kolom Foto - DIBUAT LEBIH BESAR */}
         <div className={`relative w-full max-w-lg ${isLandscape ? 'aspect-[3/2]' : 'aspect-[2/3]'}`}>
             {isLoading && (
-                <div className="absolute inset-0 bg-[var(--color-bg-secondary)] rounded-lg flex flex-col items-center justify-center text-center p-4">
+                <div className="absolute inset-0 bg-[var(--color-bg-secondary)] rounded-none flex flex-col items-center justify-center text-center p-4 border-4 border-black">
                     <svg className="animate-spin h-12 w-12 text-[var(--color-text-accent)]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    <p className="mt-4 text-[var(--color-text-secondary)]">Membuat karya agung Anda...</p>
+                    <p className="mt-4 text-[var(--color-text-secondary)] font-bold">Membuat karya agung Anda...</p>
                 </div>
             )}
             {errorMsg && (
-                <div className="absolute inset-0 bg-red-900/30 border-2 border-red-500 rounded-lg flex flex-col items-center justify-center text-center p-4">
+                <div className="absolute inset-0 bg-red-900/30 border-4 border-red-500 rounded-none flex flex-col items-center justify-center text-center p-4">
                     <p className="font-bold text-red-300">Oops! Terjadi kesalahan.</p>
                     <p className="text-sm text-red-200 mt-2">{errorMsg}</p>
                     <button
                         onClick={drawCanvas}
-                        className="mt-4 bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-[var(--color-accent-primary-text)] font-bold py-2 px-4 rounded-full text-sm"
+                        className="mt-4 bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-[var(--color-accent-primary-text)] font-bold py-2 px-4 rounded-none border-2 border-black text-sm shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1"
                     >
                         Coba Lagi
                     </button>
                 </div>
             )}
-            <img ref={finalImageRef} alt="Gambar photobooth akhir Anda" className={`w-full h-full object-contain rounded-lg shadow-2xl shadow-[var(--color-accent-primary)]/30 ${isLoading || errorMsg ? 'hidden' : 'block'}`} />
+            <img ref={finalImageRef} alt="Gambar photobooth akhir Anda" className={`w-full h-full object-contain rounded-none shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] border-4 border-black ${isLoading || errorMsg ? 'hidden' : 'block'}`} />
         </div>
         
         {/* Kolom Aksi & QR */}
@@ -573,7 +573,7 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
                 <button
                     onClick={onRestart}
                     disabled={isLoading || !!errorMsg}
-                    className="w-full bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-[var(--color-accent-primary-text)] font-bold py-4 px-8 rounded-full text-xl transition-transform transform hover:scale-105 flex items-center justify-center gap-3 disabled:bg-[var(--color-bg-tertiary)] disabled:cursor-wait"
+                    className="w-full bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-[var(--color-accent-primary-text)] font-bold py-4 px-8 rounded-none border-4 border-black text-xl transition-all transform hover:scale-105 flex items-center justify-center gap-3 disabled:bg-[var(--color-bg-tertiary)] disabled:cursor-wait shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-2 active:translate-y-2 uppercase"
                 >
                   <CheckIcon />
                   <span>Selesai</span>
@@ -582,7 +582,7 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
                 <button
                     onClick={onNextTake}
                     disabled={isLoading || !!errorMsg}
-                    className="w-full bg-[var(--color-info)] hover:bg-[var(--color-info-hover)] text-[var(--color-info-text)] font-bold py-4 px-8 rounded-full text-xl transition-transform transform hover:scale-105 flex items-center justify-center gap-3 disabled:bg-[var(--color-bg-tertiary)] disabled:cursor-wait"
+                    className="w-full bg-[var(--color-info)] hover:bg-[var(--color-info-hover)] text-[var(--color-info-text)] font-bold py-4 px-8 rounded-none border-4 border-black text-xl transition-all transform hover:scale-105 flex items-center justify-center gap-3 disabled:bg-[var(--color-bg-tertiary)] disabled:cursor-wait shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-2 active:translate-y-2 uppercase"
                 >
                     <RestartIcon />
                     Mulai Pengambilan Berikutnya
@@ -594,7 +594,7 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
                 <button
                   onClick={() => handleDownload()}
                   disabled={isLoading || !!errorMsg}
-                  className="w-full flex-1 bg-[var(--color-positive)] hover:bg-[var(--color-positive-hover)] text-[var(--color-positive-text)] font-bold py-4 px-8 rounded-full text-xl transition-transform transform hover:scale-105 flex items-center justify-center gap-3 disabled:bg-[var(--color-bg-tertiary)] disabled:cursor-not-allowed disabled:transform-none"
+                  className="w-full flex-1 bg-[var(--color-positive)] hover:bg-[var(--color-positive-hover)] text-[var(--color-positive-text)] font-bold py-4 px-8 rounded-none border-4 border-black text-xl transition-all transform hover:scale-105 flex items-center justify-center gap-3 disabled:bg-[var(--color-bg-tertiary)] disabled:cursor-not-allowed disabled:transform-none shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-2 active:translate-y-2 uppercase"
                 >
                   <DownloadIcon />
                   Unduh
@@ -605,7 +605,7 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
                  <button
                   onClick={() => setIsPrintModalOpen(true)}
                   disabled={isLoading || !!errorMsg}
-                  className="w-full flex-1 bg-[var(--color-info)] hover:bg-[var(--color-info-hover)] text-[var(--color-info-text)] font-bold py-4 px-8 rounded-full text-xl transition-transform transform hover:scale-105 flex items-center justify-center gap-3 disabled:bg-[var(--color-bg-tertiary)] disabled:cursor-not-allowed disabled:transform-none"
+                  className="w-full flex-1 bg-[var(--color-info)] hover:bg-[var(--color-info-hover)] text-[var(--color-info-text)] font-bold py-4 px-8 rounded-none border-4 border-black text-xl transition-all transform hover:scale-105 flex items-center justify-center gap-3 disabled:bg-[var(--color-bg-tertiary)] disabled:cursor-not-allowed disabled:transform-none shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-2 active:translate-y-2 uppercase"
                 >
                   <PrintIcon />
                   Cetak
@@ -618,7 +618,7 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
                 <button
                     onClick={() => setIsWhatsappModalOpen(true)}
                     disabled={isLoading || !!errorMsg || !!savedWhatsappNumber}
-                    className={`w-full font-bold py-3 px-8 rounded-full text-lg transition-transform transform hover:scale-105 flex items-center justify-center gap-3 shadow-lg ${savedWhatsappNumber ? 'bg-gray-600 cursor-default transform-none' : 'bg-[#25D366] hover:bg-[#20b858] text-white'}`}
+                    className={`w-full font-bold py-3 px-8 rounded-none border-4 border-black text-lg transition-all transform hover:scale-105 flex items-center justify-center gap-3 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-2 active:translate-y-2 uppercase ${savedWhatsappNumber ? 'bg-gray-600 cursor-default transform-none text-white' : 'bg-[#25D366] hover:bg-[#20b858] text-white'}`}
                 >
                     <WhatsAppIcon />
                     <span>{savedWhatsappNumber ? 'Terkirim ke Admin' : 'Kirim ke WhatsApp'}</span>
@@ -626,9 +626,9 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
             )}
 
             {event?.isQrCodeEnabled && generatedQrUrl && (
-                <div className="p-4 bg-[var(--color-bg-secondary)] rounded-lg text-center">
-                    <p className="text-sm text-[var(--color-text-secondary)] mb-2">Pindai untuk tautan cepat</p>
-                    <img src={generatedQrUrl} alt="Kode QR" className="w-64 h-64 mx-auto rounded-md border-4 border-white" />
+                <div className="p-4 bg-[var(--color-bg-secondary)] rounded-none border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] text-center">
+                    <p className="text-sm text-[var(--color-text-secondary)] mb-2 font-bold uppercase">Pindai untuk tautan cepat</p>
+                    <img src={generatedQrUrl} alt="Kode QR" className="w-64 h-64 mx-auto border-4 border-white" />
                 </div>
             )}
         </div>

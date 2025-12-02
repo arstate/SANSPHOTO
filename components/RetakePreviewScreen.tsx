@@ -175,17 +175,17 @@ const RetakePreviewScreen: React.FC<RetakePreviewScreenProps> = ({
     
         <div className={`relative w-full max-w-lg ${isLandscape ? 'aspect-[3/2]' : 'aspect-[2/3]'}`}>
             {isLoading && (
-                <div className="absolute inset-0 bg-[var(--color-bg-secondary)] rounded-lg flex items-center justify-center">
-                    <p className="text-[var(--color-text-secondary)]">Generating Preview...</p>
+                <div className="absolute inset-0 bg-[var(--color-bg-secondary)] rounded-none border-2 border-black flex items-center justify-center">
+                    <p className="text-[var(--color-text-secondary)] font-bold">Generating Preview...</p>
                 </div>
             )}
             {errorMsg && (
-                <div className="absolute inset-0 bg-red-900/30 border-2 border-red-500 rounded-lg flex items-center justify-center p-4 text-center">
-                    <p className="text-red-200">{errorMsg}</p>
+                <div className="absolute inset-0 bg-red-900/30 border-4 border-red-500 rounded-none flex items-center justify-center p-4 text-center">
+                    <p className="text-red-200 font-bold">{errorMsg}</p>
                 </div>
             )}
             <div className="relative">
-                <img ref={finalImageRef} alt="Your photobooth final image" className={`w-full h-full object-contain rounded-lg shadow-2xl shadow-[var(--color-accent-primary)]/30 ${isLoading || errorMsg ? 'hidden' : 'block'}`} />
+                <img ref={finalImageRef} alt="Your photobooth final image" className={`w-full h-full object-contain rounded-none shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] border-4 border-black ${isLoading || errorMsg ? 'hidden' : 'block'}`} />
 
                 {uniqueInputIds.map((inputId) => {
                     const primarySlot = template.photoSlots.find(s => s.inputId === inputId);
@@ -206,7 +206,7 @@ const RetakePreviewScreen: React.FC<RetakePreviewScreenProps> = ({
                                 <button
                                     onClick={() => onStartRetake(inputId - 1)}
                                     disabled={isActionDisabled}
-                                    className="absolute top-2 right-2 w-12 h-12 bg-black/60 backdrop-blur-sm hover:bg-black/80 text-white rounded-full transition-all transform hover:scale-110 focus:outline-none focus:ring-2 ring-offset-2 ring-offset-black/50 ring-white flex items-center justify-center border-2 border-white/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="absolute top-2 right-2 w-12 h-12 bg-black/80 hover:bg-black text-white rounded-none transition-all transform hover:scale-110 flex items-center justify-center border-2 border-white disabled:opacity-50 disabled:cursor-not-allowed shadow-[4px_4px_0px_0px_rgba(255,255,255,0.5)]"
                                     aria-label={`Retake photo ${inputId}`}
                                 >
                                     <RestartIcon />
@@ -219,8 +219,8 @@ const RetakePreviewScreen: React.FC<RetakePreviewScreenProps> = ({
         </div>
         
         <div className="flex flex-col items-center gap-4 w-full max-w-sm">
-            <div className="w-full text-center bg-[var(--color-bg-secondary)] p-4 rounded-lg border border-[var(--color-border-primary)]">
-                <p className="text-xl font-bold">Retakes Remaining:</p>
+            <div className="w-full text-center bg-[var(--color-bg-secondary)] p-4 rounded-none border-4 border-[var(--color-border-primary)] shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+                <p className="text-xl font-bold uppercase">Retakes Remaining:</p>
                 <p className={`text-4xl font-bebas tracking-wider ${canRetake ? 'text-[var(--color-text-accent)]' : 'text-red-500'}`}>
                     {Math.max(0, numericMaxRetakes - retakesUsed)}
                 </p>
@@ -228,7 +228,7 @@ const RetakePreviewScreen: React.FC<RetakePreviewScreenProps> = ({
             <button
                 onClick={handleContinue}
                 disabled={isActionDisabled}
-                className="w-full bg-[var(--color-positive)] hover:bg-[var(--color-positive-hover)] text-[var(--color-positive-text)] font-bold py-4 px-8 rounded-full text-xl transition-transform transform hover:scale-105 flex items-center justify-center gap-3 disabled:bg-[var(--color-bg-tertiary)] disabled:cursor-not-allowed"
+                className="w-full bg-[var(--color-positive)] hover:bg-[var(--color-positive-hover)] text-[var(--color-positive-text)] font-bold py-4 px-8 rounded-none border-4 border-black text-xl transition-transform transform hover:scale-105 flex items-center justify-center gap-3 disabled:bg-[var(--color-bg-tertiary)] disabled:cursor-not-allowed shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-2 active:translate-y-2 uppercase"
             >
                 <CheckIcon />
                 <span>Done & Continue</span>

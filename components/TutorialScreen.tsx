@@ -87,7 +87,7 @@ const TutorialScreen: React.FC<TutorialScreenProps> = ({ onComplete, onBack, set
       <div className="absolute top-4 left-4 z-10">
         <button 
           onClick={onBack}
-          className="bg-[var(--color-bg-secondary)]/50 hover:bg-[var(--color-bg-tertiary)]/70 text-[var(--color-text-primary)] font-bold p-3 rounded-full transition-colors"
+          className="bg-[var(--color-bg-secondary)]/50 hover:bg-[var(--color-bg-tertiary)]/70 text-[var(--color-text-primary)] font-bold p-3 rounded-none border-2 border-black transition-colors"
           aria-label="Go Back"
         >
           <BackIcon />
@@ -106,17 +106,17 @@ const TutorialScreen: React.FC<TutorialScreenProps> = ({ onComplete, onBack, set
             {steps.map((step) => (
                 <div 
                     key={step.id} 
-                    className={`w-full flex flex-col items-center text-center p-6 rounded-2xl border-2 ${step.bg} ${step.border} backdrop-blur-sm transition-transform transform hover:scale-105 duration-300 shadow-lg h-full`}
+                    className={`w-full flex flex-col items-center text-center p-6 rounded-none border-4 ${step.bg} ${step.border} backdrop-blur-sm transition-transform transform hover:scale-105 duration-300 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] h-full`}
                 >
-                    <div className={`w-24 h-24 rounded-full flex items-center justify-center mb-6 bg-[var(--color-bg-primary)] border-2 ${step.border} ${step.color} shadow-md shrink-0`}>
-                        <div className="transform scale-150">
+                    <div className={`w-24 h-24 rounded-none flex items-center justify-center mb-6 bg-[var(--color-bg-primary)] border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] shrink-0`}>
+                        <div className="transform scale-150 text-black">
                             {step.icon}
                         </div>
                     </div>
-                    <h3 className={`text-3xl font-bold mb-4 font-bebas tracking-wide ${step.color}`}>
+                    <h3 className={`text-3xl font-bold mb-4 font-bebas tracking-wide text-black`}>
                         {step.id}. {step.title}
                     </h3>
-                    <p className="text-[var(--color-text-secondary)] text-lg leading-relaxed font-medium flex-grow">
+                    <p className="text-[var(--color-text-secondary)] text-lg leading-relaxed font-medium flex-grow font-mono">
                         {step.desc}
                     </p>
                 </div>
@@ -126,7 +126,7 @@ const TutorialScreen: React.FC<TutorialScreenProps> = ({ onComplete, onBack, set
         <div className="shrink-0 mt-6 mb-4 flex justify-center w-full">
             <button
                 onClick={onComplete}
-                className="bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-[var(--color-accent-primary-text)] font-bold py-4 px-12 rounded-full text-2xl transition-all transform hover:scale-105 shadow-[0_0_20px_rgba(139,92,246,0.5)] animate-pulse"
+                className="bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-[var(--color-accent-primary-text)] font-bold py-4 px-12 rounded-none text-2xl transition-all transform hover:scale-105 shadow-[8px_8px_0px_0px_#000000] border-4 border-black animate-pulse hover:translate-x-[-2px] hover:translate-y-[-2px]"
             >
                 MENGERTI, MULAI FOTO!
             </button>

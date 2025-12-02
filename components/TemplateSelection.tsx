@@ -154,7 +154,7 @@ const TemplateSelection: React.FC<TemplateSelectionProps> = ({
       <div className="absolute top-4 left-4 z-10">
         <button 
           onClick={onBack}
-          className="bg-[var(--color-bg-secondary)]/50 hover:bg-[var(--color-bg-tertiary)]/70 text-[var(--color-text-primary)] font-bold p-3 rounded-full transition-colors"
+          className="bg-[var(--color-bg-secondary)]/50 hover:bg-[var(--color-bg-tertiary)]/70 text-[var(--color-text-primary)] font-bold p-3 rounded-none border-2 border-black transition-colors shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
           aria-label="Go Back"
         >
           <BackIcon />
@@ -169,18 +169,18 @@ const TemplateSelection: React.FC<TemplateSelectionProps> = ({
 
       <main className="flex-grow flex flex-col items-center justify-center w-full min-h-0 px-4">
         {previewedTemplate ? (
-            <div className={`group relative w-full ${previewedTemplate.orientation === 'landscape' ? 'max-w-2xl' : 'max-w-xs'} border-4 border-[var(--color-border-primary)] rounded-lg p-2 bg-[var(--color-bg-secondary)] flex flex-col text-center`}>
+            <div className={`group relative w-full ${previewedTemplate.orientation === 'landscape' ? 'max-w-2xl' : 'max-w-xs'} border-4 border-[var(--color-border-primary)] rounded-none p-2 bg-[var(--color-bg-secondary)] flex flex-col text-center shadow-[10px_10px_0px_0px_rgba(0,0,0,1)]`}>
                 <div className="relative">
                     <ImageFromCache 
                         src={previewedTemplate.imageUrl} 
                         alt={previewedTemplate.name}
-                        className={`rounded-md shadow-lg w-full ${previewedTemplate.orientation === 'landscape' ? 'aspect-[3/2]' : 'aspect-[2/3]'} object-cover`}
+                        className={`rounded-none border-2 border-black w-full ${previewedTemplate.orientation === 'landscape' ? 'aspect-[3/2]' : 'aspect-[2/3]'} object-cover`}
                     />
                     {isAdminLoggedIn && (
                         <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                             <button
                                 onClick={() => onEditLayout(previewedTemplate)}
-                                className="bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-[var(--color-accent-primary-text)] font-bold py-3 px-6 rounded-full text-lg transition-transform transform hover:scale-105"
+                                className="bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-[var(--color-accent-primary-text)] font-bold py-3 px-6 rounded-none border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-lg transition-transform transform hover:scale-105"
                             >
                                 Edit Layout
                             </button>
@@ -188,11 +188,11 @@ const TemplateSelection: React.FC<TemplateSelectionProps> = ({
                     )}
                 </div>
                 <div className="mt-2">
-                    <p className="text-[var(--color-text-secondary)] font-semibold">{previewedTemplate.name}</p>
-                    <p className="text-xs text-[var(--color-text-muted)]">{previewedTemplate.widthMM}mm x {previewedTemplate.heightMM}mm</p>
+                    <p className="text-[var(--color-text-secondary)] font-bold uppercase tracking-wide">{previewedTemplate.name}</p>
+                    <p className="text-xs text-[var(--color-text-muted)] font-mono">{previewedTemplate.widthMM}mm x {previewedTemplate.heightMM}mm</p>
                 </div>
                 {isAdminLoggedIn ? (
-                    <div className="mt-2 pt-2 border-t border-[var(--color-border-primary)] flex justify-center gap-2">
+                    <div className="mt-2 pt-2 border-t-2 border-[var(--color-border-primary)] flex justify-center gap-2">
                         <button onClick={() => onEditMetadata(previewedTemplate)} className="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] p-2" aria-label="Edit Details"><EditIcon /></button>
                         <button onClick={() => {
                             if (window.confirm('Are you sure you want to delete this template permanently?')) {
@@ -203,7 +203,7 @@ const TemplateSelection: React.FC<TemplateSelectionProps> = ({
                 ) : (
                     <button
                         onClick={() => onSelect(previewedTemplate)}
-                        className="mt-4 bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-[var(--color-accent-primary-text)] font-bold py-2 px-4 rounded-full text-md transition-transform transform hover:scale-105 w-full"
+                        className="mt-4 bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-[var(--color-accent-primary-text)] font-bold py-3 px-4 rounded-none border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1 text-md transition-all uppercase w-full"
                     >
                         Use This Template
                     </button>
@@ -229,7 +229,7 @@ const TemplateSelection: React.FC<TemplateSelectionProps> = ({
                 <button
                     key={template.id}
                     onClick={() => setPreviewedTemplate(template)}
-                    className={`relative shrink-0 ${template.orientation === 'landscape' ? 'w-[13.5rem] h-36' : 'w-24 h-36'} rounded-md overflow-hidden border-4 transition-colors ${previewedTemplate?.id === template.id ? 'border-[var(--color-accent-primary)]' : 'border-[var(--color-border-primary)] hover:border-[var(--color-border-secondary)]'}`}
+                    className={`relative shrink-0 ${template.orientation === 'landscape' ? 'w-[13.5rem] h-36' : 'w-24 h-36'} rounded-none overflow-hidden border-4 transition-colors ${previewedTemplate?.id === template.id ? 'border-[var(--color-accent-primary)]' : 'border-[var(--color-border-primary)] hover:border-[var(--color-border-secondary)]'}`}
                     aria-label={`Select ${template.name}`}
                 >
                     <ImageFromCache 
@@ -238,7 +238,7 @@ const TemplateSelection: React.FC<TemplateSelectionProps> = ({
                         className="w-full h-full object-cover pointer-events-none" 
                     />
                     {isAdminLoggedIn && !template.eventId && (
-                        <div className="absolute top-0 right-0 p-1 bg-yellow-500/80 rounded-bl-md" title="Unassigned">
+                        <div className="absolute top-0 right-0 p-1 bg-yellow-500/80 rounded-none border-l border-b border-black" title="Unassigned">
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
                             </svg>
@@ -249,7 +249,7 @@ const TemplateSelection: React.FC<TemplateSelectionProps> = ({
             {isAdminLoggedIn && (
                 <button
                     onClick={onAddTemplate}
-                    className="shrink-0 w-24 h-36 border-4 border-dashed border-[var(--color-border-secondary)] hover:border-[var(--color-positive)] hover:text-[var(--color-positive)] text-[var(--color-text-muted)] rounded-lg bg-[var(--color-bg-secondary)]/50 flex flex-col items-center justify-center text-center transition-colors"
+                    className="shrink-0 w-24 h-36 border-4 border-dashed border-[var(--color-border-secondary)] hover:border-[var(--color-positive)] hover:text-[var(--color-positive)] text-[var(--color-text-muted)] rounded-none bg-[var(--color-bg-secondary)]/50 flex flex-col items-center justify-center text-center transition-colors"
                 >
                     <AddIcon />
                     <span className="mt-1 text-xs font-bold">Add New</span>

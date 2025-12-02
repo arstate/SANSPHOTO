@@ -29,40 +29,40 @@ const TenantLoginModal: React.FC<TenantLoginModalProps> = ({ tenant, onLogin, on
       onClick={onClose}
     >
       <div 
-        className="bg-[var(--color-bg-secondary)] rounded-lg shadow-xl p-8 w-full max-w-sm border border-[var(--color-border-primary)]"
+        className="bg-[var(--color-bg-secondary)] rounded-none shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] p-8 w-full max-w-sm border-4 border-black"
         onClick={(e) => e.stopPropagation()}
       >
         <h2 className="font-bebas text-4xl text-center mb-1">Admin Login</h2>
         <p className="text-center text-[var(--color-text-accent)] font-bold text-lg mb-6">{tenant.username}</p>
         <form onSubmit={handleLogin}>
           <div className="mb-4">
-            <label htmlFor="username" className="block text-sm font-bold mb-2 text-[var(--color-text-secondary)]">Username</label>
+            <label htmlFor="username" className="block text-sm font-bold mb-2 text-[var(--color-text-secondary)] uppercase">Username</label>
             <input
               id="username"
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md py-2 px-3 text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-border-focus)]"
+              className="w-full bg-[var(--color-bg-tertiary)] border-2 border-black rounded-none py-2 px-3 text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
               required
             />
           </div>
           <div className="mb-6">
-            <label htmlFor="password" className="block text-sm font-bold mb-2 text-[var(--color-text-secondary)]">Password</label>
+            <label htmlFor="password" className="block text-sm font-bold mb-2 text-[var(--color-text-secondary)] uppercase">Password</label>
             <input
               id="password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-[var(--color-bg-tertiary)] border border-[var(--color-border-secondary)] rounded-md py-2 px-3 text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-border-focus)]"
+              className="w-full bg-[var(--color-bg-tertiary)] border-2 border-black rounded-none py-2 px-3 text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
               required
             />
           </div>
-          {error && <p className="text-red-400 text-center mb-4">{error}</p>}
+          {error && <p className="text-red-500 font-bold text-center mb-4 bg-red-100 p-2 border-2 border-black">{error}</p>}
           <div className="flex flex-col gap-3">
-            <button type="submit" className="w-full bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-[var(--color-accent-primary-text)] font-bold py-3 px-4 rounded-full text-lg">
+            <button type="submit" className="w-full bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-[var(--color-accent-primary-text)] font-bold py-3 px-4 rounded-none text-lg border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1">
               Login
             </button>
-            <button type="button" onClick={onClose} className="w-full bg-[var(--color-bg-tertiary)] hover:bg-[var(--color-border-secondary)] text-[var(--color-text-primary)] font-bold py-3 px-4 rounded-full text-lg">
+            <button type="button" onClick={onClose} className="w-full bg-[var(--color-bg-tertiary)] hover:bg-[var(--color-border-secondary)] text-[var(--color-text-primary)] font-bold py-3 px-4 rounded-none text-lg border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1">
               Cancel
             </button>
           </div>

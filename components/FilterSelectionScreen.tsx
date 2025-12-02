@@ -176,7 +176,7 @@ const FilterSelectionScreen: React.FC<FilterSelectionScreenProps> = ({
       {/* Main Preview Area */}
       <main className="flex-grow w-full flex items-center justify-center p-4 min-h-0">
         <div 
-            className={`relative shadow-2xl shadow-[var(--color-accent-primary)]/20 bg-white rounded-sm overflow-hidden border-4 border-white ${isLandscape ? 'aspect-[3/2]' : 'aspect-[2/3]'}`}
+            className={`relative shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] bg-white rounded-none overflow-hidden border-4 border-black ${isLandscape ? 'aspect-[3/2]' : 'aspect-[2/3]'}`}
             style={{ 
                 maxHeight: '100%', 
                 maxWidth: '100%',
@@ -218,7 +218,7 @@ const FilterSelectionScreen: React.FC<FilterSelectionScreenProps> = ({
       </main>
 
       {/* Filter Selection Slider & Controls */}
-      <div className="shrink-0 w-full bg-[var(--color-bg-secondary)] border-t border-[var(--color-border-primary)] p-4 flex flex-col gap-4 z-20">
+      <div className="shrink-0 w-full bg-[var(--color-bg-secondary)] border-t-4 border-[var(--color-border-primary)] p-4 flex flex-col gap-4 z-20">
           
           {/* Slider */}
           <div className="flex overflow-x-auto gap-4 pb-2 scrollbar-thin px-2 justify-start md:justify-center">
@@ -228,7 +228,7 @@ const FilterSelectionScreen: React.FC<FilterSelectionScreenProps> = ({
                     onClick={() => handleSelectFilter(filter)}
                     className={`flex flex-col items-center gap-2 shrink-0 transition-transform ${selectedFilterId === filter.id ? 'scale-110' : 'hover:scale-105 opacity-70 hover:opacity-100'}`}
                   >
-                      <div className={`w-20 h-20 rounded-lg overflow-hidden border-2 ${selectedFilterId === filter.id ? 'border-[var(--color-accent-primary)] ring-2 ring-[var(--color-accent-primary)]/50' : 'border-gray-500'}`}>
+                      <div className={`w-20 h-20 rounded-none overflow-hidden border-4 ${selectedFilterId === filter.id ? 'border-[var(--color-accent-primary)] ring-2 ring-[var(--color-accent-primary)]/50' : 'border-black'}`}>
                           {/* Thumbnail Preview using the first captured image */}
                           <img 
                             src={images[0]} 
@@ -237,7 +237,7 @@ const FilterSelectionScreen: React.FC<FilterSelectionScreenProps> = ({
                             style={{ filter: filter.cssFilter, transform: 'scaleX(-1)' }}
                           />
                       </div>
-                      <span className={`text-xs font-bold ${selectedFilterId === filter.id ? 'text-[var(--color-accent-primary)]' : 'text-[var(--color-text-secondary)]'}`}>
+                      <span className={`text-xs font-bold uppercase ${selectedFilterId === filter.id ? 'text-[var(--color-accent-primary)]' : 'text-[var(--color-text-secondary)]'}`}>
                           {filter.name}
                       </span>
                   </button>
@@ -249,11 +249,11 @@ const FilterSelectionScreen: React.FC<FilterSelectionScreenProps> = ({
               <button
                   onClick={handleContinue}
                   disabled={isProcessing}
-                  className="bg-[var(--color-positive)] hover:bg-[var(--color-positive-hover)] text-[var(--color-positive-text)] font-bold py-3 px-12 rounded-full text-xl transition-transform transform hover:scale-105 flex items-center justify-center gap-2 shadow-lg disabled:bg-[var(--color-bg-tertiary)] disabled:cursor-wait disabled:transform-none"
+                  className="bg-[var(--color-positive)] hover:bg-[var(--color-positive-hover)] text-[var(--color-positive-text)] font-bold py-3 px-12 rounded-none border-4 border-black text-xl transition-transform transform hover:scale-105 flex items-center justify-center gap-2 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-2 active:translate-y-2 disabled:bg-[var(--color-bg-tertiary)] disabled:cursor-wait disabled:transform-none uppercase"
               >
                   {isProcessing ? (
                       <>
-                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        <div className="w-5 h-5 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
                         <span>Processing...</span>
                       </>
                   ) : (
