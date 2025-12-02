@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Settings, FloatingObject, PriceList, PaymentEntry, OnlineHistoryEntry } from '../types';
 import { BackIcon } from './icons/BackIcon';
@@ -42,7 +43,7 @@ interface SettingsScreenProps {
     payments?: PaymentEntry[];
     onDeletePayment: (id: string) => void;
     onAcceptPayment: (id: string) => void;
-    onDeleteAllPayments: () => void; // New Prop
+    onDeleteAllPayments: () => void;
 }
 
 export const GOOGLE_FONTS = [
@@ -70,14 +71,14 @@ const CategoryButton: React.FC<{
 }> = ({ label, icon, isActive, onClick }) => (
   <button
     onClick={onClick}
-    className={`w-full flex items-center gap-3 text-left p-3 rounded-md transition-all text-lg border-b-4 border-r-4 border-black border-t-2 border-l-2 mb-2 ${
+    className={`w-full flex items-center gap-3 text-left p-4 transition-all text-lg border-b-4 border-r-4 border-black border-t-2 border-l-2 mb-3 ${
       isActive
         ? 'bg-[var(--color-accent-primary)] text-white border-black translate-x-1 translate-y-1 shadow-none'
         : 'bg-white text-black hover:bg-gray-100 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]'
     }`}
   >
     <div className={`${isActive ? 'text-white' : 'text-black'}`}>{icon}</div>
-    <span className="font-bold font-mono uppercase">{label}</span>
+    <span className="font-bold font-mono uppercase tracking-tight">{label}</span>
   </button>
 );
 
@@ -632,7 +633,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
         return (
           <div className="space-y-6">
             {/* Session Settings */}
-            <div className="p-6 bg-[var(--color-bg-secondary)] rounded-md border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left space-y-4">
+            <div className="p-6 bg-[var(--color-bg-secondary)] border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left space-y-4">
                 <h3 className="text-xl font-bold font-bebas tracking-wider text-black border-b-2 border-black pb-2">General Settings</h3>
                 <div>
                   <label htmlFor="countdownDuration" className="block text-sm font-bold text-black font-mono uppercase">Countdown Duration (seconds)</label>
@@ -662,8 +663,8 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                               onChange={handleSettingsInputChange}
                               className="sr-only peer"
                           />
-                          <div className="w-12 h-6 bg-gray-300 rounded-full border-2 border-black peer-checked:bg-[var(--color-accent-primary)] transition-colors">
-                              <div className={`absolute top-1 left-1 w-4 h-4 bg-white border-2 border-black rounded-full transition-transform ${settings.flashEffectEnabled ? 'translate-x-6' : ''}`}></div>
+                          <div className="w-12 h-6 bg-gray-300 border-2 border-black peer-checked:bg-[var(--color-accent-primary)] transition-colors">
+                              <div className={`absolute top-1 left-1 w-4 h-4 bg-white border-2 border-black transition-transform ${settings.flashEffectEnabled ? 'translate-x-6' : ''}`}></div>
                           </div>
                       </div>
                   </label>
@@ -684,12 +685,12 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
             </div>
 
             {/* Camera Source Settings */}
-            <div className="p-6 bg-[var(--color-bg-secondary)] rounded-md border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left space-y-4">
+            <div className="p-6 bg-[var(--color-bg-secondary)] border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left space-y-4">
                 <h3 className="text-xl font-bold font-bebas tracking-wider text-black border-b-2 border-black pb-2 flex items-center gap-2"><CameraIcon /> Camera Source</h3>
                 <p className="text-sm text-gray-600 font-mono">Choose between the default device webcam or an external IP Camera stream.</p>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <label className={`flex flex-col items-center p-4 border-2 rounded-md cursor-pointer transition-all ${settings.cameraSourceType !== 'ip_camera' ? 'border-black bg-yellow-200 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' : 'border-gray-400 hover:border-black'}`}>
+                    <label className={`flex flex-col items-center p-4 border-2 cursor-pointer transition-all ${settings.cameraSourceType !== 'ip_camera' ? 'border-black bg-yellow-200 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' : 'border-gray-400 hover:border-black'}`}>
                         <input 
                             type="radio" 
                             name="cameraSourceType" 
@@ -702,7 +703,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                         <span className="text-xs text-center text-gray-600 mt-1 font-mono">Uses browser API (USB/HDMI Capture)</span>
                     </label>
 
-                    <label className={`flex flex-col items-center p-4 border-2 rounded-md cursor-pointer transition-all ${settings.cameraSourceType === 'ip_camera' ? 'border-black bg-yellow-200 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' : 'border-gray-400 hover:border-black'}`}>
+                    <label className={`flex flex-col items-center p-4 border-2 cursor-pointer transition-all ${settings.cameraSourceType === 'ip_camera' ? 'border-black bg-yellow-200 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' : 'border-gray-400 hover:border-black'}`}>
                         <input 
                             type="radio" 
                             name="cameraSourceType" 
@@ -723,7 +724,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                             <label htmlFor="cameraDeviceId" className="block text-sm font-bold text-black font-mono uppercase">Select Input Device</label>
                             <button 
                                 onClick={refreshVideoDevices} 
-                                className="text-xs text-black font-bold border border-black px-2 py-1 rounded bg-white hover:bg-gray-100 flex items-center gap-1 shadow-[2px_2px_0px_0px_black]"
+                                className="text-xs text-black font-bold border-2 border-black px-2 py-1 bg-white hover:bg-gray-100 flex items-center gap-1 shadow-[2px_2px_0px_0px_black]"
                             >
                                 <RestartIcon /> Refresh
                             </button>
@@ -762,7 +763,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                             />
                         </div>
 
-                        <label htmlFor="ipCameraUseProxy" className="flex items-center justify-between cursor-pointer p-2 bg-gray-100 rounded border border-black">
+                        <label htmlFor="ipCameraUseProxy" className="flex items-center justify-between cursor-pointer p-2 bg-gray-100 border-2 border-black">
                             <div>
                                 <span className="block text-sm font-bold text-black font-mono uppercase">Enable CORS Proxy</span>
                                 <p className="text-xs text-gray-600 font-mono">Wraps the URL in a public proxy to bypass CORS issues.</p>
@@ -776,8 +777,8 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                                     onChange={handleSettingsInputChange}
                                     className="sr-only peer"
                                 />
-                                <div className="w-12 h-6 bg-gray-300 rounded-full border-2 border-black peer-checked:bg-[var(--color-accent-primary)] transition-colors">
-                                    <div className={`absolute top-1 left-1 w-4 h-4 bg-white border-2 border-black rounded-full transition-transform ${settings.ipCameraUseProxy ? 'translate-x-6' : ''}`}></div>
+                                <div className="w-12 h-6 bg-gray-300 border-2 border-black peer-checked:bg-[var(--color-accent-primary)] transition-colors">
+                                    <div className={`absolute top-1 left-1 w-4 h-4 bg-white border-2 border-black transition-transform ${settings.ipCameraUseProxy ? 'translate-x-6' : ''}`}></div>
                                 </div>
                             </div>
                         </label>
@@ -786,7 +787,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
             </div>
 
             {/* Closed Mode Settings */}
-            <div className="p-6 bg-[var(--color-bg-secondary)] rounded-md border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left space-y-4">
+            <div className="p-6 bg-[var(--color-bg-secondary)] border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left space-y-4">
               <h3 className="text-xl font-bold font-bebas tracking-wider text-black border-b-2 border-black pb-2">Closed Mode</h3>
               <div className="border-t-2 border-black pt-4">
                 <label htmlFor="isClosedModeEnabled" className="flex items-center justify-between cursor-pointer">
@@ -796,8 +797,8 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                     </div>
                     <div className="relative">
                         <input type="checkbox" id="isClosedModeEnabled" name="isClosedModeEnabled" checked={settings.isClosedModeEnabled ?? false} onChange={handleToggleClosedMode} className="sr-only peer" />
-                        <div className="w-12 h-6 bg-gray-300 rounded-full border-2 border-black peer-checked:bg-[var(--color-accent-primary)] transition-colors">
-                            <div className={`absolute top-1 left-1 w-4 h-4 bg-white border-2 border-black rounded-full transition-transform ${settings.isClosedModeEnabled ? 'translate-x-6' : ''}`}></div>
+                        <div className="w-12 h-6 bg-gray-300 border-2 border-black peer-checked:bg-[var(--color-accent-primary)] transition-colors">
+                            <div className={`absolute top-1 left-1 w-4 h-4 bg-white border-2 border-black transition-transform ${settings.isClosedModeEnabled ? 'translate-x-6' : ''}`}></div>
                         </div>
                     </div>
                 </label>
@@ -819,7 +820,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
             </div>
             
              {/* Download Settings */}
-            <div className="p-6 bg-[var(--color-bg-secondary)] rounded-md border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left space-y-4">
+            <div className="p-6 bg-[var(--color-bg-secondary)] border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left space-y-4">
               <h3 className="text-xl font-bold font-bebas tracking-wider text-black border-b-2 border-black pb-2">Download Settings</h3>
               <div className="border-t-2 border-black pt-4">
                 <label htmlFor="isAutoDownloadEnabled" className="flex items-center justify-between cursor-pointer">
@@ -836,8 +837,8 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                             onChange={handleSettingsInputChange}
                             className="sr-only peer"
                         />
-                        <div className="w-12 h-6 bg-gray-300 rounded-full border-2 border-black peer-checked:bg-[var(--color-accent-primary)] transition-colors">
-                            <div className={`absolute top-1 left-1 w-4 h-4 bg-white border-2 border-black rounded-full transition-transform ${settings.isAutoDownloadEnabled ? 'translate-x-6' : ''}`}></div>
+                        <div className="w-12 h-6 bg-gray-300 border-2 border-black peer-checked:bg-[var(--color-accent-primary)] transition-colors">
+                            <div className={`absolute top-1 left-1 w-4 h-4 bg-white border-2 border-black transition-transform ${settings.isAutoDownloadEnabled ? 'translate-x-6' : ''}`}></div>
                         </div>
                     </div>
                 </label>
@@ -857,8 +858,8 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                             onChange={handleSettingsInputChange}
                             className="sr-only peer"
                         />
-                        <div className="w-12 h-6 bg-gray-300 rounded-full border-2 border-black peer-checked:bg-[var(--color-accent-primary)] transition-colors">
-                            <div className={`absolute top-1 left-1 w-4 h-4 bg-white border-2 border-black rounded-full transition-transform ${settings.isDownloadButtonEnabled ? 'translate-x-6' : ''}`}></div>
+                        <div className="w-12 h-6 bg-gray-300 border-2 border-black peer-checked:bg-[var(--color-accent-primary)] transition-colors">
+                            <div className={`absolute top-1 left-1 w-4 h-4 bg-white border-2 border-black transition-transform ${settings.isDownloadButtonEnabled ? 'translate-x-6' : ''}`}></div>
                         </div>
                     </div>
                 </label>
@@ -866,11 +867,11 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
             </div>
 
             {/* Print Settings */}
-            <div className="p-6 bg-[var(--color-bg-secondary)] rounded-md border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left space-y-4">
+            <div className="p-6 bg-[var(--color-bg-secondary)] border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left space-y-4">
               <h3 className="text-xl font-bold font-bebas tracking-wider text-black border-b-2 border-black pb-2">Print Settings</h3>
               
               {/* Configure Defaults Button */}
-              <div className="bg-gray-100 p-4 rounded-md border border-black">
+              <div className="bg-gray-100 p-4 border-2 border-black">
                   <div className="flex justify-between items-start gap-4">
                       <div>
                           <h4 className="font-bold text-black font-mono uppercase">Printer Calibration</h4>
@@ -880,7 +881,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                       </div>
                       <button 
                         onClick={handleConfigurePrinter}
-                        className="bg-[var(--color-info)] text-black border-2 border-black font-bold py-2 px-4 rounded shadow-[2px_2px_0px_0px_black] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all flex items-center gap-2"
+                        className="bg-[var(--color-info)] text-black border-2 border-black font-bold py-2 px-4 shadow-[2px_2px_0px_0px_black] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all flex items-center gap-2"
                       >
                           <SettingsIcon /> Configure
                       </button>
@@ -895,8 +896,8 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                     </div>
                     <div className="relative">
                         <input type="checkbox" id="isPrintButtonEnabled" name="isPrintButtonEnabled" checked={settings.isPrintButtonEnabled ?? true} onChange={handleSettingsInputChange} className="sr-only peer" />
-                        <div className="w-12 h-6 bg-gray-300 rounded-full border-2 border-black peer-checked:bg-[var(--color-accent-primary)] transition-colors">
-                            <div className={`absolute top-1 left-1 w-4 h-4 bg-white border-2 border-black rounded-full transition-transform ${settings.isPrintButtonEnabled ? 'translate-x-6' : ''}`}></div>
+                        <div className="w-12 h-6 bg-gray-300 border-2 border-black peer-checked:bg-[var(--color-accent-primary)] transition-colors">
+                            <div className={`absolute top-1 left-1 w-4 h-4 bg-white border-2 border-black transition-transform ${settings.isPrintButtonEnabled ? 'translate-x-6' : ''}`}></div>
                         </div>
                     </div>
                 </label>
@@ -929,8 +930,8 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                           </div>
                           <div className="relative">
                               <input type="checkbox" id="isPrintCopyInputEnabled" name="isPrintCopyInputEnabled" checked={settings.isPrintCopyInputEnabled ?? true} onChange={handleSettingsInputChange} className="sr-only peer" />
-                              <div className="w-12 h-6 bg-gray-300 rounded-full border-2 border-black peer-checked:bg-[var(--color-accent-primary)] transition-colors">
-                                  <div className={`absolute top-1 left-1 w-4 h-4 bg-white border-2 border-black rounded-full transition-transform ${settings.isPrintCopyInputEnabled ? 'translate-x-6' : ''}`}></div>
+                              <div className="w-12 h-6 bg-gray-300 border-2 border-black peer-checked:bg-[var(--color-accent-primary)] transition-colors">
+                                  <div className={`absolute top-1 left-1 w-4 h-4 bg-white border-2 border-black transition-transform ${settings.isPrintCopyInputEnabled ? 'translate-x-6' : ''}`}></div>
                               </div>
                           </div>
                       </label>
@@ -954,7 +955,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
         return (
            <div className="space-y-6">
              {/* Welcome Screen Text Customization */}
-            <div className="p-6 bg-[var(--color-bg-secondary)] rounded-md border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left space-y-4">
+            <div className="p-6 bg-[var(--color-bg-secondary)] border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left space-y-4">
               <h3 className="text-xl font-bold font-bebas tracking-wider text-black border-b-2 border-black pb-2">Welcome Screen Text</h3>
               <div>
                 <label htmlFor="welcomeTitle" className="block text-sm font-bold text-black font-mono uppercase">Main Title</label>
@@ -986,14 +987,14 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                         <label htmlFor="welcomeTitleColor" className="block text-sm font-bold text-black font-mono uppercase">Title Color</label>
                         <button onClick={() => handleResetSetting('welcomeTitleColor')} className="text-xs text-gray-500 hover:text-black underline font-mono">Reset</button>
                       </div>
-                      <input type="color" id="welcomeTitleColor" name="welcomeTitleColor" value={settings.welcomeTitleColor || '#F9FAFB'} onChange={handleSettingsInputChange} className="mt-1 w-full h-12 p-1 bg-white border-2 border-black rounded-md cursor-pointer"/>
+                      <input type="color" id="welcomeTitleColor" name="welcomeTitleColor" value={settings.welcomeTitleColor || '#F9FAFB'} onChange={handleSettingsInputChange} className="mt-1 w-full h-12 p-1 bg-white border-2 border-black cursor-pointer"/>
                   </div>
                   <div>
                        <div className="flex justify-between items-center mb-1">
                         <label htmlFor="welcomeSubtitleColor" className="block text-sm font-bold text-black font-mono uppercase">Subtitle Color</label>
                         <button onClick={() => handleResetSetting('welcomeSubtitleColor')} className="text-xs text-gray-500 hover:text-black underline font-mono">Reset</button>
                       </div>
-                      <input type="color" id="welcomeSubtitleColor" name="welcomeSubtitleColor" value={settings.welcomeSubtitleColor || '#D1D5DB'} onChange={handleSettingsInputChange} className="mt-1 w-full h-12 p-1 bg-white border-2 border-black rounded-md cursor-pointer"/>
+                      <input type="color" id="welcomeSubtitleColor" name="welcomeSubtitleColor" value={settings.welcomeSubtitleColor || '#D1D5DB'} onChange={handleSettingsInputChange} className="mt-1 w-full h-12 p-1 bg-white border-2 border-black cursor-pointer"/>
                   </div>
               </div>
 
@@ -1006,7 +1007,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                   </div>
                   <label htmlFor="isWelcomeTitleFontRandom" className="flex items-center justify-between cursor-pointer">
                     <span className="text-sm font-bold text-black font-mono uppercase">Randomize Title Font</span>
-                    <div className="relative"><input type="checkbox" id="isWelcomeTitleFontRandom" name="isWelcomeTitleFontRandom" checked={settings.isWelcomeTitleFontRandom ?? false} onChange={handleSettingsInputChange} className="sr-only peer" /><div className="w-12 h-6 bg-gray-300 rounded-full border-2 border-black peer-checked:bg-[var(--color-accent-primary)] transition-colors"><div className={`absolute top-1 left-1 w-4 h-4 bg-white border-2 border-black rounded-full transition-transform ${settings.isWelcomeTitleFontRandom ? 'translate-x-6' : ''}`}></div></div></div>
+                    <div className="relative"><input type="checkbox" id="isWelcomeTitleFontRandom" name="isWelcomeTitleFontRandom" checked={settings.isWelcomeTitleFontRandom ?? false} onChange={handleSettingsInputChange} className="sr-only peer" /><div className="w-12 h-6 bg-gray-300 border-2 border-black peer-checked:bg-[var(--color-accent-primary)] transition-colors"><div className={`absolute top-1 left-1 w-4 h-4 bg-white border-2 border-black transition-transform ${settings.isWelcomeTitleFontRandom ? 'translate-x-6' : ''}`}></div></div></div>
                   </label>
                 </div>
                 <div className="border-t-2 border-black pt-4 space-y-4">
@@ -1018,7 +1019,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                   </div>
                    <label htmlFor="isWelcomeSubtitleFontRandom" className="flex items-center justify-between cursor-pointer">
                     <span className="text-sm font-bold text-black font-mono uppercase">Randomize Subtitle Font</span>
-                    <div className="relative"><input type="checkbox" id="isWelcomeSubtitleFontRandom" name="isWelcomeSubtitleFontRandom" checked={settings.isWelcomeSubtitleFontRandom ?? false} onChange={handleSettingsInputChange} className="sr-only peer" /><div className="w-12 h-6 bg-gray-300 rounded-full border-2 border-black peer-checked:bg-[var(--color-accent-primary)] transition-colors"><div className={`absolute top-1 left-1 w-4 h-4 bg-white border-2 border-black rounded-full transition-transform ${settings.isWelcomeSubtitleFontRandom ? 'translate-x-6' : ''}`}></div></div></div>
+                    <div className="relative"><input type="checkbox" id="isWelcomeSubtitleFontRandom" name="isWelcomeSubtitleFontRandom" checked={settings.isWelcomeSubtitleFontRandom ?? false} onChange={handleSettingsInputChange} className="sr-only peer" /><div className="w-12 h-6 bg-gray-300 border-2 border-black peer-checked:bg-[var(--color-accent-primary)] transition-colors"><div className={`absolute top-1 left-1 w-4 h-4 bg-white border-2 border-black transition-transform ${settings.isWelcomeSubtitleFontRandom ? 'translate-x-6' : ''}`}></div></div></div>
                   </label>
                 </div>
 
@@ -1037,8 +1038,8 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                             onChange={handleSettingsInputChange}
                             className="sr-only peer"
                         />
-                        <div className="w-12 h-6 bg-gray-300 rounded-full border-2 border-black peer-checked:bg-[var(--color-accent-primary)] transition-colors">
-                            <div className={`absolute top-1 left-1 w-4 h-4 bg-white border-2 border-black rounded-full transition-transform ${settings.isWelcomeTextShadowEnabled ? 'translate-x-6' : ''}`}></div>
+                        <div className="w-12 h-6 bg-gray-300 border-2 border-black peer-checked:bg-[var(--color-accent-primary)] transition-colors">
+                            <div className={`absolute top-1 left-1 w-4 h-4 bg-white border-2 border-black transition-transform ${settings.isWelcomeTextShadowEnabled ? 'translate-x-6' : ''}`}></div>
                         </div>
                     </div>
                 </label>
@@ -1046,29 +1047,29 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
             </div>
             
             {/* Floating 3D Objects Manager */}
-            <div className="p-6 bg-[var(--color-bg-secondary)] rounded-md border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left space-y-4">
+            <div className="p-6 bg-[var(--color-bg-secondary)] border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left space-y-4">
               <h3 className="text-xl font-bold font-bebas tracking-wider text-black border-b-2 border-black pb-2">Floating 3D Objects</h3>
               <p className="text-sm text-gray-600 font-mono">Manage decorative 3D objects on the welcome screen.</p>
               
               {/* List */}
               <div className="space-y-3">
                   {currentFloatingObjects.map(obj => (
-                      <div key={obj.id} className="bg-gray-50 p-3 rounded-md border-2 border-black">
+                      <div key={obj.id} className="bg-gray-50 p-3 border-2 border-black">
                           <div className="flex justify-between items-center mb-2">
                               <div>
                                   <span className="font-bold text-black">{obj.name}</span>
-                                  <span className="ml-2 text-xs text-black font-mono bg-yellow-200 px-1.5 py-0.5 border border-black rounded">
+                                  <span className="ml-2 text-xs text-black font-mono bg-yellow-200 px-1.5 py-0.5 border border-black">
                                       {obj.type === 'built-in-camera' ? 'Built-in' : 'Custom Voxel'}
                                   </span>
                               </div>
                               <div className="flex gap-2">
-                                  <button onClick={() => handleObjectToggle(obj.id)} className={`p-1.5 border-2 border-black rounded bg-white hover:bg-gray-100 ${obj.isVisible ? 'text-green-600' : 'text-gray-400'}`}>
+                                  <button onClick={() => handleObjectToggle(obj.id)} className={`p-1.5 border-2 border-black bg-white hover:bg-gray-100 ${obj.isVisible ? 'text-green-600' : 'text-gray-400'}`}>
                                       {obj.isVisible ? <ToggleOnIcon /> : <ToggleOffIcon />}
                                   </button>
-                                  <button onClick={() => setEditingObjectId(editingObjectId === obj.id ? null : obj.id)} className={`p-1.5 border-2 border-black rounded bg-white hover:bg-gray-100 ${editingObjectId === obj.id ? 'bg-purple-100' : ''}`}>
+                                  <button onClick={() => setEditingObjectId(editingObjectId === obj.id ? null : obj.id)} className={`p-1.5 border-2 border-black bg-white hover:bg-gray-100 ${editingObjectId === obj.id ? 'bg-purple-100' : ''}`}>
                                       <EditIcon />
                                   </button>
-                                  <button onClick={() => handleDeleteObject(obj.id)} className="p-1.5 border-2 border-black rounded bg-white hover:bg-red-100 text-red-500">
+                                  <button onClick={() => handleDeleteObject(obj.id)} className="p-1.5 border-2 border-black bg-white hover:bg-red-100 text-red-500">
                                       <TrashIcon />
                                   </button>
                               </div>
@@ -1083,7 +1084,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                                         type="range" min="0.1" max="3" step="0.1" 
                                         value={obj.scale} 
                                         onChange={(e) => handleObjectPropertyChange(obj.id, 'scale', parseFloat(e.target.value))}
-                                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer border border-black"
+                                        className="w-full h-2 bg-gray-200 appearance-none cursor-pointer border border-black"
                                       />
                                   </div>
                                   <div>
@@ -1092,7 +1093,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                                         type="range" min="0" max="0.1" step="0.001" 
                                         value={obj.spinSpeed} 
                                         onChange={(e) => handleObjectPropertyChange(obj.id, 'spinSpeed', parseFloat(e.target.value))}
-                                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer border border-black"
+                                        className="w-full h-2 bg-gray-200 appearance-none cursor-pointer border border-black"
                                       />
                                   </div>
                                   <div>
@@ -1101,7 +1102,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                                         type="range" min="0" max="100" 
                                         value={obj.positionX} 
                                         onChange={(e) => handleObjectPropertyChange(obj.id, 'positionX', parseInt(e.target.value))}
-                                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer border border-black"
+                                        className="w-full h-2 bg-gray-200 appearance-none cursor-pointer border border-black"
                                       />
                                   </div>
                                   <div>
@@ -1110,7 +1111,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                                         type="range" min="0" max="100" 
                                         value={obj.positionY} 
                                         onChange={(e) => handleObjectPropertyChange(obj.id, 'positionY', parseInt(e.target.value))}
-                                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer border border-black"
+                                        className="w-full h-2 bg-gray-200 appearance-none cursor-pointer border border-black"
                                       />
                                   </div>
                                   
@@ -1131,7 +1132,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
 
                                   <div className="col-span-1 sm:col-span-2">
                                      <label className="flex items-center gap-2 cursor-pointer">
-                                        <input type="checkbox" checked={obj.isSpinning} onChange={(e) => handleObjectPropertyChange(obj.id, 'isSpinning', e.target.checked)} className="rounded border-2 border-black text-purple-600 focus:ring-0" />
+                                        <input type="checkbox" checked={obj.isSpinning} onChange={(e) => handleObjectPropertyChange(obj.id, 'isSpinning', e.target.checked)} className="border-2 border-black text-purple-600 focus:ring-0" />
                                         <span className="text-sm font-bold">Enable Spinning Animation</span>
                                      </label>
                                   </div>
@@ -1144,7 +1145,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
               {/* Upload New */}
               <div className="border-t-2 border-black pt-4">
                  <label className="block text-sm font-bold text-black font-mono uppercase mb-2">Add Custom Voxel Object (.json)</label>
-                 <label className="flex items-center justify-center w-full h-24 border-2 border-dashed border-black rounded-lg cursor-pointer hover:bg-yellow-100 transition-colors">
+                 <label className="flex items-center justify-center w-full h-24 border-2 border-dashed border-black cursor-pointer hover:bg-yellow-100 transition-colors">
                      <div className="flex flex-col items-center">
                          <AddIcon />
                          <span className="text-xs mt-1 font-bold text-black">Click to upload JSON</span>
@@ -1159,13 +1160,13 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
             </div>
 
             {/* Welcome Screen Background Customization */}
-            <div className="p-6 bg-[var(--color-bg-secondary)] rounded-md border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left space-y-4">
+            <div className="p-6 bg-[var(--color-bg-secondary)] border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left space-y-4">
               <h3 className="text-xl font-bold font-bebas tracking-wider text-black border-b-2 border-black pb-2">Welcome Screen Background</h3>
               <div>
                 <label className="block text-sm font-bold text-black font-mono uppercase">Background Type</label>
-                <div className="mt-2 grid grid-cols-2 lg:grid-cols-4 gap-2 rounded-lg bg-gray-100 p-1 border-2 border-black">
+                <div className="mt-2 grid grid-cols-2 lg:grid-cols-4 gap-2 bg-gray-100 p-1 border-2 border-black">
                   {(['default', 'color', 'image', 'camera'] as const).map(type => (
-                    <label key={type} className={`block text-center cursor-pointer rounded py-2 px-3 text-sm font-bold transition-colors ${settings.welcomeBgType === type ? 'bg-[var(--color-accent-primary)] text-white' : 'hover:bg-white text-black'}`}>
+                    <label key={type} className={`block text-center cursor-pointer py-2 px-3 text-sm font-bold transition-colors ${settings.welcomeBgType === type ? 'bg-[var(--color-accent-primary)] text-white' : 'hover:bg-white text-black'}`}>
                       <input type="radio" name="welcomeBgType" value={type} checked={settings.welcomeBgType === type} onChange={handleSettingsInputChange} className="sr-only"/>
                       {type.charAt(0).toUpperCase() + type.slice(1)}
                     </label>
@@ -1176,7 +1177,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
               {settings.welcomeBgType === 'color' && (
                 <div className="border-t-2 border-black pt-4">
                   <label htmlFor="welcomeBgColor" className="block text-sm font-bold text-black font-mono uppercase">Background Color</label>
-                  <input type="color" id="welcomeBgColor" name="welcomeBgColor" value={settings.welcomeBgColor || '#111827'} onChange={handleSettingsInputChange} className="mt-1 w-full h-12 p-1 bg-white border-2 border-black rounded-md cursor-pointer"/>
+                  <input type="color" id="welcomeBgColor" name="welcomeBgColor" value={settings.welcomeBgColor || '#111827'} onChange={handleSettingsInputChange} className="mt-1 w-full h-12 p-1 bg-white border-2 border-black cursor-pointer"/>
                 </div>
               )}
 
@@ -1209,14 +1210,14 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                     max="300"
                     value={settings.welcomeBgZoom || 100}
                     onChange={handleSettingsInputChange}
-                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer border border-black"
+                    className="w-full h-2 bg-gray-200 appearance-none cursor-pointer border border-black"
                   />
                 </div>
               )}
             </div>
             
              {/* Start Button Customization */}
-            <div className="p-6 bg-[var(--color-bg-secondary)] rounded-md border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left space-y-4">
+            <div className="p-6 bg-[var(--color-bg-secondary)] border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left space-y-4">
                 <h3 className="text-xl font-bold font-bebas tracking-wider text-black border-b-2 border-black pb-2">Start Button</h3>
                 <div>
                     <label htmlFor="startButtonText" className="block text-sm font-bold text-black font-mono uppercase">Button Text</label>
@@ -1237,14 +1238,14 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                             <label htmlFor="startButtonBgColor" className="block text-sm font-bold text-black font-mono uppercase">Background Color</label>
                             <button onClick={() => handleResetSetting('startButtonBgColor')} className="text-xs text-gray-500 hover:text-black underline font-mono">Reset</button>
                         </div>
-                        <input type="color" id="startButtonBgColor" name="startButtonBgColor" value={settings.startButtonBgColor || '#8B5CF6'} onChange={handleSettingsInputChange} className="w-full h-12 p-1 bg-white border-2 border-black rounded-md cursor-pointer"/>
+                        <input type="color" id="startButtonBgColor" name="startButtonBgColor" value={settings.startButtonBgColor || '#8B5CF6'} onChange={handleSettingsInputChange} className="w-full h-12 p-1 bg-white border-2 border-black cursor-pointer"/>
                     </div>
                     <div>
                         <div className="flex justify-between items-center mb-1">
                             <label htmlFor="startButtonTextColor" className="block text-sm font-bold text-black font-mono uppercase">Text Color</label>
                             <button onClick={() => handleResetSetting('startButtonTextColor')} className="text-xs text-gray-500 hover:text-black underline font-mono">Reset</button>
                         </div>
-                        <input type="color" id="startButtonTextColor" name="startButtonTextColor" value={settings.startButtonTextColor || '#FFFFFF'} onChange={handleSettingsInputChange} className="w-full h-12 p-1 bg-white border-2 border-black rounded-md cursor-pointer"/>
+                        <input type="color" id="startButtonTextColor" name="startButtonTextColor" value={settings.startButtonTextColor || '#FFFFFF'} onChange={handleSettingsInputChange} className="w-full h-12 p-1 bg-white border-2 border-black cursor-pointer"/>
                     </div>
                 </div>
                 
@@ -1263,8 +1264,8 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                                 onChange={handleSettingsInputChange}
                                 className="sr-only peer"
                             />
-                            <div className="w-12 h-6 bg-gray-300 rounded-full border-2 border-black peer-checked:bg-[var(--color-accent-primary)] transition-colors">
-                                <div className={`absolute top-1 left-1 w-4 h-4 bg-white border-2 border-black rounded-full transition-transform ${settings.isStartButtonShadowEnabled ? 'translate-x-6' : ''}`}></div>
+                            <div className="w-12 h-6 bg-gray-300 border-2 border-black peer-checked:bg-[var(--color-accent-primary)] transition-colors">
+                                <div className={`absolute top-1 left-1 w-4 h-4 bg-white border-2 border-black transition-transform ${settings.isStartButtonShadowEnabled ? 'translate-x-6' : ''}`}></div>
                             </div>
                         </div>
                     </label>
@@ -1272,7 +1273,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
             </div>
 
             {/* Online History Button Customization */}
-            <div className="p-6 bg-[var(--color-bg-secondary)] rounded-md border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left space-y-4">
+            <div className="p-6 bg-[var(--color-bg-secondary)] border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left space-y-4">
                 <h3 className="text-xl font-bold font-bebas tracking-wider text-black border-b-2 border-black pb-2">Online History Button (User)</h3>
                 
                 <div className="border-t-2 border-black pt-4">
@@ -1290,8 +1291,8 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                                 onChange={handleSettingsInputChange}
                                 className="sr-only peer"
                             />
-                            <div className="w-12 h-6 bg-gray-300 rounded-full border-2 border-black peer-checked:bg-[var(--color-accent-primary)] transition-colors">
-                                <div className={`absolute top-1 left-1 w-4 h-4 bg-white border-2 border-black rounded-full transition-transform ${settings.isOnlineHistoryEnabled ? 'translate-x-6' : ''}`}></div>
+                            <div className="w-12 h-6 bg-gray-300 border-2 border-black peer-checked:bg-[var(--color-accent-primary)] transition-colors">
+                                <div className={`absolute top-1 left-1 w-4 h-4 bg-white border-2 border-black transition-transform ${settings.isOnlineHistoryEnabled ? 'translate-x-6' : ''}`}></div>
                             </div>
                         </div>
                     </label>
@@ -1313,19 +1314,19 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 <div className="grid grid-cols-2 gap-4 border-t-2 border-black pt-4">
                     <label htmlFor="isOnlineHistoryButtonIconEnabled" className="flex items-center justify-between cursor-pointer">
                         <span className="text-sm font-bold text-black font-mono uppercase">Show Icon</span>
-                        <div className="relative"><input type="checkbox" id="isOnlineHistoryButtonIconEnabled" name="isOnlineHistoryButtonIconEnabled" checked={settings.isOnlineHistoryButtonIconEnabled ?? true} onChange={handleSettingsInputChange} className="sr-only peer" /><div className="w-12 h-6 bg-gray-300 rounded-full border-2 border-black peer-checked:bg-[var(--color-accent-primary)] transition-colors"><div className={`absolute top-1 left-1 w-4 h-4 bg-white border-2 border-black rounded-full transition-transform ${settings.isOnlineHistoryButtonIconEnabled ? 'translate-x-6' : ''}`}></div></div></div>
+                        <div className="relative"><input type="checkbox" id="isOnlineHistoryButtonIconEnabled" name="isOnlineHistoryButtonIconEnabled" checked={settings.isOnlineHistoryButtonIconEnabled ?? true} onChange={handleSettingsInputChange} className="sr-only peer" /><div className="w-12 h-6 bg-gray-300 border-2 border-black peer-checked:bg-[var(--color-accent-primary)] transition-colors"><div className={`absolute top-1 left-1 w-4 h-4 bg-white border-2 border-black transition-transform ${settings.isOnlineHistoryButtonIconEnabled ? 'translate-x-6' : ''}`}></div></div></div>
                     </label>
                     <label htmlFor="isOnlineHistoryButtonShadowEnabled" className="flex items-center justify-between cursor-pointer">
                         <span className="text-sm font-bold text-black font-mono uppercase">Enable Shadow</span>
-                        <div className="relative"><input type="checkbox" id="isOnlineHistoryButtonShadowEnabled" name="isOnlineHistoryButtonShadowEnabled" checked={settings.isOnlineHistoryButtonShadowEnabled ?? true} onChange={handleSettingsInputChange} className="sr-only peer" /><div className="w-12 h-6 bg-gray-300 rounded-full border-2 border-black peer-checked:bg-[var(--color-accent-primary)] transition-colors"><div className={`absolute top-1 left-1 w-4 h-4 bg-white border-2 border-black rounded-full transition-transform ${settings.isOnlineHistoryButtonShadowEnabled ? 'translate-x-6' : ''}`}></div></div></div>
+                        <div className="relative"><input type="checkbox" id="isOnlineHistoryButtonShadowEnabled" name="isOnlineHistoryButtonShadowEnabled" checked={settings.isOnlineHistoryButtonShadowEnabled ?? true} onChange={handleSettingsInputChange} className="sr-only peer" /><div className="w-12 h-6 bg-gray-300 border-2 border-black peer-checked:bg-[var(--color-accent-primary)] transition-colors"><div className={`absolute top-1 left-1 w-4 h-4 bg-white border-2 border-black transition-transform ${settings.isOnlineHistoryButtonShadowEnabled ? 'translate-x-6' : ''}`}></div></div></div>
                     </label>
                      <label htmlFor="isOnlineHistoryButtonFillEnabled" className="flex items-center justify-between cursor-pointer">
                         <span className="text-sm font-bold text-black font-mono uppercase">Enable Fill</span>
-                        <div className="relative"><input type="checkbox" id="isOnlineHistoryButtonFillEnabled" name="isOnlineHistoryButtonFillEnabled" checked={settings.isOnlineHistoryButtonFillEnabled ?? false} onChange={handleSettingsInputChange} className="sr-only peer" /><div className="w-12 h-6 bg-gray-300 rounded-full border-2 border-black peer-checked:bg-[var(--color-accent-primary)] transition-colors"><div className={`absolute top-1 left-1 w-4 h-4 bg-white border-2 border-black rounded-full transition-transform ${settings.isOnlineHistoryButtonFillEnabled ? 'translate-x-6' : ''}`}></div></div></div>
+                        <div className="relative"><input type="checkbox" id="isOnlineHistoryButtonFillEnabled" name="isOnlineHistoryButtonFillEnabled" checked={settings.isOnlineHistoryButtonFillEnabled ?? false} onChange={handleSettingsInputChange} className="sr-only peer" /><div className="w-12 h-6 bg-gray-300 border-2 border-black peer-checked:bg-[var(--color-accent-primary)] transition-colors"><div className={`absolute top-1 left-1 w-4 h-4 bg-white border-2 border-black transition-transform ${settings.isOnlineHistoryButtonFillEnabled ? 'translate-x-6' : ''}`}></div></div></div>
                     </label>
                     <label htmlFor="isOnlineHistoryButtonStrokeEnabled" className="flex items-center justify-between cursor-pointer">
                         <span className="text-sm font-bold text-black font-mono uppercase">Enable Stroke</span>
-                        <div className="relative"><input type="checkbox" id="isOnlineHistoryButtonStrokeEnabled" name="isOnlineHistoryButtonStrokeEnabled" checked={settings.isOnlineHistoryButtonStrokeEnabled ?? true} onChange={handleSettingsInputChange} className="sr-only peer" /><div className="w-12 h-6 bg-gray-300 rounded-full border-2 border-black peer-checked:bg-[var(--color-accent-primary)] transition-colors"><div className={`absolute top-1 left-1 w-4 h-4 bg-white border-2 border-black rounded-full transition-transform ${settings.isOnlineHistoryButtonStrokeEnabled ? 'translate-x-6' : ''}`}></div></div></div>
+                        <div className="relative"><input type="checkbox" id="isOnlineHistoryButtonStrokeEnabled" name="isOnlineHistoryButtonStrokeEnabled" checked={settings.isOnlineHistoryButtonStrokeEnabled ?? true} onChange={handleSettingsInputChange} className="sr-only peer" /><div className="w-12 h-6 bg-gray-300 border-2 border-black peer-checked:bg-[var(--color-accent-primary)] transition-colors"><div className={`absolute top-1 left-1 w-4 h-4 bg-white border-2 border-black transition-transform ${settings.isOnlineHistoryButtonStrokeEnabled ? 'translate-x-6' : ''}`}></div></div></div>
                     </label>
                 </div>
 
@@ -1336,7 +1337,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                                 <label htmlFor="onlineHistoryButtonFillColor" className="block text-sm font-bold text-black font-mono uppercase">Fill Color</label>
                                 <button onClick={() => handleResetSetting('onlineHistoryButtonFillColor')} className="text-xs text-gray-500 hover:text-black underline font-mono">Reset</button>
                             </div>
-                            <input type="color" id="onlineHistoryButtonFillColor" name="onlineHistoryButtonFillColor" value={settings.onlineHistoryButtonFillColor || '#1F2937'} onChange={handleSettingsInputChange} className="w-full h-12 p-1 bg-white border-2 border-black rounded-md cursor-pointer"/>
+                            <input type="color" id="onlineHistoryButtonFillColor" name="onlineHistoryButtonFillColor" value={settings.onlineHistoryButtonFillColor || '#1F2937'} onChange={handleSettingsInputChange} className="w-full h-12 p-1 bg-white border-2 border-black cursor-pointer"/>
                         </div>
                     )}
                     <div>
@@ -1344,7 +1345,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                             <label htmlFor="onlineHistoryButtonTextColor" className="block text-sm font-bold text-black font-mono uppercase">Text Color</label>
                             <button onClick={() => handleResetSetting('onlineHistoryButtonTextColor')} className="text-xs text-gray-500 hover:text-black underline font-mono">Reset</button>
                         </div>
-                        <input type="color" id="onlineHistoryButtonTextColor" name="onlineHistoryButtonTextColor" value={settings.onlineHistoryButtonTextColor || '#D1D5DB'} onChange={handleSettingsInputChange} className="w-full h-12 p-1 bg-white border-2 border-black rounded-md cursor-pointer"/>
+                        <input type="color" id="onlineHistoryButtonTextColor" name="onlineHistoryButtonTextColor" value={settings.onlineHistoryButtonTextColor || '#D1D5DB'} onChange={handleSettingsInputChange} className="w-full h-12 p-1 bg-white border-2 border-black cursor-pointer"/>
                     </div>
                     {(settings.isOnlineHistoryButtonStrokeEnabled) && (
                         <div>
@@ -1352,25 +1353,25 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                                 <label htmlFor="onlineHistoryButtonStrokeColor" className="block text-sm font-bold text-black font-mono uppercase">Stroke Color</label>
                                 <button onClick={() => handleResetSetting('onlineHistoryButtonStrokeColor')} className="text-xs text-gray-500 hover:text-black underline font-mono">Reset</button>
                             </div>
-                            <input type="color" id="onlineHistoryButtonStrokeColor" name="onlineHistoryButtonStrokeColor" value={settings.onlineHistoryButtonStrokeColor || '#9CA3AF'} onChange={handleSettingsInputChange} className="w-full h-12 p-1 bg-white border-2 border-black rounded-md cursor-pointer"/>
+                            <input type="color" id="onlineHistoryButtonStrokeColor" name="onlineHistoryButtonStrokeColor" value={settings.onlineHistoryButtonStrokeColor || '#9CA3AF'} onChange={handleSettingsInputChange} className="w-full h-12 p-1 bg-white border-2 border-black cursor-pointer"/>
                         </div>
                     )}
                 </div>
             </div>
 
             {/* Theme Settings */}
-            <div className="p-6 bg-[var(--color-bg-secondary)] rounded-md border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left space-y-4">
+            <div className="p-6 bg-[var(--color-bg-secondary)] border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left space-y-4">
               <h3 className="text-xl font-bold font-bebas tracking-wider text-black border-b-2 border-black pb-2">App Theme</h3>
               <div className="flex gap-2">
                 <button
                   onClick={() => handleThemeChange('dark')}
-                  className={`flex-1 font-bold py-3 px-4 rounded-md transition-all border-2 border-black ${settings.theme === 'dark' || !settings.theme ? 'bg-[var(--color-bg-primary)] text-black shadow-none translate-x-[2px] translate-y-[2px]' : 'bg-white hover:bg-gray-100 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]'}`}
+                  className={`flex-1 font-bold py-3 px-4 transition-all border-2 border-black ${settings.theme === 'dark' || !settings.theme ? 'bg-[var(--color-bg-primary)] text-black shadow-none translate-x-[2px] translate-y-[2px]' : 'bg-white hover:bg-gray-100 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]'}`}
                 >
                   Neo-Yellow
                 </button>
                 <button
                   onClick={() => handleThemeChange('light')}
-                  className={`flex-1 font-bold py-3 px-4 rounded-md transition-all border-2 border-black ${settings.theme === 'light' ? 'bg-white text-black shadow-none translate-x-[2px] translate-y-[2px]' : 'bg-gray-200 hover:bg-gray-300 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]'}`}
+                  className={`flex-1 font-bold py-3 px-4 transition-all border-2 border-black ${settings.theme === 'light' ? 'bg-white text-black shadow-none translate-x-[2px] translate-y-[2px]' : 'bg-gray-200 hover:bg-gray-300 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]'}`}
                 >
                   Neo-Clean
                 </button>
@@ -1382,7 +1383,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
         return (
            <div className="space-y-6">
              {/* Security Settings */}
-            <div className="p-6 bg-[var(--color-bg-secondary)] rounded-md border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left space-y-4">
+            <div className="p-6 bg-[var(--color-bg-secondary)] border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left space-y-4">
               <h3 className="text-xl font-bold font-bebas tracking-wider text-black border-b-2 border-black pb-2 flex items-center gap-2"><KeyIcon /> Security Settings</h3>
               
               {/* PIN Lock */}
@@ -1401,8 +1402,8 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                               onChange={handleSettingsInputChange}
                               className="sr-only peer"
                           />
-                          <div className="w-12 h-6 bg-gray-300 rounded-full border-2 border-black peer-checked:bg-[var(--color-accent-primary)] transition-colors">
-                              <div className={`absolute top-1 left-1 w-4 h-4 bg-white border-2 border-black rounded-full transition-transform ${settings.isPinLockEnabled ? 'translate-x-6' : ''}`}></div>
+                          <div className="w-12 h-6 bg-gray-300 border-2 border-black peer-checked:bg-[var(--color-accent-primary)] transition-colors">
+                              <div className={`absolute top-1 left-1 w-4 h-4 bg-white border-2 border-black transition-transform ${settings.isPinLockEnabled ? 'translate-x-6' : ''}`}></div>
                           </div>
                       </div>
                   </label>
@@ -1424,7 +1425,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                           />
                           <button
                               onClick={handleResetPin}
-                              className="bg-orange-400 hover:bg-orange-500 text-black font-bold py-2 px-4 rounded border-2 border-black shadow-[2px_2px_0px_0px_black] text-sm"
+                              className="bg-orange-400 hover:bg-orange-500 text-black font-bold py-2 px-4 border-2 border-black shadow-[2px_2px_0px_0px_black] text-sm"
                           >
                               Reset
                           </button>
@@ -1451,8 +1452,8 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                               onChange={handleSettingsInputChange}
                               className="sr-only peer"
                           />
-                          <div className="w-12 h-6 bg-gray-300 rounded-full border-2 border-black peer-checked:bg-[var(--color-accent-primary)] transition-colors">
-                              <div className={`absolute top-1 left-1 w-4 h-4 bg-white border-2 border-black rounded-full transition-transform ${settings.isStrictKioskMode ? 'translate-x-6' : ''}`}></div>
+                          <div className="w-12 h-6 bg-gray-300 border-2 border-black peer-checked:bg-[var(--color-accent-primary)] transition-colors">
+                              <div className={`absolute top-1 left-1 w-4 h-4 bg-white border-2 border-black transition-transform ${settings.isStrictKioskMode ? 'translate-x-6' : ''}`}></div>
                           </div>
                       </div>
                   </label>
@@ -1464,7 +1465,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
          return (
           <div className="space-y-6">
             {/* Session Code Management */}
-            <div className="p-6 bg-[var(--color-bg-secondary)] rounded-md border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left space-y-4">
+            <div className="p-6 bg-[var(--color-bg-secondary)] border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left space-y-4">
                 <h3 className="text-xl font-bold font-bebas tracking-wider text-black border-b-2 border-black pb-2">Session Management</h3>
                 
                 {/* Enable/Disable Session Code */}
@@ -1485,8 +1486,8 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                               onChange={handleToggleSessionCode}
                               className="sr-only peer"
                           />
-                          <div className="w-12 h-6 bg-gray-300 rounded-full border-2 border-black peer-checked:bg-[var(--color-accent-primary)] transition-colors">
-                              <div className={`absolute top-1 left-1 w-4 h-4 bg-white border-2 border-black rounded-full transition-transform ${settings.isSessionCodeEnabled ? 'translate-x-6' : ''}`}></div>
+                          <div className="w-12 h-6 bg-gray-300 border-2 border-black peer-checked:bg-[var(--color-accent-primary)] transition-colors">
+                              <div className={`absolute top-1 left-1 w-4 h-4 bg-white border-2 border-black transition-transform ${settings.isSessionCodeEnabled ? 'translate-x-6' : ''}`}></div>
                           </div>
                       </div>
                   </label>
@@ -1515,7 +1516,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                     </p>
                     <button
                         onClick={onManageSessions}
-                        className="w-full bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-white font-bold py-3 px-6 rounded text-lg transition-transform transform hover:translate-y-[-2px] border-2 border-black shadow-[4px_4px_0px_0px_black] active:shadow-none active:translate-x-[4px] active:translate-y-[4px] flex items-center justify-center gap-2"
+                        className="w-full bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-white font-bold py-3 px-6 text-lg transition-transform transform hover:translate-y-[-2px] border-2 border-black shadow-[4px_4px_0px_0px_black] active:shadow-none active:translate-x-[4px] active:translate-y-[4px] flex items-center justify-center gap-2"
                     >
                         <TicketIcon />
                         Manage Session Codes
@@ -1525,42 +1526,42 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
               </div>
 
              {/* Event Management */}
-              <div className="p-6 bg-[var(--color-bg-secondary)] rounded-md border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left">
+              <div className="p-6 bg-[var(--color-bg-secondary)] border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left">
                 <h3 className="text-xl font-bold mb-4 font-bebas tracking-wider text-black border-b-2 border-black pb-2">Event Management</h3>
                 <p className="text-gray-600 mb-4 font-mono text-sm">
                   Create, manage, and archive events. Assign specific templates to each event.
                 </p>
                 <button
                   onClick={onManageEvents}
-                  className="w-full bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-white font-bold py-3 px-6 rounded text-lg transition-transform transform hover:translate-y-[-2px] border-2 border-black shadow-[4px_4px_0px_0px_black] active:shadow-none active:translate-x-[4px] active:translate-y-[4px]"
+                  className="w-full bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-white font-bold py-3 px-6 text-lg transition-transform transform hover:translate-y-[-2px] border-2 border-black shadow-[4px_4px_0px_0px_black] active:shadow-none active:translate-x-[4px] active:translate-y-[4px]"
                 >
                   Manage Events
                 </button>
               </div>
 
               {/* Template Settings */}
-              <div className="p-6 bg-[var(--color-bg-secondary)] rounded-md border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left">
+              <div className="p-6 bg-[var(--color-bg-secondary)] border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left">
                 <h3 className="text-xl font-bold mb-4 font-bebas tracking-wider text-black border-b-2 border-black pb-2">Template Library</h3>
                 <p className="text-gray-600 mb-4 font-mono text-sm">
                   Add, edit, or delete photobooth templates from your global library.
                 </p>
                 <button
                   onClick={onManageTemplates}
-                  className="w-full bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-white font-bold py-3 px-6 rounded text-lg transition-transform transform hover:translate-y-[-2px] border-2 border-black shadow-[4px_4px_0px_0px_black] active:shadow-none active:translate-x-[4px] active:translate-y-[4px]"
+                  className="w-full bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-white font-bold py-3 px-6 text-lg transition-transform transform hover:translate-y-[-2px] border-2 border-black shadow-[4px_4px_0px_0px_black] active:shadow-none active:translate-x-[4px] active:translate-y-[4px]"
                 >
                   Manage All Templates
                 </button>
               </div>
               
               {/* History */}
-              <div className="p-6 bg-[var(--color-bg-secondary)] rounded-md border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left">
+              <div className="p-6 bg-[var(--color-bg-secondary)] border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left">
                   <h3 className="text-xl font-bold mb-4 font-bebas tracking-wider text-black border-b-2 border-black pb-2">Photobooth History</h3>
                   <p className="text-gray-600 mb-4 font-mono text-sm">
                       View, filter, and manage all photos taken during events.
                   </p>
                   <button
                       onClick={onViewHistory}
-                      className="w-full bg-[var(--color-info)] hover:bg-[var(--color-info-hover)] text-white font-bold py-3 px-6 rounded text-lg transition-transform transform hover:translate-y-[-2px] border-2 border-black shadow-[4px_4px_0px_0px_black] active:shadow-none active:translate-x-[4px] active:translate-y-[4px]"
+                      className="w-full bg-[var(--color-info)] hover:bg-[var(--color-info-hover)] text-white font-bold py-3 px-6 text-lg transition-transform transform hover:translate-y-[-2px] border-2 border-black shadow-[4px_4px_0px_0px_black] active:shadow-none active:translate-x-[4px] active:translate-y-[4px]"
                   >
                       View Photobooth History
                   </button>
@@ -1570,7 +1571,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
       case 'payment':
         return (
             <div className="space-y-6">
-                <div className="p-6 bg-[var(--color-bg-secondary)] rounded-md border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left space-y-4">
+                <div className="p-6 bg-[var(--color-bg-secondary)] border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left space-y-4">
                     <h3 className="text-xl font-bold font-bebas tracking-wider text-black border-b-2 border-black pb-2">Payment Mode</h3>
                     
                     {/* Enable/Disable Payment Mode */}
@@ -1591,8 +1592,8 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                                     onChange={handleTogglePaymentMode}
                                     className="sr-only peer"
                                 />
-                                <div className="w-12 h-6 bg-gray-300 rounded-full border-2 border-black peer-checked:bg-[var(--color-accent-primary)] transition-colors">
-                                    <div className={`absolute top-1 left-1 w-4 h-4 bg-white border-2 border-black rounded-full transition-transform ${settings.isPaymentEnabled ? 'translate-x-6' : ''}`}></div>
+                                <div className="w-12 h-6 bg-gray-300 border-2 border-black peer-checked:bg-[var(--color-accent-primary)] transition-colors">
+                                    <div className={`absolute top-1 left-1 w-4 h-4 bg-white border-2 border-black transition-transform ${settings.isPaymentEnabled ? 'translate-x-6' : ''}`}></div>
                                 </div>
                             </div>
                         </label>
@@ -1600,7 +1601,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 </div>
 
                 {/* QRIS Image Upload */}
-                <div className={`p-6 bg-[var(--color-bg-secondary)] rounded-md border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left space-y-4 ${!settings.isPaymentEnabled ? 'opacity-50 pointer-events-none' : ''}`}>
+                <div className={`p-6 bg-[var(--color-bg-secondary)] border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left space-y-4 ${!settings.isPaymentEnabled ? 'opacity-50 pointer-events-none' : ''}`}>
                     <h3 className="text-xl font-bold font-bebas tracking-wider text-black border-b-2 border-black pb-2">QRIS Image</h3>
                     <div>
                         <label htmlFor="qrisImageUrl" className="block text-sm font-bold text-black font-mono uppercase">QRIS Image URL</label>
@@ -1618,18 +1619,18 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 </div>
 
                 {/* Price Lists Management */}
-                <div className={`p-6 bg-[var(--color-bg-secondary)] rounded-md border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left space-y-4 ${!settings.isPaymentEnabled ? 'opacity-50 pointer-events-none' : ''}`}>
+                <div className={`p-6 bg-[var(--color-bg-secondary)] border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left space-y-4 ${!settings.isPaymentEnabled ? 'opacity-50 pointer-events-none' : ''}`}>
                     <h3 className="text-xl font-bold font-bebas tracking-wider text-black border-b-2 border-black pb-2">Price List Packages</h3>
                     
                     {/* Add New Price List */}
-                    <form onSubmit={handleAddPriceList} className="bg-gray-100 p-4 rounded-md border-2 border-black space-y-3">
+                    <form onSubmit={handleAddPriceList} className="bg-gray-100 p-4 border-2 border-black space-y-3">
                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                             <input
                                 type="text"
                                 placeholder="Package Name"
                                 value={newPriceName}
                                 onChange={e => setNewPriceName(e.target.value)}
-                                className="w-full bg-white border-2 border-black rounded px-3 py-2 text-sm font-bold"
+                                className="w-full bg-white border-2 border-black px-3 py-2 text-sm font-bold"
                                 required
                             />
                             <input
@@ -1637,7 +1638,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                                 placeholder="Price"
                                 value={newPriceAmount}
                                 onChange={e => setNewPriceAmount(e.target.value)}
-                                className="w-full bg-white border-2 border-black rounded px-3 py-2 text-sm font-bold"
+                                className="w-full bg-white border-2 border-black px-3 py-2 text-sm font-bold"
                                 required
                             />
                             <input
@@ -1646,7 +1647,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                                 value={newPriceTakes}
                                 onChange={e => setNewPriceTakes(Math.max(1, parseInt(e.target.value) || 1))}
                                 min="1"
-                                className="w-full bg-white border-2 border-black rounded px-3 py-2 text-sm font-bold"
+                                className="w-full bg-white border-2 border-black px-3 py-2 text-sm font-bold"
                                 required
                             />
                              <input
@@ -1654,10 +1655,10 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                                 placeholder="Description (optional)"
                                 value={newPriceDesc}
                                 onChange={e => setNewPriceDesc(e.target.value)}
-                                className="w-full bg-white border-2 border-black rounded px-3 py-2 text-sm font-bold"
+                                className="w-full bg-white border-2 border-black px-3 py-2 text-sm font-bold"
                             />
                          </div>
-                         <button type="submit" className="w-full bg-[var(--color-positive)] hover:bg-[var(--color-positive-hover)] text-black font-bold py-2 rounded border-2 border-black shadow-[2px_2px_0px_0px_black] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none text-sm uppercase">
+                         <button type="submit" className="w-full bg-[var(--color-positive)] hover:bg-[var(--color-positive-hover)] text-black font-bold py-2 border-2 border-black shadow-[2px_2px_0px_0px_black] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none text-sm uppercase">
                              Add Package
                          </button>
                     </form>
@@ -1665,13 +1666,13 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                     {/* List Existing Packages */}
                     <div className="space-y-2 mt-4">
                         {(settings.priceLists || []).map(pkg => (
-                            <div key={pkg.id} className="flex items-center justify-between p-3 bg-white rounded-md border-2 border-black shadow-[2px_2px_0px_0px_black]">
+                            <div key={pkg.id} className="flex items-center justify-between p-3 bg-white border-2 border-black shadow-[2px_2px_0px_0px_black]">
                                 <div>
                                     <p className="font-bold text-black uppercase">{pkg.name} - Rp {pkg.price.toLocaleString()}</p>
                                     <p className="text-xs text-[var(--color-accent-primary)] font-bold">{(pkg.maxTakes || 1)} Session(s)</p>
                                     <p className="text-xs text-gray-600">{pkg.description}</p>
                                 </div>
-                                <button onClick={() => handleDeletePriceList(pkg.id)} className="text-red-500 hover:text-red-700 p-2 border-2 border-transparent hover:border-black rounded">
+                                <button onClick={() => handleDeletePriceList(pkg.id)} className="text-red-500 hover:text-red-700 p-2 border-2 border-transparent hover:border-black">
                                     <TrashIcon />
                                 </button>
                             </div>
@@ -1683,12 +1684,12 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 </div>
 
                 {/* Payment History View */}
-                <div className="p-6 bg-[var(--color-bg-secondary)] rounded-md border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left space-y-4">
+                <div className="p-6 bg-[var(--color-bg-secondary)] border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left space-y-4">
                     <div className="flex justify-between items-center border-b-2 border-black pb-2">
                         <h3 className="text-xl font-bold font-bebas tracking-wider text-black">Recent Payments</h3>
                         <button 
                             onClick={handleRefreshPayments}
-                            className={`p-2 bg-white border-2 border-black hover:bg-gray-100 rounded-full transition-all text-black shadow-[2px_2px_0px_0px_black] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none ${isRefreshingPayments ? 'animate-spin text-[var(--color-accent-primary)]' : ''}`}
+                            className={`p-2 bg-white border-2 border-black hover:bg-gray-100 transition-all text-black shadow-[2px_2px_0px_0px_black] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none ${isRefreshingPayments ? 'animate-spin text-[var(--color-accent-primary)]' : ''}`}
                             title="Refresh List"
                             disabled={isRefreshingPayments}
                         >
@@ -1698,7 +1699,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                     
                     <div className="relative min-h-[150px]">
                         {isRefreshingPayments && (
-                            <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-10 flex flex-col items-center justify-center rounded-lg animate-fade-in border-2 border-black">
+                            <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-10 flex flex-col items-center justify-center animate-fade-in border-2 border-black">
                                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black mb-2"></div>
                                 <p className="text-xs text-black font-bold font-mono">Refreshing...</p>
                             </div>
@@ -1706,7 +1707,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                         
                         <div className="max-h-[600px] overflow-y-auto scrollbar-thin space-y-2 pr-1">
                             {payments.map(pay => (
-                                <div key={pay.id} className="p-3 bg-white rounded border-2 border-black flex justify-between items-center text-sm shadow-[2px_2px_0px_0px_gray]">
+                                <div key={pay.id} className="p-3 bg-white border-2 border-black flex justify-between items-center text-sm shadow-[2px_2px_0px_0px_gray]">
                                     <div>
                                         <p className="font-bold text-black uppercase">{pay.userName}</p>
                                         <p className="text-xs text-gray-600 font-mono">{pay.priceListName} - Rp {pay.amount.toLocaleString()}</p>
@@ -1718,13 +1719,13 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                                         )}
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <span className={`px-2 py-1 rounded border-2 border-black text-xs font-bold uppercase ${pay.status === 'verified' ? 'bg-green-300 text-black' : 'bg-yellow-300 text-black'}`}>
+                                        <span className={`px-2 py-1 border-2 border-black text-xs font-bold uppercase ${pay.status === 'verified' ? 'bg-green-300 text-black' : 'bg-yellow-300 text-black'}`}>
                                             {pay.status}
                                         </span>
                                         {pay.status === 'pending' && (
                                             <button 
                                                 onClick={() => onAcceptPayment(pay.id)}
-                                                className="p-1.5 bg-green-200 hover:bg-green-300 text-black border-2 border-black rounded transition-colors"
+                                                className="p-1.5 bg-green-200 hover:bg-green-300 text-black border-2 border-black transition-colors"
                                                 title="Accept Payment"
                                             >
                                                 <CheckIcon />
@@ -1732,7 +1733,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                                         )}
                                         <button 
                                             onClick={() => handleViewPaymentPhoto(pay)}
-                                            className="p-1.5 bg-blue-200 hover:bg-blue-300 text-black border-2 border-black rounded transition-colors disabled:opacity-50"
+                                            className="p-1.5 bg-blue-200 hover:bg-blue-300 text-black border-2 border-black transition-colors disabled:opacity-50"
                                             title="View Photos"
                                             disabled={!!isFindingPhoto}
                                         >
@@ -1744,7 +1745,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                                         </button>
                                         <button 
                                             onClick={() => handleOpenClientWeb(pay.userName)}
-                                            className="p-1.5 bg-purple-200 hover:bg-purple-300 text-black border-2 border-black rounded transition-colors"
+                                            className="p-1.5 bg-purple-200 hover:bg-purple-300 text-black border-2 border-black transition-colors"
                                             title="Open Web Link"
                                         >
                                             <GlobeIcon />
@@ -1752,7 +1753,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                                         {pay.whatsappNumber && (
                                             <button 
                                                 onClick={() => handleSendWhatsapp(pay)}
-                                                className="p-1.5 bg-green-200 hover:bg-green-300 text-black border-2 border-black rounded transition-colors disabled:opacity-50"
+                                                className="p-1.5 bg-green-200 hover:bg-green-300 text-black border-2 border-black transition-colors disabled:opacity-50"
                                                 title="Send Web Link to WhatsApp"
                                                 disabled={!!sendingWhatsappId}
                                             >
@@ -1765,7 +1766,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                                         )}
                                         <button 
                                             onClick={() => onDeletePayment(pay.id)}
-                                            className="p-1.5 bg-red-200 hover:bg-red-300 text-black border-2 border-black rounded transition-colors"
+                                            className="p-1.5 bg-red-200 hover:bg-red-300 text-black border-2 border-black transition-colors"
                                             title="Delete Payment"
                                         >
                                             <TrashIcon />
@@ -1780,7 +1781,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                         <div className="flex justify-end pt-4 border-t-2 border-black">
                             <button
                                 onClick={onDeleteAllPayments}
-                                className="bg-[var(--color-negative)] hover:bg-[var(--color-negative-hover)] text-white font-bold py-2 px-6 rounded text-sm transition-transform transform hover:translate-y-[-2px] border-2 border-black shadow-[2px_2px_0px_0px_black] active:shadow-none active:translate-x-[2px] active:translate-y-[2px] flex items-center justify-center gap-2"
+                                className="bg-[var(--color-negative)] hover:bg-[var(--color-negative-hover)] text-white font-bold py-2 px-6 text-sm transition-transform transform hover:translate-y-[-2px] border-2 border-black shadow-[2px_2px_0px_0px_black] active:shadow-none active:translate-x-[2px] active:translate-y-[2px] flex items-center justify-center gap-2"
                             >
                                 <TrashIcon />
                                 Hapus Semua Riwayat
@@ -1794,21 +1795,21 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
         return (
           <div className="space-y-6">
             {/* Review Management Button */}
-            <div className="p-6 bg-[var(--color-bg-secondary)] rounded-md border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left">
+            <div className="p-6 bg-[var(--color-bg-secondary)] border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left">
               <h3 className="text-xl font-bold mb-4 font-bebas tracking-wider text-black border-b-2 border-black pb-2">Review Management</h3>
               <p className="text-gray-600 mb-4 font-mono text-sm">
                 View and delete user-submitted reviews and testimonials.
               </p>
               <button
                 onClick={onManageReviews}
-                className="w-full bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-white font-bold py-3 px-6 rounded text-lg transition-transform transform hover:translate-y-[-2px] border-2 border-black shadow-[4px_4px_0px_0px_black] active:shadow-none active:translate-x-[4px] active:translate-y-[4px]"
+                className="w-full bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-white font-bold py-3 px-6 text-lg transition-transform transform hover:translate-y-[-2px] border-2 border-black shadow-[4px_4px_0px_0px_black] active:shadow-none active:translate-x-[4px] active:translate-y-[4px]"
               >
                 Manage Reviews
               </button>
             </div>
 
             {/* Review Reward Settings */}
-            <div className="p-6 bg-[var(--color-bg-secondary)] rounded-md border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left space-y-4">
+            <div className="p-6 bg-[var(--color-bg-secondary)] border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left space-y-4">
               <h3 className="text-xl font-bold font-bebas tracking-wider text-black border-b-2 border-black pb-2">Review Rewards</h3>
               <div className="border-t-2 border-black pt-4">
                 <label htmlFor="isReviewForFreebieEnabled" className="flex items-center justify-between cursor-pointer">
@@ -1818,8 +1819,8 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                     </div>
                     <div className="relative">
                         <input type="checkbox" id="isReviewForFreebieEnabled" name="isReviewForFreebieEnabled" checked={settings.isReviewForFreebieEnabled ?? false} onChange={handleSettingsInputChange} className="sr-only peer" />
-                        <div className="w-12 h-6 bg-gray-300 rounded-full border-2 border-black peer-checked:bg-[var(--color-accent-primary)] transition-colors">
-                            <div className={`absolute top-1 left-1 w-4 h-4 bg-white border-2 border-black rounded-full transition-transform ${settings.isReviewForFreebieEnabled ? 'translate-x-6' : ''}`}></div>
+                        <div className="w-12 h-6 bg-gray-300 border-2 border-black peer-checked:bg-[var(--color-accent-primary)] transition-colors">
+                            <div className={`absolute top-1 left-1 w-4 h-4 bg-white border-2 border-black transition-transform ${settings.isReviewForFreebieEnabled ? 'translate-x-6' : ''}`}></div>
                         </div>
                     </div>
                 </label>
@@ -1842,7 +1843,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
             </div>
 
             {/* Review Slider Settings */}
-            <div className="p-6 bg-[var(--color-bg-secondary)] rounded-md border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left space-y-4">
+            <div className="p-6 bg-[var(--color-bg-secondary)] border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left space-y-4">
               <h3 className="text-xl font-bold font-bebas tracking-wider text-black border-b-2 border-black pb-2">Review Slider</h3>
               <div className="border-t-2 border-black pt-4">
                 <label htmlFor="isReviewSliderEnabled" className="flex items-center justify-between cursor-pointer">
@@ -1852,8 +1853,8 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                     </div>
                     <div className="relative">
                         <input type="checkbox" id="isReviewSliderEnabled" name="isReviewSliderEnabled" checked={settings.isReviewSliderEnabled ?? true} onChange={handleSettingsInputChange} className="sr-only peer" />
-                        <div className="w-12 h-6 bg-gray-300 rounded-full border-2 border-black peer-checked:bg-[var(--color-accent-primary)] transition-colors">
-                            <div className={`absolute top-1 left-1 w-4 h-4 bg-white border-2 border-black rounded-full transition-transform ${settings.isReviewSliderEnabled ? 'translate-x-6' : ''}`}></div>
+                        <div className="w-12 h-6 bg-gray-300 border-2 border-black peer-checked:bg-[var(--color-accent-primary)] transition-colors">
+                            <div className={`absolute top-1 left-1 w-4 h-4 bg-white border-2 border-black transition-transform ${settings.isReviewSliderEnabled ? 'translate-x-6' : ''}`}></div>
                         </div>
                     </div>
                 </label>
@@ -1874,7 +1875,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
             </div>
             
             {/* Rating Screen Text Customization */}
-            <div className="p-6 bg-[var(--color-bg-secondary)] rounded-md border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left space-y-4">
+            <div className="p-6 bg-[var(--color-bg-secondary)] border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left space-y-4">
                 <h3 className="text-xl font-bold font-bebas tracking-wider text-black border-b-2 border-black pb-2">Rating Screen Text Customization</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t-2 border-black pt-4">
                     <div>
@@ -1929,7 +1930,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
       case 'network':
         return (
             <div className="space-y-6">
-                <div className="p-6 bg-[var(--color-bg-secondary)] rounded-md border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left">
+                <div className="p-6 bg-[var(--color-bg-secondary)] border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left">
                     <h3 className="text-xl font-bold text-black mb-4 font-bebas tracking-wider flex items-center gap-2 border-b-2 border-black pb-2">
                         <SpeedIcon /> Internet Speed Test
                     </h3>
@@ -1939,7 +1940,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                         {/* Ping Gauge */}
-                        <div className="bg-white p-4 rounded-md flex flex-col items-center justify-center border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                        <div className="bg-white p-4 flex flex-col items-center justify-center border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
                             <span className="text-black text-sm uppercase tracking-wider mb-2 font-bold">Ping</span>
                             <div className="flex items-end gap-1">
                                 {testStatus === 'ping' ? (
@@ -1952,7 +1953,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                         </div>
 
                         {/* Download Gauge */}
-                        <div className="bg-white p-4 rounded-md flex flex-col items-center justify-center border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                        <div className="bg-white p-4 flex flex-col items-center justify-center border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
                             <span className="text-black text-sm uppercase tracking-wider mb-2 font-bold">Download</span>
                             <div className="flex items-end gap-1">
                                 {testStatus === 'download' ? (
@@ -1965,7 +1966,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                         </div>
 
                         {/* Upload Gauge */}
-                        <div className="bg-white p-4 rounded-md flex flex-col items-center justify-center border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                        <div className="bg-white p-4 flex flex-col items-center justify-center border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
                             <span className="text-black text-sm uppercase tracking-wider mb-2 font-bold">Upload</span>
                             <div className="flex items-end gap-1">
                                 {testStatus === 'upload' ? (
@@ -1982,7 +1983,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                         <button
                             onClick={runSpeedTest}
                             disabled={testStatus !== 'idle'}
-                            className="bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-white font-bold py-3 px-8 rounded text-xl transition-transform transform hover:translate-y-[-2px] border-2 border-black shadow-[4px_4px_0px_0px_black] active:shadow-none active:translate-x-[4px] active:translate-y-[4px] mx-auto disabled:bg-gray-300 disabled:cursor-wait"
+                            className="bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-white font-bold py-3 px-8 text-xl transition-transform transform hover:translate-y-[-2px] border-2 border-black shadow-[4px_4px_0px_0px_black] active:shadow-none active:translate-x-[4px] active:translate-y-[4px] mx-auto disabled:bg-gray-300 disabled:cursor-wait"
                         >
                             {testStatus !== 'idle' ? 'Running Test...' : 'Start Speed Test'}
                         </button>
@@ -1996,12 +1997,12 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
       case 'master':
         return isMasterAdmin ? (
           <div className="space-y-6">
-            <div className={`p-6 rounded-md border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left bg-purple-100`}>
+            <div className={`p-6 border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left bg-purple-100`}>
               <h3 className={`text-xl font-bold text-black border-b-2 border-black pb-2 font-bebas tracking-wider`}>Master Admin Area</h3>
               <p className={`text-gray-700 mb-4 font-mono text-sm`}>Manage tenant admins who use your photobooth platform.</p>
               <button
                 onClick={onManageTenants}
-                className="w-full bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-white font-bold py-3 px-6 rounded text-lg transition-transform transform hover:translate-y-[-2px] border-2 border-black shadow-[4px_4px_0px_0px_black] active:shadow-none active:translate-x-[4px] active:translate-y-[4px] flex items-center justify-center gap-2"
+                className="w-full bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-white font-bold py-3 px-6 text-lg transition-transform transform hover:translate-y-[-2px] border-2 border-black shadow-[4px_4px_0px_0px_black] active:shadow-none active:translate-x-[4px] active:translate-y-[4px] flex items-center justify-center gap-2"
               >
                 <UsersIcon />
                 Manage Admins
@@ -2018,7 +2019,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
     <>
       {/* Toast Notification */}
       {showPrintConfigSuccess && (
-        <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 bg-green-400 border-2 border-black text-black px-6 py-3 rounded-none shadow-[4px_4px_0px_0px_black] flex items-center gap-2 animate-bounce">
+        <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 bg-green-400 border-2 border-black text-black px-6 py-3 shadow-[4px_4px_0px_0px_black] flex items-center gap-2 animate-bounce">
             <CheckIcon />
             <span className="font-bold font-mono">Settings Saved</span>
         </div>
@@ -2026,7 +2027,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
       
       {/* Copy Toast Notification */}
       {clipboardMessage && (
-        <div className="fixed bottom-10 left-1/2 transform -translate-x-1/2 z-50 bg-[var(--color-accent-primary)] border-2 border-black text-white px-6 py-3 rounded-none shadow-[4px_4px_0px_0px_black] flex items-center gap-2 animate-fade-in-up">
+        <div className="fixed bottom-10 left-1/2 transform -translate-x-1/2 z-50 bg-[var(--color-accent-primary)] border-2 border-black text-white px-6 py-3 shadow-[4px_4px_0px_0px_black] flex items-center gap-2 animate-fade-in-up">
             <CheckIcon />
             <span className="font-bold font-mono">{clipboardMessage}</span>
         </div>
@@ -2039,7 +2040,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
           onClick={() => setViewingPhotos(null)}
         >
           <div
-            className="relative bg-[var(--color-bg-secondary)] rounded-md shadow-[8px_8px_0px_0px_rgba(255,255,255,0.5)] w-full h-full max-w-5xl flex flex-col p-4 border-2 border-black"
+            className="relative bg-[var(--color-bg-secondary)] shadow-[8px_8px_0px_0px_rgba(255,255,255,0.5)] w-full h-full max-w-5xl flex flex-col p-4 border-2 border-black"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex justify-between items-center mb-4 pb-2 border-b-2 border-black">
@@ -2048,7 +2049,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 </h3>
                 <button
                   onClick={() => setViewingPhotos(null)}
-                  className="bg-red-500 hover:bg-red-600 text-white p-2 rounded border-2 border-black shadow-[2px_2px_0px_0px_black] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none"
+                  className="bg-red-500 hover:bg-red-600 text-white p-2 border-2 border-black shadow-[2px_2px_0px_0px_black] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none"
                   aria-label="Close"
                 >
                   <CloseIcon />
@@ -2058,7 +2059,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
             <div className="flex-grow overflow-y-auto scrollbar-thin p-2">
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                     {viewingPhotos.map((photo, index) => (
-                        <div key={index} className="relative group bg-gray-200 rounded-md overflow-hidden border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,0.5)]">
+                        <div key={index} className="relative group bg-gray-200 overflow-hidden border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,0.5)]">
                             <div className="aspect-[2/3] w-full">
                                 <img
                                     src={photo.url}
@@ -2071,7 +2072,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                                 <button
                                     onClick={() => handleDownloadPhoto(photo)}
                                     disabled={downloadingPhotoIds.includes(photo.nama)}
-                                    className="bg-[var(--color-positive)] hover:bg-[var(--color-positive-hover)] text-black font-bold py-2 px-6 rounded text-sm transition-transform transform hover:scale-105 border-2 border-black shadow-[2px_2px_0px_0px_black] flex items-center gap-2 disabled:bg-gray-400 disabled:cursor-wait"
+                                    className="bg-[var(--color-positive)] hover:bg-[var(--color-positive-hover)] text-black font-bold py-2 px-6 text-sm transition-transform transform hover:scale-105 border-2 border-black shadow-[2px_2px_0px_0px_black] flex items-center gap-2 disabled:bg-gray-400 disabled:cursor-wait"
                                 >
                                     {downloadingPhotoIds.includes(photo.nama) ? <UploadingIcon /> : <DownloadIcon />}
                                     <span>Download</span>
@@ -2093,7 +2094,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
         <div className="absolute top-4 left-4 z-10">
           <button 
             onClick={onBack}
-            className="bg-white hover:bg-gray-100 text-black border-2 border-black font-bold p-3 rounded-full transition-colors shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-[4px] active:translate-y-[4px]"
+            className="bg-white hover:bg-gray-100 text-black border-2 border-black font-bold p-3 transition-colors shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-[4px] active:translate-y-[4px]"
             aria-label="Go Back"
           >
             <BackIcon />
@@ -2168,7 +2169,6 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
             .input-style {
                 background-color: #FFFFFF;
                 border: 2px solid #000000;
-                border-radius: 0.375rem;
                 box-shadow: 2px 2px 0px 0px #000000;
                 padding: 0.5rem 0.75rem;
                 color: #000000;

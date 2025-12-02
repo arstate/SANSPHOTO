@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -21,91 +22,90 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Bebas+Neue&family=Roboto:wght@400;700&family=Lora:ital@0;1&family=Oswald:wght@400;700&family=Lobster&family=Pacifico&family=Caveat&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
       :root {
-        /* NEO-BRUTALISM PALETTE (Dark/Default Mode is actually Colorful in this theme) */
+        /* NEO-BRUTALISM PALETTE */
         --color-bg-primary: #FFDE59; /* Vibrant Yellow */
         --color-bg-secondary: #FFFFFF; /* Stark White for cards */
-        --color-bg-tertiary: #F3F4F6; /* Light Grey for inner sections */
-        --color-bg-overlay: rgba(0, 0, 0, 0.85);
+        --color-bg-tertiary: #E0E7FF; /* Light Indigo for inner sections */
+        --color-bg-overlay: rgba(0, 0, 0, 0.9);
 
         --color-border-primary: #000000; /* Pitch Black Borders */
         --color-border-secondary: #000000;
-        --color-border-focus: #8B5CF6;
-        --color-border-active: #000000;
-
-        --color-text-primary: #000000; /* Always Black Text for readability on Yellow/White */
-        --color-text-secondary: #1F2937;
+        --color-border-focus: #000000;
+        
+        --color-text-primary: #000000; 
+        --color-text-secondary: #000000;
         --color-text-muted: #4B5563;
-        --color-text-placeholder: #6B7280;
-        --color-text-accent: #7C3AED;
+        --color-text-accent: #000000;
 
-        /* Buttons & Accents - High Saturation */
-        --color-accent-primary: #8B5CF6; /* Vibrant Purple */
-        --color-accent-primary-hover: #7C3AED;
+        /* Buttons & Accents - High Contrast */
+        --color-accent-primary: #A855F7; /* Purple */
+        --color-accent-primary-hover: #9333EA;
         --color-accent-primary-text: #FFFFFF;
 
         --color-accent-secondary: #FB923C; /* Orange */
         --color-accent-secondary-hover: #F97316;
         --color-accent-secondary-text: #000000;
 
-        --color-positive: #22C55E; /* Bright Green */
-        --color-positive-hover: #16A34A;
+        --color-positive: #4ADE80; /* Bright Green */
+        --color-positive-hover: #22C55E;
         --color-positive-text: #000000;
         
-        --color-negative: #EF4444; /* Bright Red */
-        --color-negative-hover: #DC2626;
-        --color-negative-text: #FFFFFF;
+        --color-negative: #F87171; /* Bright Red */
+        --color-negative-hover: #EF4444;
+        --color-negative-text: #000000;
         
-        --color-info: #06B6D4; /* Cyan */
-        --color-info-hover: #0891B2;
+        --color-info: #67E8F9; /* Cyan */
+        --color-info-hover: #06B6D4;
         --color-info-text: #000000;
 
         /* Brutalist Specifics */
         --border-width: 3px;
-        --shadow-hard: 4px 4px 0px 0px #000000;
-        --shadow-hard-sm: 2px 2px 0px 0px #000000;
+        --shadow-hard: 5px 5px 0px 0px #000000;
+        --shadow-hard-sm: 3px 3px 0px 0px #000000;
         --shadow-hard-lg: 8px 8px 0px 0px #000000;
+        --shadow-hard-hover: 2px 2px 0px 0px #000000;
       }
 
-      /* Light Theme Variant (Alternative Palette - "Clean Brutalism") */
+      /* Light Theme Variant */
       .light {
-        --color-bg-primary: #FFFFFF;
-        --color-bg-secondary: #F0F0F0;
-        --color-bg-tertiary: #E5E7EB;
-        --color-bg-overlay: rgba(255, 255, 255, 0.9);
-
-        --color-border-primary: #000000;
+        --color-bg-primary: #F3F4F6;
+        --color-bg-secondary: #FFFFFF;
+        --color-bg-tertiary: #D1D5DB;
+        --color-bg-overlay: rgba(255, 255, 255, 0.95);
         
         --color-text-primary: #000000;
-        --color-text-secondary: #1F2937;
         
-        --color-accent-primary: #000000; /* Black Accent */
-        --color-accent-primary-hover: #333333;
+        --color-accent-primary: #000000;
         --color-accent-primary-text: #FFFFFF;
-        
-        --color-accent-secondary: #FFDE59; /* Yellow Accent */
-        --color-accent-secondary-hover: #FACC15;
-        --color-accent-secondary-text: #000000;
+      }
+
+      /* --- GLOBAL NEO-BRUTALISM OVERRIDES --- */
+      
+      /* KILL ALL ROUNDED CORNERS */
+      * {
+        border-radius: 0px !important;
       }
 
       body {
         font-family: 'Poppins', sans-serif;
         overflow: hidden;
         background-color: var(--color-bg-primary);
-        /* Background Pattern for Texture */
-        background-image: radial-gradient(#000000 1px, transparent 1px);
-        background-size: 20px 20px;
+        /* Dot Pattern */
+        background-image: radial-gradient(#000000 10%, transparent 11%);
+        background-size: 24px 24px;
         display: flex;
         align-items: center;
         justify-content: center;
         height: 100vh;
         margin: 0;
         color: var(--color-text-primary);
-        transition: background-color 0.3s ease, color 0.3s ease;
+        transition: background-color 0.3s ease;
         overscroll-behavior: none;
       }
       
       .font-bebas {
         font-family: 'Bebas Neue', sans-serif;
+        letter-spacing: 0.05em;
       }
       .font-mono {
         font-family: 'Roboto Mono', monospace;
@@ -122,7 +122,7 @@
         border: var(--border-width) solid var(--color-border-primary);
         box-shadow: var(--shadow-hard-lg);
         transition: background-color 0.3s ease;
-        overflow: hidden; /* Ensure content stays within border */
+        overflow: hidden;
       }
       
       #app-container.responsive-mode {
@@ -138,31 +138,29 @@
         width: 100%;
         height: 100%;
         overflow: hidden;
-        /* Ensure inner content has a solid background if needed, usually transparent is fine */
       }
 
       /* Custom Scrollbar - Brutalist */
       .scrollbar-thin {
         scrollbar-width: thin;
-        scrollbar-color: var(--color-border-primary) var(--color-bg-tertiary);
+        scrollbar-color: var(--color-border-primary) transparent;
       }
       .scrollbar-thin::-webkit-scrollbar {
-        height: 12px;
-        width: 12px;
+        height: 14px;
+        width: 14px;
       }
       .scrollbar-thin::-webkit-scrollbar-track {
         background: var(--color-bg-tertiary);
         border-left: 2px solid black;
       }
       .scrollbar-thin::-webkit-scrollbar-thumb {
-        background-color: var(--color-accent-primary);
-        border: 2px solid black;
+        background-color: var(--color-border-primary);
+        border: 2px solid white;
       }
       .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-        background-color: var(--color-accent-primary-hover);
+        background-color: var(--color-accent-primary);
       }
 
-      /* --- NEO-BRUTALISM GLOBAL OVERRIDES --- */
       
       /* Buttons */
       button {
@@ -170,23 +168,29 @@
         box-shadow: var(--shadow-hard) !important;
         transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1) !important;
         text-transform: uppercase;
+        font-weight: 800 !important;
         letter-spacing: 0.05em;
+        background-color: var(--color-bg-secondary); /* Default base */
+      }
+      button:hover:not(:disabled) {
+        transform: translate(-2px, -2px);
+        box-shadow: 7px 7px 0px 0px #000000 !important;
       }
       button:active:not(:disabled) {
-        transform: translate(4px, 4px) !important;
-        box-shadow: none !important;
+        transform: translate(2px, 2px) !important;
+        box-shadow: var(--shadow-hard-hover) !important;
       }
       button:disabled {
         opacity: 0.6;
         cursor: not-allowed;
         box-shadow: none !important;
-        background-color: #E5E7EB !important;
-        color: #9CA3AF !important;
-        border-color: #9CA3AF !important;
-      }
-      button.transform-none {
+        background-color: #D1D5DB !important;
+        color: #6B7280 !important;
+        border-color: #6B7280 !important;
         transform: none !important;
       }
+
+      /* Specific Button Colors when defined via style prop or class will override background-color above due to specificity */
 
       /* Cards / Containers */
       .bg-\[var\(--color-bg-secondary\)\] {
@@ -205,28 +209,43 @@
       select {
         background-color: #FFFFFF !important;
         border: var(--border-width) solid var(--color-border-primary) !important;
-        border-radius: 0.5rem !important;
         box-shadow: var(--shadow-hard-sm) !important;
         color: #000000 !important;
         font-family: 'Roboto Mono', monospace !important;
-        font-weight: 600 !important;
+        font-weight: 700 !important;
+        padding: 0.75rem !important;
       }
       input:focus, textarea:focus, select:focus {
         outline: none !important;
         box-shadow: var(--shadow-hard) !important;
-        background-color: #FEF3C7 !important; /* Light yellow on focus */
+        background-color: #FEF9C3 !important; /* Pastel Yellow on focus */
+        transform: translate(-2px, -2px);
       }
 
-      /* Text Shadows for overlay text */
+      /* Text Shadows */
       .text-shadow-hard {
-        text-shadow: 2px 2px 0px #000000;
+        text-shadow: 3px 3px 0px #000000;
       }
+
+      /* Special Case for "Circle" elements that MUST be circles (like radio buttons or specific icons) */
+      .rounded-full {
+         border-radius: 50% !important;
+      }
+      
+      /* Exception for Toggle Switch tracks - keeping them square for brutalism */
+      .peer:checked ~ div {
+        border-radius: 0px !important; 
+      }
+      .peer ~ div {
+        border-radius: 0px !important;
+      }
+      /* But the knob inside usually looks better square in brutalism too, handled by global * rule */
 
       @keyframes shake {
-        10%, 90% { transform: translate3d(-1px, 0, 0); }
-        20%, 80% { transform: translate3d(2px, 0, 0); }
-        30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
-        40%, 60% { transform: translate3d(4px, 0, 0); }
+        10%, 90% { transform: translate3d(-2px, 0, 0); }
+        20%, 80% { transform: translate3d(4px, 0, 0); }
+        30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
+        40%, 60% { transform: translate3d(6px, 0, 0); }
       }
       .animate-shake {
         animation: shake 0.82s cubic-bezier(.36,.07,.19,.97) both;

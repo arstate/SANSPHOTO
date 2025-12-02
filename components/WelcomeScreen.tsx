@@ -1,12 +1,4 @@
 
-
-
-
-
-
-
-
-
 import React, { useMemo, useRef, useEffect, useState } from 'react';
 import { SettingsIcon } from './icons/SettingsIcon';
 import { HistoryIcon } from './icons/HistoryIcon';
@@ -35,16 +27,16 @@ interface WelcomeScreenProps {
 }
 
 const CachingStatus: React.FC<{ progress: number }> = ({ progress }) => (
-    <div className="fixed bottom-0 left-0 right-0 p-3 bg-[var(--color-bg-secondary)]/80 backdrop-blur-sm z-50 transition-opacity duration-300">
+    <div className="fixed bottom-0 left-0 right-0 p-3 bg-[var(--color-bg-secondary)] border-t-4 border-black z-50 transition-opacity duration-300">
         <div className="max-w-md mx-auto text-center">
-            <p className="text-sm text-[var(--color-text-secondary)] mb-1">Downloading templates for offline use...</p>
-            <div className="w-full bg-[var(--color-border-secondary)] rounded-full h-2.5">
+            <p className="text-sm font-bold text-black mb-1 uppercase">Downloading Resources...</p>
+            <div className="w-full bg-white border-2 border-black h-4 relative">
                 <div 
-                    className="bg-[var(--color-accent-primary)] h-2.5 rounded-full transition-all duration-300" 
+                    className="bg-[var(--color-accent-primary)] h-full transition-all duration-300 border-r-2 border-black" 
                     style={{ width: `${progress}%` }}
                 ></div>
             </div>
-            <p className="text-xs font-mono mt-1 text-[var(--color-text-accent)]">{Math.round(progress)}%</p>
+            <p className="text-xs font-mono mt-1 text-black font-bold">{Math.round(progress)}%</p>
         </div>
     </div>
 );
@@ -125,7 +117,6 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
   };
 
   useEffect(() => {
-    // FIX: Replaced NodeJS.Timeout with number for browser compatibility.
     let titleInterval: number | undefined;
     if (isWelcomeTitleFontRandom) {
       titleInterval = window.setInterval(() => {
@@ -137,7 +128,6 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
   }, [isWelcomeTitleFontRandom]);
   
   useEffect(() => {
-    // FIX: Replaced NodeJS.Timeout with number for browser compatibility.
     let subtitleInterval: number | undefined;
     if (isWelcomeSubtitleFontRandom) {
       subtitleInterval = window.setInterval(() => {
@@ -232,7 +222,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                 transform: 'translate(-50%, -50%)' 
               }}
             >
-              <ThreeObject objectData={obj} className="drop-shadow-2xl" />
+              <ThreeObject objectData={obj} className="drop-shadow-[10px_10px_0px_rgba(0,0,0,0.5)]" />
             </div>
           );
       })}
@@ -241,7 +231,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
         <div className="absolute top-4 left-4 flex gap-2">
           <button 
             onClick={isAdminLoggedIn ? onAdminLogoutClick : onAdminLoginClick}
-            className="bg-[var(--color-bg-secondary)]/50 hover:bg-[var(--color-bg-tertiary)]/70 text-[var(--color-text-primary)] font-bold p-3 rounded-full transition-colors"
+            className="bg-[var(--color-bg-secondary)] hover:bg-[var(--color-bg-tertiary)] text-[var(--color-text-primary)] font-bold p-3 transition-colors border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
             aria-label={isAdminLoggedIn ? 'Admin Logout' : 'Admin Login'}
           >
             {isAdminLoggedIn ? <LogoutIcon /> : <AdminIcon />}
@@ -251,7 +241,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
           {deferredPrompt && (
             <button 
               onClick={handleInstallApp}
-              className="bg-[var(--color-accent-primary)]/80 hover:bg-[var(--color-accent-primary)] text-[var(--color-text-primary)] font-bold p-3 rounded-full transition-colors shadow-lg animate-bounce"
+              className="bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)] text-white font-bold p-3 transition-colors border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] animate-bounce"
               aria-label="Install App"
               title="Install App"
             >
@@ -262,20 +252,20 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
 
         <div className={`flex-grow flex flex-col items-center justify-center transition-all duration-500 ${hasReviewsToShow ? 'pb-48' : ''}`}>
             <h1 
-              className="text-8xl md:text-9xl tracking-widest text-white transition-all duration-500"
+              className="text-8xl md:text-9xl tracking-widest text-white transition-all duration-500 uppercase"
               style={{
                 color: welcomeTitleColor || undefined,
-                textShadow: isWelcomeTextShadowEnabled ? '2px 2px 8px rgba(0,0,0,0.7)' : 'none',
+                textShadow: isWelcomeTextShadowEnabled ? '4px 4px 0px #000000' : 'none',
                 fontFamily: isWelcomeTitleFontRandom ? randomTitleFont : welcomeTitleFont,
               }}
             >
               {welcomeTitle}
             </h1>
             <p 
-              className="text-gray-200 mb-8 transition-all duration-500"
+              className="text-gray-200 mb-12 transition-all duration-500 text-xl md:text-2xl font-bold bg-black/20 p-2 inline-block backdrop-blur-sm"
               style={{
                 color: welcomeSubtitleColor || undefined,
-                textShadow: isWelcomeTextShadowEnabled ? '1px 1px 4px rgba(0,0,0,0.7)' : 'none',
+                textShadow: isWelcomeTextShadowEnabled ? '2px 2px 0px #000000' : 'none',
                 fontFamily: isWelcomeSubtitleFontRandom ? randomSubtitleFont : welcomeSubtitleFont,
               }}
             >
@@ -285,42 +275,42 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                 <div className="flex flex-wrap justify-center gap-4">
                   <button
                       onClick={onSettingsClick}
-                      className="bg-[var(--color-accent-secondary)] hover:bg-[var(--color-accent-secondary-hover)] text-[var(--color-accent-secondary-text)] font-bold py-3 px-10 rounded-full text-xl transition-transform transform hover:scale-105 shadow-lg shadow-black/50 flex items-center gap-2"
+                      className="bg-[var(--color-accent-secondary)] hover:bg-[var(--color-accent-secondary-hover)] text-[var(--color-accent-secondary-text)] font-bold py-4 px-10 text-xl flex items-center gap-2 border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]"
                   >
                       <SettingsIcon />
                       Settings
                   </button>
                   <button
                       onClick={onViewHistory}
-                      className="bg-[var(--color-info)] hover:bg-[var(--color-info-hover)] text-[var(--color-info-text)] font-bold py-3 px-10 rounded-full text-xl transition-transform transform hover:scale-105 shadow-lg shadow-black/50 flex items-center gap-2"
+                      className="bg-[var(--color-info)] hover:bg-[var(--color-info-hover)] text-[var(--color-info-text)] font-bold py-4 px-10 text-xl flex items-center gap-2 border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]"
                   >
                       <HistoryIcon />
                       View History
                   </button>
                   <button
                       onClick={onViewOnlineHistory}
-                      className="bg-[var(--color-info)] hover:bg-[var(--color-info-hover)] text-[var(--color-info-text)] font-bold py-3 px-10 rounded-full text-xl transition-transform transform hover:scale-105 shadow-lg shadow-black/50 flex items-center gap-2"
+                      className="bg-[var(--color-info)] hover:bg-[var(--color-info-hover)] text-[var(--color-info-text)] font-bold py-4 px-10 text-xl flex items-center gap-2 border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]"
                   >
                       <GlobeIcon />
                       Online History
                   </button>
                 </div>
             ) : (
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
                 {settings.isOnlineHistoryEnabled && (
                     <button
                         onClick={onViewOnlineHistory}
                         className={`
-                            font-bold py-3 px-10 rounded-full text-xl transition-all transform hover:scale-105 flex items-center gap-2
-                            ${isOnlineHistoryButtonShadowEnabled ? 'shadow-lg shadow-black/50' : ''}
-                            ${isOnlineHistoryButtonStrokeEnabled ? 'border-2' : 'border-0'}
-                            ${!isOnlineHistoryButtonFillEnabled && !onlineHistoryButtonFillColor ? 'hover:bg-[var(--color-bg-secondary)]/50' : ''}
+                            font-bold py-4 px-10 text-xl flex items-center gap-2
+                            ${isOnlineHistoryButtonShadowEnabled ? 'shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:translate-x-1 hover:translate-y-1 hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]' : ''}
+                            ${isOnlineHistoryButtonStrokeEnabled ? 'border-4 border-black' : 'border-0'}
+                            ${!isOnlineHistoryButtonFillEnabled && !onlineHistoryButtonFillColor ? 'bg-white hover:bg-gray-100' : ''}
                             ${isOnlineHistoryButtonFillEnabled && !onlineHistoryButtonFillColor ? 'bg-[var(--color-bg-secondary)] hover:brightness-110' : ''}
                         `}
                         style={{
-                            backgroundColor: isOnlineHistoryButtonFillEnabled ? (onlineHistoryButtonFillColor || undefined) : 'transparent',
+                            backgroundColor: isOnlineHistoryButtonFillEnabled ? (onlineHistoryButtonFillColor || undefined) : undefined,
                             color: onlineHistoryButtonTextColor || undefined,
-                            borderColor: isOnlineHistoryButtonStrokeEnabled ? (onlineHistoryButtonStrokeColor || 'var(--color-text-secondary)') : 'transparent',
+                            borderColor: isOnlineHistoryButtonStrokeEnabled ? (onlineHistoryButtonStrokeColor || '#000000') : 'transparent',
                         }}
                     >
                         {isOnlineHistoryButtonIconEnabled && <GlobeIcon />}
@@ -332,17 +322,17 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                   disabled={isLoading || isCaching}
                   className={`
                       ${startButtonBgColor ? '' : 'bg-[var(--color-accent-primary)] hover:bg-[var(--color-accent-primary-hover)]'}
-                      ${startButtonTextColor ? '' : 'text-[var(--color-accent-primary-text)]'}
-                      ${isStartButtonShadowEnabled ? 'shadow-lg shadow-black/50' : ''}
-                      font-bold py-3 px-10 rounded-full text-xl transition-transform transform hover:scale-105
-                      disabled:bg-[var(--color-bg-tertiary)] disabled:transform-none disabled:cursor-wait
+                      ${startButtonTextColor ? '' : 'text-white'}
+                      ${isStartButtonShadowEnabled ? 'shadow-[8px_8px_0px_0px_#000000] hover:translate-x-1 hover:translate-y-1 hover:shadow-[4px_4px_0px_0px_#000000]' : ''}
+                      font-black py-5 px-16 text-3xl border-4 border-black
+                      disabled:bg-gray-400 disabled:shadow-none disabled:transform-none disabled:cursor-wait
                   `}
                   style={{
                       backgroundColor: startButtonBgColor || undefined,
                       color: startButtonTextColor || undefined,
                   }}
                 >
-                  {isLoading ? 'Starting...' : startButtonText}
+                  {isLoading ? 'LOADING...' : startButtonText}
                 </button>
               </div>
             )}
