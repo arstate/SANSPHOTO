@@ -41,7 +41,7 @@ import useFullscreenLock from './hooks/useFullscreenLock';
 
 // URL Google Apps Script untuk menangani unggahan
 const SCRIPT_URL_RETAKE = 'https://script.google.com/macros/s/AKfycbyaHTCbrYvk4JtiZInyZilCLhYmi4dcaXmasPpV365UqdsUtftJ1FIscd1Nc4fkRYD5BA/exec';
-const FONNTE_API_KEY = 'pP5bEpfrqJ7ii2j2jwha';
+const FONNTE_API_KEY = '6mUqzM24nzjby1nFgPR1';
 
 const INITIAL_PHOTO_SLOTS: PhotoSlot[] = [
   { id: 1, inputId: 1, x: 90,  y: 70,   width: 480, height: 480 },
