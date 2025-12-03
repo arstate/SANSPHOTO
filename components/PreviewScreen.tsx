@@ -621,7 +621,7 @@ const PreviewScreen: React.FC<PreviewScreenProps> = ({
                     className={`w-full font-bold py-3 px-8 rounded-none border-4 border-black text-lg transition-all transform hover:scale-105 flex items-center justify-center gap-3 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-x-2 active:translate-y-2 uppercase ${savedWhatsappNumber ? 'bg-gray-600 cursor-default transform-none text-white' : 'bg-[#25D366] hover:bg-[#20b858] text-white'}`}
                 >
                     <WhatsAppIcon />
-                    <span>{savedWhatsappNumber ? 'Terkirim ke Admin' : 'Kirim ke WhatsApp'}</span>
+                    <span>{savedWhatsappNumber ? 'Terkirim' : 'Kirim ke WhatsApp'}</span>
                 </button>
             )}
 
