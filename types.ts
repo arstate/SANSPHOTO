@@ -4,6 +4,7 @@ export enum AppState {
   WELCOME,
   TUTORIAL, // New: Tutorial Screen
   KEY_CODE_ENTRY,
+  GUEST_INPUT, // New: Guest Name Input for non-payment modes
   PRICE_SELECTION, // New: Selection Price/Package
   PAYMENT_SHOW, // New: Show QRIS
   PAYMENT_VERIFICATION, // New: Scan Proof

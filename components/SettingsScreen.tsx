@@ -1686,7 +1686,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 {/* Payment History View */}
                 <div className="p-6 bg-[var(--color-bg-secondary)] border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-left space-y-4">
                     <div className="flex justify-between items-center border-b-2 border-black pb-2">
-                        <h3 className="text-xl font-bold font-bebas tracking-wider text-black">Recent Payments</h3>
+                        <h3 className="text-xl font-bold font-bebas tracking-wider text-black">Recent Activity</h3>
                         <button 
                             onClick={handleRefreshPayments}
                             className={`p-2 bg-white border-2 border-black hover:bg-gray-100 transition-all text-black shadow-[2px_2px_0px_0px_black] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none ${isRefreshingPayments ? 'animate-spin text-[var(--color-accent-primary)]' : ''}`}
@@ -1710,7 +1710,9 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                                 <div key={pay.id} className="p-3 bg-white border-2 border-black flex justify-between items-center text-sm shadow-[2px_2px_0px_0px_gray]">
                                     <div>
                                         <p className="font-bold text-black uppercase">{pay.userName}</p>
-                                        <p className="text-xs text-gray-600 font-mono">{pay.priceListName} - Rp {pay.amount.toLocaleString()}</p>
+                                        <p className="text-xs text-gray-600 font-mono">
+                                            {pay.priceListName} - {pay.amount === 0 ? <span className="font-bold text-green-600">FREE / GUEST</span> : `Rp ${pay.amount.toLocaleString()}`}
+                                        </p>
                                         <p className="text-[10px] text-gray-500 font-mono">{new Date(pay.timestamp).toLocaleString()}</p>
                                         {pay.whatsappNumber && (
                                             <p className="text-xs text-green-600 mt-1 flex items-center gap-1 font-bold">
@@ -1767,14 +1769,14 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                                         <button 
                                             onClick={() => onDeletePayment(pay.id)}
                                             className="p-1.5 bg-red-200 hover:bg-red-300 text-black border-2 border-black transition-colors"
-                                            title="Delete Payment"
+                                            title="Delete Activity"
                                         >
                                             <TrashIcon />
                                         </button>
                                     </div>
                                 </div>
                             ))}
-                            {payments.length === 0 && <p className="text-center text-gray-500 py-10 font-mono">No payments yet.</p>}
+                            {payments.length === 0 && <p className="text-center text-gray-500 py-10 font-mono">No activity yet.</p>}
                         </div>
                     </div>
                     {payments.length > 0 && (

@@ -32,6 +32,7 @@ import PaymentVerificationScreen from './components/PaymentVerificationScreen';
 import TutorialScreen from './components/TutorialScreen';
 import ClientGalleryScreen from './components/ClientGalleryScreen';
 import FilterSelectionScreen from './components/FilterSelectionScreen';
+import GuestInputScreen from './components/GuestInputScreen';
 
 import { AppState, PhotoSlot, Settings, Template, Event, HistoryEntry, SessionKey, Review, Tenant, FloatingObject, PriceList, PaymentEntry } from './types';
 import { db, ref, onValue, set, push, update, remove, firebaseObjectToArray, query, orderByChild, equalTo, get } from './firebase';
@@ -479,6 +480,7 @@ const App: React.FC = () => {
         case AppState.PREVIEW: progress = 'Melihat Pratinjau Akhir'; break;
         case AppState.PRICE_SELECTION: progress = 'Memilih Paket'; break;
         case AppState.PAYMENT_SHOW: progress = 'Pembayaran'; break;
+        case AppState.GUEST_INPUT: progress = 'Input Nama'; break;
     }
     if (progress) {
         update(ref(db, `data/${currentTenantId}/sessionKeys/${currentSessionKey.id}`), { progress });
@@ -524,7 +526,6 @@ const App: React.FC = () => {
         if (settings.priceLists && settings.priceLists.length > 0) {
             setAppState(AppState.PRICE_SELECTION);
         } else {
-            // Configured to pay but no prices? Fallback or error.
             alert("Payment mode is enabled but no price packages are configured. Please contact admin.");
         }
         return;
@@ -534,28 +535,10 @@ const App: React.FC = () => {
     if (settings.isSessionCodeEnabled) {
       setAppState(AppState.KEY_CODE_ENTRY);
     } else {
-      // 3. Free Play Mode
-      setIsSessionLoading(true);
-      try {
-        const newKeyData: Omit<SessionKey, 'id'> = {
-          code: 'FREEPLAY', maxTakes: Number(settings.freePlayMaxTakes) || 1, takesUsed: 1, status: 'in_progress', createdAt: Date.now(), progress: 'Memilih Event', hasBeenReviewed: false,
-        };
-        const newKeyRef = await push(ref(db, `data/${currentTenantId}/sessionKeys`), newKeyData);
-        if (!newKeyRef.key) throw new Error("Could not get new session key.");
-        
-        const newKey: SessionKey = { id: newKeyRef.key, ...newKeyData };
-        setCurrentSessionKey(newKey);
-        setCurrentTakeCount(1);
-        setAppState(AppState.EVENT_SELECTION);
-      } catch (error) {
-        console.error("Error starting free play session:", error);
-        setKeyCodeError("Could not start a free session.");
-        setAppState(AppState.WELCOME);
-      } finally {
-        setIsSessionLoading(false);
-      }
+      // 3. Free Play Mode -> Go to Guest Input First
+      setAppState(AppState.GUEST_INPUT);
     }
-  }, [settings.isSessionCodeEnabled, settings.isPaymentEnabled, settings.freePlayMaxTakes, settings.priceLists, currentTenantId]);
+  }, [settings.isSessionCodeEnabled, settings.isPaymentEnabled, settings.priceLists, currentTenantId]);
 
   // Payment Flow Handlers
   const handlePriceSelect = useCallback((priceList: PriceList) => {
@@ -584,6 +567,66 @@ const App: React.FC = () => {
     }
   }, [currentTenantId, selectedPriceList]);
 
+  // New Handler: Guest Input Submit (For Free & Code modes)
+  const handleGuestSubmit = useCallback(async (userName: string) => {
+      if (!currentTenantId) return;
+      setIsSessionLoading(true);
+
+      try {
+          // 1. Create a "Payment" Record with 0 amount for Recent Activity Tracking
+          const activityType = currentSessionKey ? 'CODE SESSION' : 'GUEST SESSION';
+          const paymentData: Omit<PaymentEntry, 'id'> = {
+              userName,
+              priceListId: 'guest-session',
+              priceListName: activityType,
+              amount: 0,
+              status: 'verified', // Auto-verified since it's free/code
+              timestamp: Date.now()
+          };
+
+          const newActivityRef = await push(ref(db, `data/${currentTenantId}/payments`), paymentData);
+          if (newActivityRef.key) {
+              setCurrentPaymentId(newActivityRef.key); // Store ID for WhatsApp feature later
+          }
+
+          // 2. If it's Free Play (no session key yet), create one now.
+          // If Code mode, the key exists from handleKeyCodeSubmit logic.
+          if (!currentSessionKey) {
+              const newKeyData: Omit<SessionKey, 'id'> = {
+                  code: 'FREEPLAY', 
+                  maxTakes: Number(settings.freePlayMaxTakes) || 1, 
+                  takesUsed: 1, 
+                  status: 'in_progress', 
+                  createdAt: Date.now(), 
+                  progress: 'Memilih Event', 
+                  hasBeenReviewed: false,
+              };
+              const newKeyRef = await push(ref(db, `data/${currentTenantId}/sessionKeys`), newKeyData);
+              if (newKeyRef.key) {
+                  const newKey: SessionKey = { id: newKeyRef.key, ...newKeyData };
+                  setCurrentSessionKey(newKey);
+                  setCurrentTakeCount(1);
+              }
+          } else {
+              // Code Mode: Just update existing key to started
+              await update(ref(db, `data/${currentTenantId}/sessionKeys/${currentSessionKey.id}`), { 
+                  status: 'in_progress', 
+                  takesUsed: 1 
+              });
+              setCurrentTakeCount(1);
+          }
+
+          setAppState(AppState.EVENT_SELECTION);
+
+      } catch (error) {
+          console.error("Error starting guest session:", error);
+          alert("Could not start session. Please try again.");
+          setAppState(AppState.WELCOME);
+      } finally {
+          setIsSessionLoading(false);
+      }
+  }, [currentTenantId, currentSessionKey, settings.freePlayMaxTakes]);
+
   const handlePaymentPaid = useCallback(() => {
     setAppState(AppState.PAYMENT_VERIFICATION);
   }, []);
@@ -595,8 +638,6 @@ const App: React.FC = () => {
       setIsSessionLoading(true);
       try {
         // Find max takes from price list derived from payment
-        // Note: selectedPriceList might be null if reloaded, ideally use payment.priceListName to lookup or store maxTakes in payment
-        // For robustness, if selectedPriceList is missing, default to 1 or try to find it
         let sessionMaxTakes = 1;
         if (selectedPriceList && selectedPriceList.id === payment.priceListId) {
             sessionMaxTakes = selectedPriceList.maxTakes;
@@ -644,15 +685,10 @@ const App: React.FC = () => {
     });
     
     // 2. Start Session
-    // We fetch the current payment object to pass to startPaidSession
     const payment = payments.find(p => p.id === currentPaymentId);
     if (payment) {
         startPaidSession(payment);
     } else {
-        // Fallback with just current Payment ID reference logic inside startPaidSession logic if possible, 
-        // but since we need maxTakes, we rely on the state finding it.
-        // If payment isn't in state yet (rare race condition), wait for listener or fail.
-        // Simple fallback:
         const tempPayment: any = { priceListId: selectedPriceList?.id };
         startPaidSession(tempPayment);
     }
@@ -678,12 +714,12 @@ const App: React.FC = () => {
   }, [currentTenantId]);
 
   const handleDeletePayment = useCallback(async (paymentId: string) => {
-      if (!currentTenantId || !window.confirm("Are you sure you want to delete this payment record? This will revoke access to the generated gallery link.")) return;
+      if (!currentTenantId || !window.confirm("Are you sure you want to delete this record? This will revoke access to the generated gallery link.")) return;
       await remove(ref(db, `data/${currentTenantId}/payments/${paymentId}`));
   }, [currentTenantId]);
 
   const handleDeleteAllPayments = useCallback(async () => {
-      if (!currentTenantId || !window.confirm("WARNING: This will delete ALL payment records and revoke access to all client galleries. This action cannot be undone. Are you sure?")) return;
+      if (!currentTenantId || !window.confirm("WARNING: This will delete ALL records and revoke access to all client galleries. This action cannot be undone. Are you sure?")) return;
       try {
           await remove(ref(db, `data/${currentTenantId}/payments`));
       } catch (error) {
@@ -701,7 +737,7 @@ const App: React.FC = () => {
       if (!currentTenantId || !currentPaymentId) return;
 
       try {
-          // 1. Get current payment details to get the name
+          // 1. Get current payment/activity details
           const payment = payments.find(p => p.id === currentPaymentId);
           if (!payment) {
               console.error("Payment not found for WA logic");
@@ -785,7 +821,8 @@ const App: React.FC = () => {
            if (newKeyRef.key) {
               setCurrentSessionKey({ id: newKeyRef.key, ...newSessionData });
               setCurrentTakeCount(1);
-              setAppState(AppState.EVENT_SELECTION);
+              // Instead of EVENT_SELECTION, go to GUEST_INPUT to capture name
+              setAppState(AppState.GUEST_INPUT);
            } else {
              setKeyCodeError("Gagal membuat sesi baru.");
            }
@@ -797,9 +834,9 @@ const App: React.FC = () => {
               return;
           }
           setCurrentSessionKey(sessionKey);
-          setCurrentTakeCount(1);
-          await update(ref(db, `data/${currentTenantId}/sessionKeys/${sessionKey.id}`), { status: 'in_progress', takesUsed: 1 });
-          setAppState(AppState.EVENT_SELECTION);
+          // Don't start it 'in_progress' yet, wait for name input
+          // Go to GUEST_INPUT
+          setAppState(AppState.GUEST_INPUT);
         }
     } catch (error) {
         console.error("Error validating session key:", error);
@@ -1002,53 +1039,6 @@ const App: React.FC = () => {
       if (currentTenantId && window.confirm("Are you sure?")) await remove(ref(db, `data/${currentTenantId}/reviews/${reviewId}`));
   }, [currentTenantId]);
 
-  const handleBack = useCallback(() => {
-    switch (appState) {
-        case AppState.TUTORIAL: setAppState(AppState.WELCOME); break;
-        case AppState.TEMPLATE_SELECTION: setSelectedEventId(null); setAppState(AppState.EVENT_SELECTION); break;
-        case AppState.EVENT_SELECTION: handleCancelSession(); break;
-        case AppState.KEY_CODE_ENTRY: case AppState.SETTINGS: case AppState.HISTORY: case AppState.ONLINE_HISTORY: case AppState.PRICE_SELECTION: setAppState(AppState.WELCOME); break;
-        case AppState.MANAGE_EVENTS: case AppState.MANAGE_SESSIONS: case AppState.MANAGE_REVIEWS: case AppState.MANAGE_TENANTS: setAppState(AppState.SETTINGS); break;
-        case AppState.PREVIEW: (settings.maxRetakes ?? 0) > 0 ? setAppState(AppState.RETAKE_PREVIEW) : (setCapturedImages([]), setSelectedTemplate(null), setAppState(AppState.TEMPLATE_SELECTION)); break;
-        case AppState.PAYMENT_SHOW: setAppState(AppState.PRICE_SELECTION); break;
-        case AppState.PAYMENT_VERIFICATION: setAppState(AppState.PAYMENT_SHOW); break;
-        case AppState.FILTER_SELECTION: break; // Do nothing, cannot go back from Filter
-        default: setAppState(AppState.WELCOME);
-    }
-  }, [appState, settings.maxRetakes]);
-
-  // All login functions are just for setting state, App component decides which modal to open
-  const handleOpenAdminLogin = useCallback(() => {
-    if (currentTenantId === 'master') setIsLoginModalOpen(true);
-    else if (currentTenantId) setIsTenantLoginModalOpen(true);
-  }, [currentTenantId]);
-  
-  const handleAdminLogin = useCallback((tenant?: Tenant) => {
-    if (tenant) {
-      // Tenant login from master page
-      setIsAdminLoggedIn(true);
-      setIsMasterAdmin(false);
-      setIsLoginModalOpen(false);
-      window.location.hash = `#/${tenant.path}`;
-    } else {
-      // Master admin login
-      setIsAdminLoggedIn(true);
-      setIsMasterAdmin(true);
-      setIsLoginModalOpen(false);
-    }
-  }, []);
-  
-  const handleTenantAdminLogin = useCallback(() => {
-      setIsAdminLoggedIn(true);
-      setIsMasterAdmin(false);
-      setIsTenantLoginModalOpen(false);
-  }, []);
-  
-  const handleAdminLogout = useCallback(() => {
-      setIsAdminLoggedIn(false);
-      setIsMasterAdmin(false);
-  }, []);
-
   const handleSessionEnd = useCallback(() => {
     if (currentSessionKey && currentTenantId) {
         if (currentSessionKey.code.startsWith('FREEPLAY')) { 
@@ -1082,6 +1072,57 @@ const App: React.FC = () => {
       }
       handleSessionEnd();
   }, [currentSessionKey, currentTenantId, handleSessionEnd]);
+
+  const handleBack = useCallback(() => {
+    switch (appState) {
+        case AppState.TUTORIAL: setAppState(AppState.WELCOME); break;
+        case AppState.TEMPLATE_SELECTION: setSelectedEventId(null); setAppState(AppState.EVENT_SELECTION); break;
+        case AppState.EVENT_SELECTION: handleCancelSession(); break;
+        case AppState.KEY_CODE_ENTRY: case AppState.SETTINGS: case AppState.HISTORY: case AppState.ONLINE_HISTORY: case AppState.PRICE_SELECTION: setAppState(AppState.WELCOME); break;
+        case AppState.GUEST_INPUT:
+            if (settings.isSessionCodeEnabled) setAppState(AppState.KEY_CODE_ENTRY);
+            else setAppState(AppState.TUTORIAL);
+            break;
+        case AppState.MANAGE_EVENTS: case AppState.MANAGE_SESSIONS: case AppState.MANAGE_REVIEWS: case AppState.MANAGE_TENANTS: setAppState(AppState.SETTINGS); break;
+        case AppState.PREVIEW: (settings.maxRetakes ?? 0) > 0 ? setAppState(AppState.RETAKE_PREVIEW) : (setCapturedImages([]), setSelectedTemplate(null), setAppState(AppState.TEMPLATE_SELECTION)); break;
+        case AppState.PAYMENT_SHOW: setAppState(AppState.PRICE_SELECTION); break;
+        case AppState.PAYMENT_VERIFICATION: setAppState(AppState.PAYMENT_SHOW); break;
+        case AppState.FILTER_SELECTION: break; // Do nothing, cannot go back from Filter
+        default: setAppState(AppState.WELCOME);
+    }
+  }, [appState, settings.maxRetakes, settings.isSessionCodeEnabled, handleCancelSession]); // Added handleCancelSession to dependency
+
+  // All login functions are just for setting state, App component decides which modal to open
+  const handleOpenAdminLogin = useCallback(() => {
+    if (currentTenantId === 'master') setIsLoginModalOpen(true);
+    else if (currentTenantId) setIsTenantLoginModalOpen(true);
+  }, [currentTenantId]);
+  
+  const handleAdminLogin = useCallback((tenant?: Tenant) => {
+    if (tenant) {
+      // Tenant login from master page
+      setIsAdminLoggedIn(true);
+      setIsMasterAdmin(false);
+      setIsLoginModalOpen(false);
+      window.location.hash = `#/${tenant.path}`;
+    } else {
+      // Master admin login
+      setIsAdminLoggedIn(true);
+      setIsMasterAdmin(true);
+      setIsLoginModalOpen(false);
+    }
+  }, []);
+  
+  const handleTenantAdminLogin = useCallback(() => {
+      setIsAdminLoggedIn(true);
+      setIsMasterAdmin(false);
+      setIsTenantLoginModalOpen(false);
+  }, []);
+  
+  const handleAdminLogout = useCallback(() => {
+      setIsAdminLoggedIn(false);
+      setIsMasterAdmin(false);
+  }, []);
 
   const handleCaptureProgressUpdate = useCallback((current: number, total: number) => {
     if (currentSessionKey && currentTenantId) {
@@ -1261,6 +1302,7 @@ const App: React.FC = () => {
       case AppState.TUTORIAL:
         return <TutorialScreen onComplete={handleTutorialComplete} onBack={handleBack} settings={settings} />;
       case AppState.KEY_CODE_ENTRY: return <KeyCodeScreen onKeyCodeSubmit={handleKeyCodeSubmit} onBack={handleBack} error={keyCodeError} isLoading={isSessionLoading} />;
+      case AppState.GUEST_INPUT: return <GuestInputScreen onNext={handleGuestSubmit} onBack={handleBack} />;
       
       // Payment Flow
       case AppState.PRICE_SELECTION: return <PriceSelectionScreen priceLists={settings.priceLists || []} onSelect={handlePriceSelect} onBack={handleBack} onNext={(name) => handleCreatePayment(name)} />;
